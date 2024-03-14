@@ -54,7 +54,10 @@ async fn main() {
     let instances = initialize_database().await;
     let dt = Utc::now();
     let expense = Expense::new(0, ExpenseType::Maintenance(MaintenanceType::Landscaping), 100.0, dt, "Normal Maintenance".to_string());
-    let _result = add_expense(&instances, &expense).await;
+    match add_expense(&instances, &expense).await {
+        Ok(_) => println!("Successfully added EXPENSE"),
+        Err(e) => println!("Error when adding EXPENSE: {}", e),
+    }
 
     instances.close().await;
 }
