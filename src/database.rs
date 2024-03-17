@@ -1,7 +1,7 @@
 use std::result::Result;
 use sqlx::{sqlite::{SqliteQueryResult, SqliteConnectOptions}, Connection, Sqlite, Executor, SqlitePool, migrate::MigrateDatabase};
 
-use crate::{properties::Property, Expense, ExpenseType, MaintenanceType, UtilitiesType};
+use crate::{properties::Property, tenant::{Lease, Tenant}, Expense, ExpenseType, MaintenanceType, UtilitiesType};
 
 pub async fn initialize_database() -> sqlx::Pool<Sqlite> {
     let db_url = String::from("sqlite://sqlite.db");
@@ -11,6 +11,8 @@ pub async fn initialize_database() -> sqlx::Pool<Sqlite> {
             Ok(_) => println!("Database created successfully"),
             Err(e) => panic!("{}", e)
         }
+    } else {
+        println!("Database already exists");
     }
 
     SqlitePool::connect(&db_url).await.unwrap()
@@ -22,14 +24,12 @@ pub async fn create_schema(db_url:&str) -> Result<SqliteQueryResult, sqlx::Error
     PRAGMA foreign_keys = ON;
     CREATE TABLE IF NOT EXISTS leases (
         lease_id            INTEGER PRIMARY KEY AUTOINCREMENT,
-        tenant_id           INTEGER,
         start_date          TEXT,
         end_date            TEXT,
         monthly_rent        REAL,
         payment_due_date    TEXT,
-        payment_method      TEXT,
-        FOREIGN KEY (tenant_id) REFERENCES tenants(tenant_id)
-    );    
+        payment_method      TEXT
+    );  
     CREATE TABLE IF NOT EXISTS properties (
         property_id         INTEGER PRIMARY KEY AUTOINCREMENT,
         property_name       TEXT,
@@ -38,24 +38,27 @@ pub async fn create_schema(db_url:&str) -> Result<SqliteQueryResult, sqlx::Error
         state               TEXT,
         zip_code            TEXT,
         num_units           INTEGER
-    );    
+    );
     CREATE TABLE IF NOT EXISTS maintenance_requests (
         request_id          INTEGER PRIMARY KEY AUTOINCREMENT,
         tenant_id           INTEGER,
         request_date        TEXT,
         description         TEXT,
         status              TEXT,
-        completion_date     TEXT null
-    );    
+        completion_date     TEXT null,        
+        FOREIGN KEY (tenant_id) REFERENCES tenants(tenant_id)
+    );
     CREATE TABLE IF NOT EXISTS tenants (
         tenant_id           INTEGER PRIMARY KEY AUTOINCREMENT,
         lease_id            INTEGER,
+        property_id         INTEGER,
         first_name          TEXT,
         last_name           TEXT,
         email               TEXT,
         phone_number        TEXT,
-        move_in_date        TEXT,        
+        move_in_date        TEXT,
         FOREIGN KEY (lease_id) REFERENCES leases(lease_id)
+        FOREIGN KEY (property_id) REFERENCES properties(property_id)
     );    
     CREATE TABLE IF NOT EXISTS expenses (
         expense_id          INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -114,6 +117,31 @@ pub async fn add_property(pool: &sqlx::Pool<Sqlite>, property: &Property) -> Res
         .bind(&property.state)
         .bind(&property.zip_code)
         .bind(property.num_units)
+        .execute(pool)
+        .await?;
+    Ok(())
+}
+
+pub async fn add_tenant(pool: &sqlx::Pool<Sqlite>, tenant: &Tenant, lease: &Lease, property_id: u16) -> Result<(), sqlx::Error> {
+    let x = sqlx::query(
+        "INSERT INTO leases (start_date, end_date, monthly_rent, payment_due_date) VALUES (?, ?, ?, ?)")
+        .bind(lease.start_date.to_string())
+        .bind(lease.end_date.to_string())
+        .bind(lease.monthly_rent)
+        .bind(lease.payment_due_date)
+        .execute(pool)
+        .await?
+        .last_insert_rowid();
+
+    sqlx::query(
+        "INSERT INTO tenants (lease_id, property_id, first_name, last_name, email, phone_number, move_in_date) VALUES (?, ?, ?, ?, ?, ?, ?)")
+        .bind(x)
+        .bind(property_id)
+        .bind(&tenant.first_name)
+        .bind(&tenant.last_name)
+        .bind(&tenant.email)
+        .bind(&tenant.phone_number)
+        .bind(&tenant.move_in_date.to_string())
         .execute(pool)
         .await?;
     Ok(())
