@@ -1,7 +1,11 @@
 use std::result::Result;
 use sqlx::{sqlite::{SqliteQueryResult, SqliteConnectOptions}, Connection, Sqlite, Executor, SqlitePool, migrate::MigrateDatabase};
 
-use crate::{properties::Property, tenant::{Lease, Tenant}, Expense, ExpenseType, MaintenanceType, UtilitiesType};
+use crate::{
+    properties::Property, 
+    tenant::{Lease, Tenant}, 
+    expenses::*
+};
 
 pub async fn initialize_database() -> sqlx::Pool<Sqlite> {
     let db_url = String::from("sqlite://sqlite.db");

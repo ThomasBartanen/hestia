@@ -7,56 +7,15 @@ use tenant::Lease;
 use crate::{
     database::{add_expense, add_property, initialize_database}, 
     properties::Property,
-    tenant::Tenant
+    tenant::Tenant,
+    expenses::*
 };
-
 
 mod database;
 mod properties;
 mod tenant;
+mod expenses;
 
-#[derive(Debug)]
-enum ExpenseType {
-    Maintenance(MaintenanceType),
-    Utilities(UtilitiesType),
-    Other,
-}
-
-#[derive(Debug)]
-enum MaintenanceType {
-    Repairs,
-    Cleaning,
-    Landscaping,
-    Other,
-}
-
-#[derive(Debug)]
-enum UtilitiesType {
-    Water,
-    Electricity,
-    Gas,
-    Other,
-}
-
-struct Expense {
-    property_id: u16,
-    expense_type: ExpenseType,
-    amount: f64,
-    date: DateTime<Utc>,
-    description: String
-}
-
-impl Expense {
-    fn new(property_id: u16, expense_type: ExpenseType, amount: f64, date: DateTime<Utc>, description: String) -> Expense {
-        Expense {
-            property_id,
-            expense_type,
-            amount,
-            date,
-            description
-        }
-    }
-}
 #[async_std::main]
 async fn main() {
     let instances = initialize_database().await;
