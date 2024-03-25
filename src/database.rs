@@ -2,9 +2,7 @@ use std::result::Result;
 use sqlx::{sqlite::{SqliteQueryResult, SqliteConnectOptions}, Connection, Sqlite, Executor, SqlitePool, migrate::MigrateDatabase};
 
 use crate::{
-    properties::Property, 
-    tenant::{Lease, Tenant}, 
-    expenses::*
+    expenses::*, properties::Property, tenant::{FeeStructure, Lease, Tenant}
 };
 
 pub async fn initialize_database() -> sqlx::Pool<Sqlite> {
@@ -30,8 +28,7 @@ pub async fn create_schema(db_url:&str) -> Result<SqliteQueryResult, sqlx::Error
         lease_id            INTEGER PRIMARY KEY AUTOINCREMENT,
         start_date          TEXT,
         end_date            TEXT,
-        monthly_rent        REAL,
-        payment_due_date    TEXT,
+        fee_structure       TEXT,
         payment_method      TEXT
     );  
     CREATE TABLE IF NOT EXISTS properties (
@@ -142,12 +139,26 @@ pub async fn add_property(pool: &sqlx::Pool<Sqlite>, property: &Property) -> Res
 }
 
 pub async fn add_tenant(pool: &sqlx::Pool<Sqlite>, tenant: &Tenant, lease: &Lease, property_id: u16) -> Result<(), sqlx::Error> {
+    let fee_structure: String = match lease.fee_structure {
+        FeeStructure::Gross(rent) => {
+            format!("Gross: Base Rent {}", rent.base_rent)
+        },
+        FeeStructure::SingleNet(rent, tax_rate) => {
+            format!("Single Net: Base Rent {}, Property Tax Rate {}", rent.base_rent, tax_rate.property_tax)
+        },
+        FeeStructure::DoubleNet(rent, tax_rate, insurance_rate) => {
+            format!("Double Net: Base Rent {}, Property Tax Rate {}, Insurance Rate {}", rent.base_rent, tax_rate.property_tax, insurance_rate.building_insurance)
+        },
+        FeeStructure::TripleNet(rent, tax_rate, insurance_rate, cam_rates) => {
+            format!("Triple Net: Base Rent {}, Property Tax Rate {}, Insurance Rate {}, CAM Rates {:?}", rent.base_rent, tax_rate.property_tax, insurance_rate.building_insurance, cam_rates)
+        },
+    };
+
     let x = sqlx::query(
-        "INSERT INTO leases (start_date, end_date, monthly_rent, payment_due_date) VALUES (?, ?, ?, ?)")
+        "INSERT INTO leases (start_date, end_date, fee_structure) VALUES (?, ?, ?)")
         .bind(lease.start_date.to_string())
         .bind(lease.end_date.to_string())
-        .bind(lease.monthly_rent)
-        .bind(lease.payment_due_date)
+        .bind(fee_structure.to_string())
         .execute(pool)
         .await?
         .last_insert_rowid();

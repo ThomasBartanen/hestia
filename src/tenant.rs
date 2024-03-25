@@ -1,5 +1,59 @@
 use chrono::NaiveDate;
 
+#[derive(Debug, Clone)]
+pub enum FeeStructure {
+    Gross(Rent),
+    SingleNet(Rent, PropertyTaxRate),
+    DoubleNet(Rent, PropertyTaxRate, InsuranceRate),
+    TripleNet(
+        Rent,
+        PropertyTaxRate,
+        InsuranceRate,
+        CAMRates,
+    ),
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct Rent {
+    pub base_rent: f32,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct PropertyTaxRate {
+    pub property_tax: f32,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct InsuranceRate {
+    pub building_insurance: f32,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct CAMRates {
+    pub electicity: f32,
+    pub recycling: f32,
+    pub garbage: f32,
+    pub water: f32,
+    pub landscaping: f32,
+    pub amenities: f32,
+    pub misc: f32,
+}
+
+impl Default for CAMRates {
+    fn default() -> CAMRates {
+        CAMRates {
+            electicity: 0.4,
+            recycling: 0.3,
+            garbage: 0.3,
+            water: 0.3,
+            landscaping: 0.3,
+            amenities: 0.2,
+            misc: 0.0,
+        }
+    }
+}
+
+#[derive(Debug)]
 pub struct Tenant {
     pub lease_id: u16, 
     pub property_id: u16,
@@ -25,22 +79,21 @@ impl Tenant {
     }
 }
 
+#[derive(Debug)]
 pub struct Lease {
     pub start_date: NaiveDate,
     pub end_date: NaiveDate,
-    pub monthly_rent: f32,
-    pub payment_due_date: u16,
+    pub fee_structure: FeeStructure,
     pub payment_method: String
 }
 
 impl Lease {
-    pub fn new(start_date: NaiveDate, end_date: NaiveDate, monthly_rent: f32, payment_due_date: u16, payment_method: String
+    pub fn new(start_date: NaiveDate, end_date: NaiveDate, fee_structure: FeeStructure, payment_method: String
     ) -> Lease {
         Lease {
             start_date,
             end_date,
-            monthly_rent,
-            payment_due_date,
+            fee_structure,
             payment_method
         }
     }
