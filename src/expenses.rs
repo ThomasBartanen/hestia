@@ -1,4 +1,4 @@
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, NaiveDate, Utc};
 
 #[derive(Debug)]
 pub enum ExpenseType {
@@ -21,6 +21,24 @@ pub enum UtilitiesType {
     Electricity,
     Gas,
     Other,
+}
+
+pub enum RequestStatus {
+    Received,
+    InProgress,
+    Completed,
+    Cancelled,
+    OnHold
+}
+
+pub struct MaintenanceRequest {
+    pub request_id: u16,
+    pub tenant_id: u16,
+    pub request_date: NaiveDate,
+    pub request_type: MaintenanceType,
+    pub description: String,
+    pub status: RequestStatus,
+    pub completion_date: Option<NaiveDate>
 }
 
 pub struct Expense {

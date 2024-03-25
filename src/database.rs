@@ -80,6 +80,21 @@ pub async fn create_schema(db_url:&str) -> Result<SqliteQueryResult, sqlx::Error
     return result;
 }
 
+pub async fn add_maint_request(pool: &sqlx::Pool<Sqlite>, request: &MaintenanceRequest) -> Result<(), sqlx::Error> {
+    let maint_type_str = match request.request_type {
+        MaintenanceType::Repairs => String::from("Maintenance: Repairs"),
+        MaintenanceType::Cleaning => String::from("Maintenance: Cleaning"),
+        MaintenanceType::Landscaping => String::from("Maintenance: Landscaping"),
+        MaintenanceType::Other => String::from("Maintenance: Other"),
+    };
+    sqlx::query(
+        "INSERT INTO ")
+        .bind(&request.tenant_id)
+        .execute(pool)
+        .await?;
+    Ok(())
+}
+
 pub async fn add_expense(pool: &sqlx::Pool<Sqlite>, expense: &Expense) -> Result<(), sqlx::Error> {
     let expense_type_str = match &expense.expense_type {
         ExpenseType::Maintenance(maintenance_type) => {
