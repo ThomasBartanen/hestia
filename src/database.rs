@@ -125,8 +125,8 @@ pub async fn add_expense(pool: &sqlx::Pool<Sqlite>, expense: &Expense) -> Result
     Ok(())
 }
 
-pub async fn add_property(pool: &sqlx::Pool<Sqlite>, property: &Property) -> Result<(), sqlx::Error> {
-    sqlx::query(
+pub async fn add_property(pool: &sqlx::Pool<Sqlite>, property: &Property) -> Result<SqliteQueryResult, sqlx::Error> {
+    let x = sqlx::query(
         "INSERT INTO properties (property_name, address, city, state, zip_code, num_units) VALUES (?, ?, ?, ?, ?, ?)")
         .bind(&property.address)
         .bind(&property.city)
@@ -135,7 +135,7 @@ pub async fn add_property(pool: &sqlx::Pool<Sqlite>, property: &Property) -> Res
         .bind(property.num_units)
         .execute(pool)
         .await?;
-    Ok(())
+    Ok(x)
 }
 
 pub async fn add_tenant(pool: &sqlx::Pool<Sqlite>, tenant: &Tenant, lease: &Lease, property_id: u16) -> Result<(), sqlx::Error> {
