@@ -2,19 +2,18 @@ use std::result::Result;
 use chrono::{DateTime, Local, NaiveDate, Utc};
 use database::add_tenant;
 use sqlx::{sqlite::{SqliteQueryResult, SqliteConnectOptions}, Connection, Sqlite, Executor, SqlitePool, migrate::MigrateDatabase};
-use tenant::Lease;
+use statements::Statement;
+use tenant::{CAMRates, InsuranceRate, Lease, PropertyTaxRate, Rent};
 
 use crate::{
-    database::{add_expense, add_property, initialize_database}, 
-    properties::Property,
-    tenant::Tenant,
-    expenses::*
+    database::{add_expense, add_property, initialize_database}, expenses::*, properties::Property, statements::create_statement, tenant::Tenant
 };
 
 mod database;
 mod properties;
 mod tenant;
 mod expenses;
+mod statements;
 
 #[async_std::main]
 async fn main() {
@@ -43,4 +42,12 @@ async fn test_database(instances: &sqlx::Pool<Sqlite>) {
         Ok(_) => println!("Successfully added EXPENSE"),
         Err(e) => println!("Error when adding EXPENSE: {}", e),
     }
+
+    let statement = Statement::new(
+        NaiveDate::from_ymd_opt(2024, 3, 1).unwrap(), 
+        tenant, 
+        lease.fee_structure);
+    //println!("New Statement: {:#?}", statement);
+
+    create_statement(statement);
 }
