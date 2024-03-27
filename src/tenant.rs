@@ -1,4 +1,8 @@
+use std::fmt;
+
 use chrono::NaiveDate;
+
+use crate::statements::calculate_share;
 
 #[derive(Debug, Clone)]
 pub enum FeeStructure {
@@ -11,6 +15,34 @@ pub enum FeeStructure {
         InsuranceRate,
         CAMRates,
     ),
+}
+impl FeeStructure {
+    pub fn display_amounts_due(&self, totals: f32) -> Vec<String> {
+        let mut lines: Vec<String> = vec![];
+        match *self {
+            FeeStructure::Gross(r) => lines.push(format!("Rent: {:.2}", r.base_rent)),
+            FeeStructure::SingleNet(r,t) => {
+                lines.push(format!("Rent:               {:.2}", r.base_rent));
+                lines.push(format!("Property Tax:       {:.2}", calculate_share(t.property_tax, totals)));
+            },
+            FeeStructure::DoubleNet(r,t,i) => {
+                lines.push(format!("Rent:               {:.2}", r.base_rent));
+                lines.push(format!("Property Tax:       {:.2}", calculate_share(t.property_tax,totals)));
+                lines.push(format!("Insurance:          {:.2}", calculate_share(i.building_insurance,totals)));
+            },
+            FeeStructure::TripleNet(r,t,i,c) => {
+                lines.push(format!("Rent:               {:.2}", r.base_rent));
+                lines.push(format!("Property Tax:       {:.2}", calculate_share(t.property_tax, totals)));
+                lines.push(format!("Insurance:          {:.2}", calculate_share(i.building_insurance, totals)));
+                lines.push(format!("Electricity:        {:.2}", calculate_share(c.electicity,totals)));
+                lines.push(format!("Garbage/Recycling:  {:.2}", calculate_share(c.garbage + c.recycling,totals)));
+                lines.push(format!("Water/Sewer:        {:.2}", calculate_share(c.water,totals)));
+                lines.push(format!("Landscaping:        {:.2}", calculate_share(c.landscaping,totals)));
+                lines.push(format!("Miscellaneous:      {:.2}", calculate_share(c.misc,totals)));
+            }
+        };
+        lines
+    }
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -98,3 +130,4 @@ impl Lease {
         }
     }
 }
+

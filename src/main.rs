@@ -14,6 +14,7 @@ mod properties;
 mod tenant;
 mod expenses;
 mod statements;
+mod pdf_formatting;
 
 #[async_std::main]
 async fn main() {
