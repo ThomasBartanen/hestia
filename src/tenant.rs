@@ -22,23 +22,36 @@ impl FeeStructure {
         match *self {
             FeeStructure::Gross(r) => lines.push(format!("Rent: {:.2}", r.base_rent)),
             FeeStructure::SingleNet(r,t) => {
-                lines.push(format!("Rent:               {:.2}", r.base_rent));
-                lines.push(format!("Property Tax:       {:.2}", calculate_share(t.property_tax, totals)));
+                lines.push(format!("Rent:"));
+                lines.push(format!("{:.2}", r.base_rent));
+                lines.push(format!("Property Tax ({:.2}%):", t.property_tax));
+                lines.push(format!("{:.2}", calculate_share(t.property_tax, totals)));
             },
             FeeStructure::DoubleNet(r,t,i) => {
-                lines.push(format!("Rent:               {:.2}", r.base_rent));
-                lines.push(format!("Property Tax:       {:.2}", calculate_share(t.property_tax,totals)));
-                lines.push(format!("Insurance:          {:.2}", calculate_share(i.building_insurance,totals)));
+                lines.push(format!("Rent:"));
+                lines.push(format!("{:.2}", r.base_rent));
+                lines.push(format!("Property Tax ({:.2}%):", t.property_tax));
+                lines.push(format!("{:.2}", calculate_share(t.property_tax, totals)));
+                lines.push(format!("Insurance ({:.2}%):", i.building_insurance));
+                lines.push(format!("{:.2}", calculate_share(i.building_insurance, totals)));
             },
             FeeStructure::TripleNet(r,t,i,c) => {
-                lines.push(format!("Rent:               {:.2}", r.base_rent));
-                lines.push(format!("Property Tax:       {:.2}", calculate_share(t.property_tax, totals)));
-                lines.push(format!("Insurance:          {:.2}", calculate_share(i.building_insurance, totals)));
-                lines.push(format!("Electricity:        {:.2}", calculate_share(c.electicity,totals)));
-                lines.push(format!("Garbage/Recycling:  {:.2}", calculate_share(c.garbage + c.recycling,totals)));
-                lines.push(format!("Water/Sewer:        {:.2}", calculate_share(c.water,totals)));
-                lines.push(format!("Landscaping:        {:.2}", calculate_share(c.landscaping,totals)));
-                lines.push(format!("Miscellaneous:      {:.2}", calculate_share(c.misc,totals)));
+                lines.push(format!("Rent:"));
+                lines.push(format!("{:.2}", r.base_rent));
+                lines.push(format!("Property Tax ({:.2}%):", t.property_tax));
+                lines.push(format!("{:.2}", calculate_share(t.property_tax, totals)));
+                lines.push(format!("Insurance ({:.2}%):", i.building_insurance));
+                lines.push(format!("{:.2}", calculate_share(i.building_insurance,totals)));
+                lines.push(format!("Electricity ({:.2}%):", c.electicity));
+                lines.push(format!("{:.2}", calculate_share(c.electicity,totals)));
+                lines.push(format!("Garbage/Recycling ({:.2}% / {:.2}):", c.garbage, c.recycling));
+                lines.push(format!("{:.2}", calculate_share(c.garbage + c.recycling,totals)));
+                lines.push(format!("Water/Sewer ({:.2}%):", c.water));
+                lines.push(format!("{:.2}", calculate_share(c.water,totals)));
+                lines.push(format!("Landscaping ({:.2}%):", c.landscaping));
+                lines.push(format!("{:.2}", calculate_share(c.landscaping,totals)));
+                lines.push(format!("Miscellaneous ({:.2}%):", c.misc));
+                lines.push(format!("{:.2}", calculate_share(c.misc,totals)));
             }
         };
         lines
