@@ -1,10 +1,9 @@
 use std::result::Result;
-use sqlx::{sqlite::{SqliteQueryResult, SqliteConnectOptions}, Connection, Sqlite, Executor, SqlitePool, migrate::MigrateDatabase};
+use chrono::NaiveDate;
+use sqlx::{migrate::MigrateDatabase, sqlite::{SqliteConnectOptions, SqliteQueryResult}, Connection, Executor, FromRow, Sqlite, SqlitePool};
 
 use crate::{
-    properties::Property, 
-    tenant::{Lease, Tenant}, 
-    expenses::*
+    expenses::*, properties::Property, tenant::{FeeStructure, Lease, Tenant}
 };
 
 pub async fn initialize_database() -> sqlx::Pool<Sqlite> {
@@ -30,8 +29,7 @@ pub async fn create_schema(db_url:&str) -> Result<SqliteQueryResult, sqlx::Error
         lease_id            INTEGER PRIMARY KEY AUTOINCREMENT,
         start_date          TEXT,
         end_date            TEXT,
-        monthly_rent        REAL,
-        payment_due_date    TEXT,
+        fee_structure       TEXT,
         payment_method      TEXT
     );  
     CREATE TABLE IF NOT EXISTS properties (
@@ -80,6 +78,21 @@ pub async fn create_schema(db_url:&str) -> Result<SqliteQueryResult, sqlx::Error
     return result;
 }
 
+pub async fn add_maint_request(pool: &sqlx::Pool<Sqlite>, request: &MaintenanceRequest) -> Result<(), sqlx::Error> {
+    let maint_type_str = match request.request_type {
+        MaintenanceType::Repairs => String::from("Maintenance: Repairs"),
+        MaintenanceType::Cleaning => String::from("Maintenance: Cleaning"),
+        MaintenanceType::Landscaping => String::from("Maintenance: Landscaping"),
+        MaintenanceType::Other => String::from("Maintenance: Other"),
+    };
+    sqlx::query(
+        "INSERT INTO maintenance_requests")
+        .bind(&request.tenant_id)
+        .execute(pool)
+        .await?;
+    Ok(())
+}
+
 pub async fn add_expense(pool: &sqlx::Pool<Sqlite>, expense: &Expense) -> Result<(), sqlx::Error> {
     let expense_type_str = match &expense.expense_type {
         ExpenseType::Maintenance(maintenance_type) => {
@@ -113,8 +126,8 @@ pub async fn add_expense(pool: &sqlx::Pool<Sqlite>, expense: &Expense) -> Result
     Ok(())
 }
 
-pub async fn add_property(pool: &sqlx::Pool<Sqlite>, property: &Property) -> Result<(), sqlx::Error> {
-    sqlx::query(
+pub async fn add_property(pool: &sqlx::Pool<Sqlite>, property: &Property) -> Result<SqliteQueryResult, sqlx::Error> {
+    let x = sqlx::query(
         "INSERT INTO properties (property_name, address, city, state, zip_code, num_units) VALUES (?, ?, ?, ?, ?, ?)")
         .bind(&property.address)
         .bind(&property.city)
@@ -123,23 +136,38 @@ pub async fn add_property(pool: &sqlx::Pool<Sqlite>, property: &Property) -> Res
         .bind(property.num_units)
         .execute(pool)
         .await?;
-    Ok(())
+    Ok(x)
 }
 
-pub async fn add_tenant(pool: &sqlx::Pool<Sqlite>, tenant: &Tenant, lease: &Lease, property_id: u16) -> Result<(), sqlx::Error> {
-    let x = sqlx::query(
-        "INSERT INTO leases (start_date, end_date, monthly_rent, payment_due_date) VALUES (?, ?, ?, ?)")
+pub async fn add_tenant(pool: &sqlx::Pool<Sqlite>, tenant: &Tenant, property_id: u16) -> Result<(), sqlx::Error> {
+    let lease = &tenant.lease;
+    let fee_structure: String = match lease.fee_structure {
+        FeeStructure::Gross(rent) => {
+            format!("Gross: Base Rent {}", rent.base_rent)
+        },
+        FeeStructure::SingleNet(rent, tax_rate) => {
+            format!("Single Net: Base Rent {}, Property Tax Rate {}", rent.base_rent, tax_rate.property_tax)
+        },
+        FeeStructure::DoubleNet(rent, tax_rate, insurance_rate) => {
+            format!("Double Net: Base Rent {}, Property Tax Rate {}, Insurance Rate {}", rent.base_rent, tax_rate.property_tax, insurance_rate.building_insurance)
+        },
+        FeeStructure::TripleNet(rent, tax_rate, insurance_rate, cam_rates) => {
+            format!("Triple Net: Base Rent {}, Property Tax Rate {}, Insurance Rate {}, CAM Rates {:?}", rent.base_rent, tax_rate.property_tax, insurance_rate.building_insurance, cam_rates)
+        },
+    };
+
+    let lease_id = sqlx::query(
+        "INSERT INTO leases (start_date, end_date, fee_structure) VALUES (?, ?, ?)")
         .bind(lease.start_date.to_string())
         .bind(lease.end_date.to_string())
-        .bind(lease.monthly_rent)
-        .bind(lease.payment_due_date)
+        .bind(fee_structure.to_string())
         .execute(pool)
         .await?
         .last_insert_rowid();
 
     sqlx::query(
         "INSERT INTO tenants (lease_id, property_id, first_name, last_name, email, phone_number, move_in_date) VALUES (?, ?, ?, ?, ?, ?, ?)")
-        .bind(x)
+        .bind(lease_id)
         .bind(property_id)
         .bind(&tenant.first_name)
         .bind(&tenant.last_name)
@@ -149,4 +177,20 @@ pub async fn add_tenant(pool: &sqlx::Pool<Sqlite>, tenant: &Tenant, lease: &Leas
         .execute(pool)
         .await?;
     Ok(())
+}
+
+pub async fn get_current_expenses(pool: &sqlx::Pool<Sqlite>, property_id: u16, cutoff_date: NaiveDate) -> Vec<Expense> {
+    let mut expenses: Vec<Expense> = vec![];
+
+    let expense_rows = sqlx::query(
+        "SELECT * FROM expenses WHERE property_id = ? AND date_incurred > ?")
+        .bind(property_id)
+        .bind(cutoff_date.to_string())
+        .fetch_all(pool)
+        .await;
+    for row in expense_rows.unwrap() {
+        let expense = Expense::from_row(&row);
+        expenses.push(expense.unwrap());
+    }
+    expenses
 }
