@@ -31,7 +31,7 @@ pub enum RequestStatus {
     InProgress,
     Completed,
     Cancelled,
-    OnHold
+    OnHold,
 }
 
 #[derive(Debug)]
@@ -42,7 +42,7 @@ pub struct MaintenanceRequest {
     pub request_type: MaintenanceType,
     pub description: String,
     pub status: RequestStatus,
-    pub completion_date: Option<NaiveDate>
+    pub completion_date: Option<NaiveDate>,
 }
 
 #[derive(Debug)]
@@ -51,17 +51,23 @@ pub struct Expense {
     pub expense_type: ExpenseType,
     pub amount: f32,
     pub date: NaiveDate,
-    pub description: String
+    pub description: String,
 }
 
 impl Expense {
-    pub fn new(property_id: u16, expense_type: ExpenseType, amount: f32, date: NaiveDate, description: String) -> Expense {
+    pub fn new(
+        property_id: u16,
+        expense_type: ExpenseType,
+        amount: f32,
+        date: NaiveDate,
+        description: String,
+    ) -> Expense {
         Expense {
             property_id,
             expense_type,
             amount,
             date,
-            description
+            description,
         }
     }
 }
@@ -80,22 +86,18 @@ impl<'r> FromRow<'r, SqliteRow> for Expense {
         println!("{}", format!("Sub Expense Type: {expense_sub_type}"));
 
         let expense_type = match expense_main_type {
-            "Maintenance" => {
-                match expense_sub_type {
-                    "Repairs" => ExpenseType::Maintenance(MaintenanceType::Repairs),
-                    "Cleaning" => ExpenseType::Maintenance(MaintenanceType::Cleaning),
-                    "Landscaping" => ExpenseType::Maintenance(MaintenanceType::Landscaping),
-                    _ => ExpenseType::Maintenance(MaintenanceType::Other),
-                }
+            "Maintenance" => match expense_sub_type {
+                "Repairs" => ExpenseType::Maintenance(MaintenanceType::Repairs),
+                "Cleaning" => ExpenseType::Maintenance(MaintenanceType::Cleaning),
+                "Landscaping" => ExpenseType::Maintenance(MaintenanceType::Landscaping),
+                _ => ExpenseType::Maintenance(MaintenanceType::Other),
             },
-            "Utilities" => {
-                match expense_sub_type {
-                    "Water" => ExpenseType::Utilities(UtilitiesType::Water),
-                    "Electricity" => ExpenseType::Utilities(UtilitiesType::Electricity),
-                    "Garbage" => ExpenseType::Utilities(UtilitiesType::Garbage),
-                    "Gas" => ExpenseType::Utilities(UtilitiesType::Gas),
-                    _ => ExpenseType::Utilities(UtilitiesType::Other),
-                }
+            "Utilities" => match expense_sub_type {
+                "Water" => ExpenseType::Utilities(UtilitiesType::Water),
+                "Electricity" => ExpenseType::Utilities(UtilitiesType::Electricity),
+                "Garbage" => ExpenseType::Utilities(UtilitiesType::Garbage),
+                "Gas" => ExpenseType::Utilities(UtilitiesType::Gas),
+                _ => ExpenseType::Utilities(UtilitiesType::Other),
             },
             _ => ExpenseType::Other,
         };
@@ -109,7 +111,7 @@ impl<'r> FromRow<'r, SqliteRow> for Expense {
             expense_type,
             amount,
             date: naive_date,
-            description
+            description,
         })
     }
 }

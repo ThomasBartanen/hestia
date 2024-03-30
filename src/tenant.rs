@@ -7,16 +7,16 @@ pub enum FeeStructure {
     Gross(Rent),
     SingleNet(Rent, PropertyTaxRate),
     DoubleNet(Rent, PropertyTaxRate, InsuranceRate),
-    TripleNet(
-        Rent,
-        PropertyTaxRate,
-        InsuranceRate,
-        CAMRates,
-    ),
+    TripleNet(Rent, PropertyTaxRate, InsuranceRate, CAMRates),
 }
 
 impl FeeStructure {
-    pub fn display_amounts_due(&self, totals: Vec<Expense>, prop_tax: f32, bus_insurance: f32) -> Vec<String> {
+    pub fn display_amounts_due(
+        &self,
+        totals: Vec<Expense>,
+        prop_tax: f32,
+        bus_insurance: f32,
+    ) -> Vec<String> {
         let mut lines: Vec<String> = vec![];
         let mut property_tax_total: f32 = prop_tax;
         let mut insurance_total: f32 = bus_insurance;
@@ -31,42 +31,38 @@ impl FeeStructure {
 
         for expense in totals {
             match expense.expense_type {
-                ExpenseType::Maintenance(maintenance_type) => {
-                    match maintenance_type {
-                        MaintenanceType::Repairs => misc_total += expense.amount,
-                        MaintenanceType::Cleaning => misc_total += expense.amount,
-                        MaintenanceType::Landscaping => landscaping_total += expense.amount,
-                        MaintenanceType::Other => misc_total += expense.amount,
-                    }
-                }
-                ExpenseType::Utilities(utilities_type) => {
-                    match utilities_type {
-                        UtilitiesType::Water => water_total += expense.amount,
-                        UtilitiesType::Electricity => elect_total += expense.amount,
-                        UtilitiesType::Garbage => garb_recycl_total += expense.amount,
-                        UtilitiesType::Gas => gas_total += expense.amount,
-                        UtilitiesType::Other => misc_total += expense.amount,
-                    }
-                }
+                ExpenseType::Maintenance(maintenance_type) => match maintenance_type {
+                    MaintenanceType::Repairs => misc_total += expense.amount,
+                    MaintenanceType::Cleaning => misc_total += expense.amount,
+                    MaintenanceType::Landscaping => landscaping_total += expense.amount,
+                    MaintenanceType::Other => misc_total += expense.amount,
+                },
+                ExpenseType::Utilities(utilities_type) => match utilities_type {
+                    UtilitiesType::Water => water_total += expense.amount,
+                    UtilitiesType::Electricity => elect_total += expense.amount,
+                    UtilitiesType::Garbage => garb_recycl_total += expense.amount,
+                    UtilitiesType::Gas => gas_total += expense.amount,
+                    UtilitiesType::Other => misc_total += expense.amount,
+                },
                 ExpenseType::Other => misc_total += expense.amount,
             }
         }
 
         match *self {
             FeeStructure::Gross(r) => lines.push(format!("Rent: {:.2}", r.base_rent)),
-            FeeStructure::SingleNet(r,t) => {
+            FeeStructure::SingleNet(r, t) => {
                 let tax_due = calculate_share(t.property_tax, property_tax_total);
-                total += r.base_rent + tax_due;                
+                total += r.base_rent + tax_due;
                 lines.push(format!("Total Due: {:.2}", total));
                 lines.push(format!("Rent:"));
                 lines.push(format!("{:.2}", r.base_rent));
                 lines.push(format!("Property Tax ({:.2}%):", t.property_tax));
                 lines.push(format!("{:.2}", tax_due));
-            },
-            FeeStructure::DoubleNet(r,t,i) => {
+            }
+            FeeStructure::DoubleNet(r, t, i) => {
                 let tax_due = calculate_share(t.property_tax, property_tax_total);
                 let insurance_due = calculate_share(i.building_insurance, insurance_total);
-                total += r.base_rent + tax_due + insurance_due;                
+                total += r.base_rent + tax_due + insurance_due;
                 lines.push(format!("Total Due: {:.2}", total));
                 lines.push(format!("Rent:"));
                 lines.push(format!("{:.2}", r.base_rent));
@@ -74,8 +70,8 @@ impl FeeStructure {
                 lines.push(format!("{:.2}", tax_due));
                 lines.push(format!("Insurance ({:.2}%):", i.building_insurance));
                 lines.push(format!("{:.2}", insurance_due));
-            },
-            FeeStructure::TripleNet(r,t,i,c) => {
+            }
+            FeeStructure::TripleNet(r, t, i, c) => {
                 let tax_due = calculate_share(t.property_tax, property_tax_total);
                 let insurance_due = calculate_share(i.building_insurance, insurance_total);
                 let elec_due = calculate_share(c.electicity, elect_total);
@@ -83,7 +79,15 @@ impl FeeStructure {
                 let water_sewer_due = calculate_share(c.water, water_total);
                 let landscaping_due = calculate_share(c.landscaping, landscaping_total);
                 let misc_due = calculate_share(c.misc, misc_total);
-                total += r.base_rent + tax_due + insurance_due + elec_due + gas_total + garb_recycl_due + water_sewer_due + landscaping_due + misc_due;
+                total += r.base_rent
+                    + tax_due
+                    + insurance_due
+                    + elec_due
+                    + gas_total
+                    + garb_recycl_due
+                    + water_sewer_due
+                    + landscaping_due
+                    + misc_due;
                 lines.push(format!("Total Due: {:.2}", total));
                 lines.push(format!("Rent:"));
                 lines.push(format!("{:.2}", r.base_rent));
@@ -93,7 +97,10 @@ impl FeeStructure {
                 lines.push(format!("{:.2}", insurance_due));
                 lines.push(format!("Electricity ({:.2}%):", c.electicity));
                 lines.push(format!("{:.2}", elec_due));
-                lines.push(format!("Garbage/Recycling ({:.2}% / {:.2}):", c.garbage, c.recycling));
+                lines.push(format!(
+                    "Garbage/Recycling ({:.2}% / {:.2}):",
+                    c.garbage, c.recycling
+                ));
                 lines.push(format!("{:.2}", garb_recycl_due));
                 lines.push(format!("Water/Sewer ({:.2}%):", c.water));
                 lines.push(format!("{:.2}", water_sewer_due));
@@ -156,11 +163,19 @@ pub struct Tenant {
     pub last_name: String,
     pub email: String,
     pub phone_number: String,
-    pub move_in_date: NaiveDate
+    pub move_in_date: NaiveDate,
 }
 
 impl Tenant {
-    pub fn new(id: u16, lease: Lease, property_id: u16, first_name: String, last_name: String, email: String, phone_number: String, move_in_date: NaiveDate
+    pub fn new(
+        id: u16,
+        lease: Lease,
+        property_id: u16,
+        first_name: String,
+        last_name: String,
+        email: String,
+        phone_number: String,
+        move_in_date: NaiveDate,
     ) -> Tenant {
         Tenant {
             id,
@@ -170,7 +185,7 @@ impl Tenant {
             last_name,
             email,
             phone_number,
-            move_in_date      
+            move_in_date,
         }
     }
 }
@@ -181,19 +196,22 @@ pub struct Lease {
     pub start_date: NaiveDate,
     pub end_date: NaiveDate,
     pub fee_structure: FeeStructure,
-    pub payment_method: String
+    pub payment_method: String,
 }
 
 impl Lease {
-    pub fn new(start_date: NaiveDate, end_date: NaiveDate, fee_structure: FeeStructure, payment_method: String
+    pub fn new(
+        start_date: NaiveDate,
+        end_date: NaiveDate,
+        fee_structure: FeeStructure,
+        payment_method: String,
     ) -> Lease {
         Lease {
             id: 0,
             start_date,
             end_date,
             fee_structure,
-            payment_method
+            payment_method,
         }
     }
 }
-
