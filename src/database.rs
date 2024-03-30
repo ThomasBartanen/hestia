@@ -86,7 +86,7 @@ pub async fn add_maint_request(pool: &sqlx::Pool<Sqlite>, request: &MaintenanceR
         MaintenanceType::Other => String::from("Maintenance: Other"),
     };
     sqlx::query(
-        "INSERT INTO ")
+        "INSERT INTO maintenance_requests")
         .bind(&request.tenant_id)
         .execute(pool)
         .await?;
@@ -139,7 +139,8 @@ pub async fn add_property(pool: &sqlx::Pool<Sqlite>, property: &Property) -> Res
     Ok(x)
 }
 
-pub async fn add_tenant(pool: &sqlx::Pool<Sqlite>, tenant: &Tenant, lease: &Lease, property_id: u16) -> Result<(), sqlx::Error> {
+pub async fn add_tenant(pool: &sqlx::Pool<Sqlite>, tenant: &Tenant, property_id: u16) -> Result<(), sqlx::Error> {
+    let lease = &tenant.lease;
     let fee_structure: String = match lease.fee_structure {
         FeeStructure::Gross(rent) => {
             format!("Gross: Base Rent {}", rent.base_rent)
@@ -155,7 +156,7 @@ pub async fn add_tenant(pool: &sqlx::Pool<Sqlite>, tenant: &Tenant, lease: &Leas
         },
     };
 
-    let x = sqlx::query(
+    let lease_id = sqlx::query(
         "INSERT INTO leases (start_date, end_date, fee_structure) VALUES (?, ?, ?)")
         .bind(lease.start_date.to_string())
         .bind(lease.end_date.to_string())
@@ -166,7 +167,7 @@ pub async fn add_tenant(pool: &sqlx::Pool<Sqlite>, tenant: &Tenant, lease: &Leas
 
     sqlx::query(
         "INSERT INTO tenants (lease_id, property_id, first_name, last_name, email, phone_number, move_in_date) VALUES (?, ?, ?, ?, ?, ?, ?)")
-        .bind(x)
+        .bind(lease_id)
         .bind(property_id)
         .bind(&tenant.first_name)
         .bind(&tenant.last_name)
