@@ -1,20 +1,28 @@
 use chrono::{DateTime, Local, NaiveDate, Utc};
 use database::add_tenant;
-use sqlx::{sqlite::{SqliteQueryResult, SqliteConnectOptions}, Connection, Sqlite, Executor, SqlitePool, migrate::MigrateDatabase};
+use sqlx::{
+    migrate::MigrateDatabase,
+    sqlite::{SqliteConnectOptions, SqliteQueryResult},
+    Connection, Executor, Sqlite, SqlitePool,
+};
 use statements::Statement;
 use std::result::Result;
 use tenant::{CAMRates, InsuranceRate, Lease, PropertyTaxRate, Rent};
 
 use crate::{
-    database::{add_expense, add_property, get_current_expenses, initialize_database}, expenses::*, properties::Property, statements::create_statement, tenant::Tenant
+    database::{add_expense, add_property, get_current_expenses, initialize_database},
+    expenses::*,
+    properties::Property,
+    statements::create_statement,
+    tenant::Tenant,
 };
 
 mod database;
-mod properties;
-mod tenant;
 mod expenses;
-mod statements;
 mod pdf_formatting;
+mod properties;
+mod statements;
+mod tenant;
 
 #[async_std::main]
 async fn main() {
@@ -48,10 +56,12 @@ async fn test_database(instances: &sqlx::Pool<Sqlite>) {
         NaiveDate::from_ymd_opt(2024, 3, 1).unwrap(),
         NaiveDate::from_ymd_opt(2025, 2, 28).unwrap(),
         tenant::FeeStructure::TripleNet(
-            Rent{ base_rent: 1700.0 },
-            PropertyTaxRate{ property_tax: 0.2},
-            InsuranceRate{ building_insurance: 0.15},
-            CAMRates{
+            Rent { base_rent: 1700.0 },
+            PropertyTaxRate { property_tax: 0.2 },
+            InsuranceRate {
+                building_insurance: 0.15,
+            },
+            CAMRates {
                 electicity: 0.3,
                 recycling: 0.3,
                 garbage: 0.3,
@@ -136,11 +146,16 @@ async fn test_database(instances: &sqlx::Pool<Sqlite>) {
     );
 
     let statement = Statement::new(
-        NaiveDate::from_ymd_opt(2024, 3, 1).unwrap(), 
+        NaiveDate::from_ymd_opt(2024, 3, 1).unwrap(),
         tenant,
-        get_current_expenses(&instances, property.id, NaiveDate::from_ymd_opt(2024, 3, 1).unwrap()).await
+        get_current_expenses(
+            &instances,
+            property.id,
+            NaiveDate::from_ymd_opt(2024, 2, 1).unwrap(),
+        )
+        .await,
     );
-    println!("New Statement: {:#?}", statement);
+    //println!("New Statement: {:#?}", statement);
 
     create_statement(statement, property);
 }
