@@ -1,4 +1,4 @@
-use chrono::{DateTime, NaiveDate, Utc};
+use chrono::NaiveDate;
 use sqlx::{sqlite::SqliteRow, FromRow, Row};
 
 #[derive(Debug)]

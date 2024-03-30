@@ -1,5 +1,3 @@
-use std::result::Result;
-
 pub struct Property {
     pub id: u16,
     pub name: String,

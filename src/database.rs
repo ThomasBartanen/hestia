@@ -1,16 +1,12 @@
 use chrono::NaiveDate;
-use sqlx::{
-    migrate::MigrateDatabase,
-    sqlite::{SqliteConnectOptions, SqliteQueryResult},
-    Connection, Executor, FromRow, Sqlite, SqlitePool,
-};
+use sqlx::{migrate::MigrateDatabase, sqlite::SqliteQueryResult, FromRow, Sqlite, SqlitePool};
 use std::result::Result;
 
 use crate::{
     expenses::*,
     properties::Property,
     statements::Statement,
-    tenant::{FeeStructure, Lease, Tenant},
+    tenant::{FeeStructure, Tenant},
 };
 
 pub async fn initialize_database() -> sqlx::Pool<Sqlite> {

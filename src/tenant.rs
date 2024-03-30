@@ -1,5 +1,3 @@
-use std::fmt;
-
 use chrono::NaiveDate;
 
 use crate::{statements::calculate_share, Expense, ExpenseType, MaintenanceType, UtilitiesType};

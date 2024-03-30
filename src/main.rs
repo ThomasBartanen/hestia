@@ -1,12 +1,7 @@
-use chrono::{DateTime, Local, NaiveDate, Utc};
+use chrono::NaiveDate;
 use database::add_tenant;
-use sqlx::{
-    migrate::MigrateDatabase,
-    sqlite::{SqliteConnectOptions, SqliteQueryResult},
-    Connection, Executor, Sqlite, SqlitePool,
-};
+use sqlx::Sqlite;
 use statements::Statement;
-use std::result::Result;
 use tenant::{CAMRates, InsuranceRate, Lease, PropertyTaxRate, Rent};
 
 use crate::{
