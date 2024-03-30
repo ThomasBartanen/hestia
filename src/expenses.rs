@@ -20,6 +20,7 @@ pub enum MaintenanceType {
 pub enum UtilitiesType {
     Water,
     Electricity,
+    Garbage,
     Gas,
     Other,
 }
@@ -69,7 +70,7 @@ impl<'r> FromRow<'r, SqliteRow> for Expense {
         let property_id = row.try_get("property_id")?;
         let expense_type: String = row.try_get("expense_type")?;
         let amount = row.try_get("amount")?;
-        let date: String = row.try_get("date")?;
+        let date: String = row.try_get("date_incurred")?;
         let description = row.try_get("description")?;
 
         let mut parts = expense_type.split(':');
@@ -91,6 +92,7 @@ impl<'r> FromRow<'r, SqliteRow> for Expense {
                 match expense_sub_type {
                     "Water" => ExpenseType::Utilities(UtilitiesType::Water),
                     "Electricity" => ExpenseType::Utilities(UtilitiesType::Electricity),
+                    "Garbage" => ExpenseType::Utilities(UtilitiesType::Garbage),
                     "Gas" => ExpenseType::Utilities(UtilitiesType::Gas),
                     _ => ExpenseType::Utilities(UtilitiesType::Other),
                 }

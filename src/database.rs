@@ -21,7 +21,7 @@ pub async fn initialize_database() -> sqlx::Pool<Sqlite> {
     SqlitePool::connect(&db_url).await.unwrap()
 }
 
-pub async fn create_schema(db_url:&str) -> Result<SqliteQueryResult, sqlx::Error> {
+pub async fn create_schema(db_url: &str) -> Result<SqliteQueryResult, sqlx::Error> {
     let pool = SqlitePool::connect(&db_url).await?;
     let qry = "
     PRAGMA foreign_keys = ON;
@@ -35,6 +35,8 @@ pub async fn create_schema(db_url:&str) -> Result<SqliteQueryResult, sqlx::Error
     CREATE TABLE IF NOT EXISTS properties (
         property_id         INTEGER PRIMARY KEY AUTOINCREMENT,
         property_name       TEXT,
+        property_tax        TEXT,
+        business_insurance  TEXT,
         address             TEXT,
         city                TEXT,
         state               TEXT,
@@ -71,7 +73,15 @@ pub async fn create_schema(db_url:&str) -> Result<SqliteQueryResult, sqlx::Error
         description         TEXT,
         receipt_url         TEXT null,
         FOREIGN KEY (property_id) REFERENCES properties(property_id)
-    );";
+    );
+    CREATE TABLE IF NOT EXISTS statements (
+        statement_id        INTEGER PRIMARY KEY AUTOINCREMENT,
+        tenant_id           INTEGER,
+        amount_due          INTEGER,
+        amount_paid         INTEGER,
+        statement_path      TEXT
+        FOREIGN KEY (tenant_id) REFERENCES tenants(tenant_id)
+    )";
     //maintenance_id      integer FOREIGN KEY REFERENCES maintenance_requests(request_id) null,
     let result = sqlx::query(&qry).execute(&pool).await;
     pool.close().await;
@@ -95,22 +105,19 @@ pub async fn add_maint_request(pool: &sqlx::Pool<Sqlite>, request: &MaintenanceR
 
 pub async fn add_expense(pool: &sqlx::Pool<Sqlite>, expense: &Expense) -> Result<(), sqlx::Error> {
     let expense_type_str = match &expense.expense_type {
-        ExpenseType::Maintenance(maintenance_type) => {
-            match maintenance_type {
-                MaintenanceType::Repairs => String::from("Maintenance: Repairs"),
-                MaintenanceType::Cleaning => String::from("Maintenance: Cleaning"),
-                MaintenanceType::Landscaping => String::from("Maintenance: Landscaping"),
-                MaintenanceType::Other => String::from("Maintenance: Other"),
-            }
-        }
-        ExpenseType::Utilities(utilities_type) => {
-            match utilities_type {
-                UtilitiesType::Water => String::from("Utilities: Water"),
-                UtilitiesType::Electricity => String::from("Utilities: Electricity"),
-                UtilitiesType::Gas => String::from("Utilities: Gas"),
-                UtilitiesType::Other => String::from("Utilities: Other"),
-            }
-        }
+        ExpenseType::Maintenance(maintenance_type) => match maintenance_type {
+            MaintenanceType::Repairs => String::from("Maintenance: Repairs"),
+            MaintenanceType::Cleaning => String::from("Maintenance: Cleaning"),
+            MaintenanceType::Landscaping => String::from("Maintenance: Landscaping"),
+            MaintenanceType::Other => String::from("Maintenance: Other"),
+        },
+        ExpenseType::Utilities(utilities_type) => match utilities_type {
+            UtilitiesType::Water => String::from("Utilities: Water"),
+            UtilitiesType::Electricity => String::from("Utilities: Electricity"),
+            UtilitiesType::Garbage => String::from("Utilities: Garbage/Recycle"),
+            UtilitiesType::Gas => String::from("Utilities: Gas"),
+            UtilitiesType::Other => String::from("Utilities: Other"),
+        },
         ExpenseType::Other => String::from("Other"),
     };
 
@@ -128,7 +135,10 @@ pub async fn add_expense(pool: &sqlx::Pool<Sqlite>, expense: &Expense) -> Result
 
 pub async fn add_property(pool: &sqlx::Pool<Sqlite>, property: &Property) -> Result<SqliteQueryResult, sqlx::Error> {
     let x = sqlx::query(
-        "INSERT INTO properties (property_name, address, city, state, zip_code, num_units) VALUES (?, ?, ?, ?, ?, ?)")
+        "INSERT INTO properties (property_name, property_tax, business_insurance, address, city, state, zip_code, num_units) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
+        .bind(&property.name)
+        .bind(&property.property_tax)
+        .bind(&property.business_insurance)
         .bind(&property.address)
         .bind(&property.city)
         .bind(&property.state)
@@ -165,7 +175,7 @@ pub async fn add_tenant(pool: &sqlx::Pool<Sqlite>, tenant: &Tenant, property_id:
         .await?
         .last_insert_rowid();
 
-    sqlx::query(
+    let tenant_result = sqlx::query(
         "INSERT INTO tenants (lease_id, property_id, first_name, last_name, email, phone_number, move_in_date) VALUES (?, ?, ?, ?, ?, ?, ?)")
         .bind(lease_id)
         .bind(property_id)
@@ -176,7 +186,7 @@ pub async fn add_tenant(pool: &sqlx::Pool<Sqlite>, tenant: &Tenant, property_id:
         .bind(&tenant.move_in_date.to_string())
         .execute(pool)
         .await?;
-    Ok(())
+    Ok(tenant_result)
 }
 
 pub async fn get_current_expenses(pool: &sqlx::Pool<Sqlite>, property_id: u16, cutoff_date: NaiveDate) -> Vec<Expense> {
@@ -193,4 +203,20 @@ pub async fn get_current_expenses(pool: &sqlx::Pool<Sqlite>, property_id: u16, c
         expenses.push(expense.unwrap());
     }
     expenses
+}
+
+pub async fn add_statement(
+    pool: &sqlx::Pool<Sqlite>,
+    statement: Statement,
+) -> Result<SqliteQueryResult, sqlx::Error> {
+    let x = sqlx::query(
+        "INSERT INTO statements (tenant_id, amount_due, amount_paid, statement_path) VALUES (?, ?, ?, ?)")
+        .bind(statement.tenant.id)
+        .bind(statement.total)
+        .bind(0)
+        .bind("test_statement")
+        .execute(pool)
+        .await?;
+
+    Ok(x)
 }

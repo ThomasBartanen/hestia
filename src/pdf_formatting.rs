@@ -2,7 +2,7 @@ use std::{fs::File, io::BufWriter};
 
 use printpdf::{BuiltinFont, Line, Mm, PdfDocument, Point, TextRenderingMode};
 
-use crate::statements::Statement;
+use crate::{properties::Property, statements::Statement};
 
 const LEFT_COLUMN: Mm = Mm(20.0);
 const RIGHT_COLUMN: Mm = Mm(115.0);
@@ -13,7 +13,7 @@ const HEADER_SIZE: f32 = 16.0;
 const BODY_SIZE: f32 = 13.0;
 const DETAILS_SIZE: f32 = 12.0;
 
-pub fn write_with_printpdf(s: Statement) {
+pub fn write_with_printpdf(s: Statement, p: Property) {
     // Max dimension values in mm 215.9 x 279.4
     let (doc, page1, layer1) = PdfDocument::new("Monthly Statement", RIGHT_EDGE, TOP_EDGE, "Layer 1");
     let current_layer = doc.get_page(page1).get_layer(layer1);
@@ -63,7 +63,7 @@ pub fn write_with_printpdf(s: Statement) {
         left_column += Mm(15.0);
         let mut current_x: Mm = left_column;
         let mut total_due: String = String::new();
-        for line in s.rates.display_amounts_due(s.fees) {
+        for line in s.rates.display_amounts_due(s.fees, p.property_tax, p.business_insurance) {
             if total_due.is_empty() {
                 total_due.push_str(&line);
                 continue;

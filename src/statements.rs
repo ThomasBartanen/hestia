@@ -1,5 +1,5 @@
 use chrono::NaiveDate;
-use crate::{pdf_formatting::write_with_printpdf, tenant::{FeeStructure, Tenant}, Expense};
+use crate::{pdf_formatting::write_with_printpdf, properties::Property, tenant::{FeeStructure, Tenant}, Expense};
 
 #[derive(Debug)]
 pub struct Statement {
@@ -54,6 +54,6 @@ pub fn calculate_share(rate: f32, total: f32) -> f32 {
     total * rate
 }
 
-pub fn create_statement(statement: Statement) {
-    write_with_printpdf(statement);
+pub fn create_statement(statement: Statement, property: Property) {
+    write_with_printpdf(statement, property);
 }

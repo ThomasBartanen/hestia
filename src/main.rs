@@ -1,8 +1,8 @@
-use std::result::Result;
 use chrono::{DateTime, Local, NaiveDate, Utc};
 use database::add_tenant;
 use sqlx::{sqlite::{SqliteQueryResult, SqliteConnectOptions}, Connection, Sqlite, Executor, SqlitePool, migrate::MigrateDatabase};
 use statements::Statement;
+use std::result::Result;
 use tenant::{CAMRates, InsuranceRate, Lease, PropertyTaxRate, Rent};
 
 use crate::{
@@ -24,18 +24,25 @@ async fn main() {
 }
 
 async fn test_database(instances: &sqlx::Pool<Sqlite>) {
-    let property = Property::new(
-        0, 
-        "name".to_string(), 
-        "address".to_string(), 
-        "city".to_string(), 
-        "state".to_string(), 
-        "zip_code".to_string(), 
-        10);
+    let mut property = Property::new(
+        0,
+        "name".to_string(),
+        1000.0,
+        950.0,
+        "address".to_string(),
+        "city".to_string(),
+        "state".to_string(),
+        "zip_code".to_string(),
+        10,
+    );
     match add_property(&instances, &property).await {
-        Ok(_) => println!("Successfully added PROPERTY"),
+        Ok(r) => {
+            //converting i64 to u16. This may cause issues. Keep an eye on this
+            property.id = r.last_insert_rowid() as u16;
+            println!("Successfully added PROPERTY");
+        }
         Err(e) => println!("Error when adding PROPERTY: {}", e),
-    }
+    };
 
     let lease = Lease::new(
         NaiveDate::from_ymd_opt(2024, 3, 1).unwrap(),
@@ -52,21 +59,81 @@ async fn test_database(instances: &sqlx::Pool<Sqlite>) {
                 landscaping: 0.3,
                 amenities: 0.3,
                 misc: 0.1,
-            }),
-        "Check".to_string());
-    let tenant = Tenant::new(lease.clone(), property.id,"John".to_string(), "Smith".to_string(), "JohnSmith@gmail.com".to_string(), "2064445555".to_string(), NaiveDate::from_ymd_opt(2024, 3, 1).unwrap());
+            },
+        ),
+        "Check".to_string(),
+    );
+    let mut tenant = Tenant::new(
+        0,
+        lease.clone(),
+        property.id,
+        "John".to_string(),
+        "Smith".to_string(),
+        "JohnSmith@gmail.com".to_string(),
+        "2064445555".to_string(),
+        NaiveDate::from_ymd_opt(2024, 3, 1).unwrap(),
+    );
     match add_tenant(&instances, &tenant, 1).await {
-        Ok(_) => println!("Successfully added TENANT"),
+        Ok(t) => {
+            tenant.id = t.last_insert_rowid() as u16;
+            println!("Successfully added TENANT")
+        }
         Err(e) => println!("Error when adding TENANT: {}", e),
     }
 
     let dt = NaiveDate::from_ymd_opt(2024, 3, 10);
-    let expense = Expense::new(1, ExpenseType::Maintenance(MaintenanceType::Landscaping), 100.0, dt.unwrap(), "Normal Maintenance".to_string());
+    let expense = Expense::new(
+        property.id,
+        ExpenseType::Maintenance(MaintenanceType::Landscaping),
+        100.0,
+        dt.unwrap(),
+        "Normal Maintenance".to_string(),
+    );
     match add_expense(&instances, &expense).await {
         Ok(_) => println!("Successfully added EXPENSE"),
         Err(e) => println!("Error when adding EXPENSE: {}", e),
     }
 
+    let expense = Expense::new(
+        property.id,
+        ExpenseType::Utilities(UtilitiesType::Electricity),
+        1920.0,
+        dt.unwrap(),
+        "Electricity Bill".to_string(),
+    );
+    match add_expense(&instances, &expense).await {
+        Ok(_) => println!("Successfully added EXPENSE"),
+        Err(e) => println!("Error when adding EXPENSE: {}", e),
+    }
+
+    let expense = Expense::new(
+        property.id,
+        ExpenseType::Utilities(UtilitiesType::Water),
+        450.0,
+        dt.unwrap(),
+        "Water Bill".to_string(),
+    );
+    match add_expense(&instances, &expense).await {
+        Ok(_) => println!("Successfully added EXPENSE"),
+        Err(e) => println!("Error when adding EXPENSE: {}", e),
+    }
+
+    let expense = Expense::new(
+        property.id,
+        ExpenseType::Other,
+        100.0,
+        dt.unwrap(),
+        "Rat Abatement".to_string(),
+    );
+    match add_expense(&instances, &expense).await {
+        Ok(_) => println!("Successfully added EXPENSE"),
+        Err(e) => println!("Error when adding EXPENSE: {}", e),
+    }
+
+    println!(
+        "Property ID: {}, Tenant's Property ID: {}, Lease ID: {}",
+        property.id, tenant.property_id, tenant.lease.id
+    );
 
     let statement = Statement::new(
         NaiveDate::from_ymd_opt(2024, 3, 1).unwrap(), 
@@ -75,5 +142,5 @@ async fn test_database(instances: &sqlx::Pool<Sqlite>) {
     );
     println!("New Statement: {:#?}", statement);
 
-    create_statement(statement);
+    create_statement(statement, property);
 }

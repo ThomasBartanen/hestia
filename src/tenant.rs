@@ -18,10 +18,10 @@ pub enum FeeStructure {
 }
 
 impl FeeStructure {
-    pub fn display_amounts_due(&self, totals: Vec<Expense>) -> Vec<String> {
+    pub fn display_amounts_due(&self, totals: Vec<Expense>, prop_tax: f32, bus_insurance: f32) -> Vec<String> {
         let mut lines: Vec<String> = vec![];
-        let mut property_tax_total: f32 = 100.0;
-        let mut insurance_total: f32 = 100.0;
+        let mut property_tax_total: f32 = prop_tax;
+        let mut insurance_total: f32 = bus_insurance;
         let mut elect_total: f32 = 0.0;
         let mut garb_recycl_total: f32 = 0.0;
         let mut water_total: f32 = 0.0;
@@ -45,6 +45,7 @@ impl FeeStructure {
                     match utilities_type {
                         UtilitiesType::Water => water_total += expense.amount,
                         UtilitiesType::Electricity => elect_total += expense.amount,
+                        UtilitiesType::Garbage => garb_recycl_total += expense.amount,
                         UtilitiesType::Gas => gas_total += expense.amount,
                         UtilitiesType::Other => misc_total += expense.amount,
                     }
@@ -84,7 +85,7 @@ impl FeeStructure {
                 let water_sewer_due = calculate_share(c.water, water_total);
                 let landscaping_due = calculate_share(c.landscaping, landscaping_total);
                 let misc_due = calculate_share(c.misc, misc_total);
-                total += r.base_rent + tax_due + insurance_due + elec_due + garb_recycl_due + water_sewer_due + landscaping_due + misc_due;
+                total += r.base_rent + tax_due + insurance_due + elec_due + gas_total + garb_recycl_due + water_sewer_due + landscaping_due + misc_due;
                 lines.push(format!("Total Due: {:.2}", total));
                 lines.push(format!("Rent:"));
                 lines.push(format!("{:.2}", r.base_rent));
@@ -143,13 +144,14 @@ impl Default for CAMRates {
             water: 0.3,
             landscaping: 0.3,
             amenities: 0.2,
-            misc: 0.0,
+            misc: 0.2,
         }
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct Tenant {
+    pub id: u16,
     pub lease: Lease,
     pub property_id: u16,
     pub first_name: String,
@@ -160,9 +162,10 @@ pub struct Tenant {
 }
 
 impl Tenant {
-    pub fn new(lease: Lease, property_id: u16, first_name: String, last_name: String, email: String, phone_number: String, move_in_date: NaiveDate
+    pub fn new(id: u16, lease: Lease, property_id: u16, first_name: String, last_name: String, email: String, phone_number: String, move_in_date: NaiveDate
     ) -> Tenant {
         Tenant {
+            id,
             lease,
             property_id,
             first_name,
