@@ -6,7 +6,7 @@ use statements::Statement;
 use tenant::{CAMRates, InsuranceRate, Lease, PropertyTaxRate, Rent};
 
 use crate::{
-    database::{add_expense, add_property, initialize_database}, expenses::*, properties::Property, statements::create_statement, tenant::Tenant
+    database::{add_expense, add_property, get_current_expenses, initialize_database}, expenses::*, properties::Property, statements::create_statement, tenant::Tenant
 };
 
 mod database;
@@ -54,24 +54,26 @@ async fn test_database(instances: &sqlx::Pool<Sqlite>) {
                 misc: 0.1,
             }),
         "Check".to_string());
-    let tenant = Tenant::new(0,1,"John".to_string(), "Smith".to_string(), "JohnSmith@gmail.com".to_string(), "2064445555".to_string(), NaiveDate::from_ymd_opt(2024, 3, 1).unwrap());
-    match add_tenant(&instances, &tenant, &lease, 1).await {
+    let tenant = Tenant::new(lease.clone(), property.id,"John".to_string(), "Smith".to_string(), "JohnSmith@gmail.com".to_string(), "2064445555".to_string(), NaiveDate::from_ymd_opt(2024, 3, 1).unwrap());
+    match add_tenant(&instances, &tenant, 1).await {
         Ok(_) => println!("Successfully added TENANT"),
         Err(e) => println!("Error when adding TENANT: {}", e),
     }
 
-    let dt = Utc::now();
-    let expense = Expense::new(1, ExpenseType::Maintenance(MaintenanceType::Landscaping), 100.0, dt, "Normal Maintenance".to_string());
+    let dt = NaiveDate::from_ymd_opt(2024, 3, 10);
+    let expense = Expense::new(1, ExpenseType::Maintenance(MaintenanceType::Landscaping), 100.0, dt.unwrap(), "Normal Maintenance".to_string());
     match add_expense(&instances, &expense).await {
         Ok(_) => println!("Successfully added EXPENSE"),
         Err(e) => println!("Error when adding EXPENSE: {}", e),
     }
 
+
     let statement = Statement::new(
         NaiveDate::from_ymd_opt(2024, 3, 1).unwrap(), 
-        tenant, 
-        lease.fee_structure);
-    //println!("New Statement: {:#?}", statement);
+        tenant,
+        get_current_expenses(&instances, property.id, NaiveDate::from_ymd_opt(2024, 3, 1).unwrap()).await
+    );
+    println!("New Statement: {:#?}", statement);
 
     create_statement(statement);
 }

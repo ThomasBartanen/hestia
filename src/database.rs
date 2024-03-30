@@ -1,5 +1,6 @@
 use std::result::Result;
-use sqlx::{sqlite::{SqliteQueryResult, SqliteConnectOptions}, Connection, Sqlite, Executor, SqlitePool, migrate::MigrateDatabase};
+use chrono::NaiveDate;
+use sqlx::{migrate::MigrateDatabase, sqlite::{SqliteConnectOptions, SqliteQueryResult}, Connection, Executor, FromRow, Sqlite, SqlitePool};
 
 use crate::{
     expenses::*, properties::Property, tenant::{FeeStructure, Lease, Tenant}
@@ -175,4 +176,20 @@ pub async fn add_tenant(pool: &sqlx::Pool<Sqlite>, tenant: &Tenant, lease: &Leas
         .execute(pool)
         .await?;
     Ok(())
+}
+
+pub async fn get_current_expenses(pool: &sqlx::Pool<Sqlite>, property_id: u16, cutoff_date: NaiveDate) -> Vec<Expense> {
+    let mut expenses: Vec<Expense> = vec![];
+
+    let expense_rows = sqlx::query(
+        "SELECT * FROM expenses WHERE property_id = ? AND date_incurred > ?")
+        .bind(property_id)
+        .bind(cutoff_date.to_string())
+        .fetch_all(pool)
+        .await;
+    for row in expense_rows.unwrap() {
+        let expense = Expense::from_row(&row);
+        expenses.push(expense.unwrap());
+    }
+    expenses
 }

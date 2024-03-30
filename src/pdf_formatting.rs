@@ -62,8 +62,12 @@ pub fn write_with_printpdf(s: Statement) {
         let mut current_iter = 0;
         left_column += Mm(15.0);
         let mut current_x: Mm = left_column;
-
-        for line in s.fees.display_amounts_due(1000.0) {
+        let mut total_due: String = String::new();
+        for line in s.rates.display_amounts_due(s.fees) {
+            if total_due.is_empty() {
+                total_due.push_str(&line);
+                continue;
+            }
             current_layer.use_text(line.to_string(), DETAILS_SIZE, current_x, y_level, &font);
             if current_iter == 1 {
                 y_level -= Mm(10.0);
@@ -78,7 +82,7 @@ pub fn write_with_printpdf(s: Statement) {
         table_bottom_level = y_level;
         y_level -= Mm(20.0);
         left_column = LEFT_COLUMN;
-        current_layer.use_text(format!("Rent Due : {:.2}", s.total), BODY_SIZE, right_column, y_level, &font);
+        current_layer.use_text(total_due, BODY_SIZE, right_column, y_level, &font);
     current_layer.end_text_section();
     
     let table_outline = Line::from_iter(vec![

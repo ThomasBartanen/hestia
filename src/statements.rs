@@ -1,21 +1,24 @@
 use chrono::NaiveDate;
-use crate::{tenant::{FeeStructure, Tenant}, pdf_formatting::write_with_printpdf};
+use crate::{pdf_formatting::write_with_printpdf, tenant::{FeeStructure, Tenant}, Expense};
 
 #[derive(Debug)]
 pub struct Statement {
     pub date: NaiveDate,
     pub tenant: Tenant,
-    pub fees: FeeStructure,
+    pub rates: FeeStructure,
+    pub fees: Vec<Expense>,
     pub total: f32
 }
 
 impl Statement {
-    pub fn new(date: NaiveDate, tenant: Tenant, fees: FeeStructure) -> Statement {
+    pub fn new(date: NaiveDate, tenant: Tenant, fees: Vec<Expense>) -> Statement {
+        let tenant_clone = tenant.clone();
         Statement {
             date,
             tenant,
-            fees: fees.clone(),
-            total: calculate_total(fees, 1000.0)
+            rates: tenant_clone.clone().lease.fee_structure,
+            fees,
+            total: calculate_total(tenant_clone.lease.fee_structure, 1000.0)
         }
     }
 }
