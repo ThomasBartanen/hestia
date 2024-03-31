@@ -2,7 +2,7 @@ use std::{fs::File, io::BufWriter};
 
 use printpdf::{BuiltinFont, Line, Mm, PdfDocument, Point, TextRenderingMode};
 
-use crate::{properties::Property, statements::Statement};
+use crate::{companies::Company, properties::Property, statements::Statement};
 
 const LEFT_COLUMN: Mm = Mm(20.0);
 const RIGHT_COLUMN: Mm = Mm(115.0);
@@ -13,7 +13,7 @@ const HEADER_SIZE: f32 = 16.0;
 const BODY_SIZE: f32 = 13.0;
 const DETAILS_SIZE: f32 = 12.0;
 
-pub fn write_with_printpdf(s: Statement, p: Property) {
+pub fn write_with_printpdf(s: Statement, p: Property, c: Company) {
     // Max dimension values in mm 215.9 x 279.4
     let (doc, page1, layer1) =
         PdfDocument::new("Monthly Statement", RIGHT_EDGE, TOP_EDGE, "Layer 1");
@@ -29,8 +29,10 @@ pub fn write_with_printpdf(s: Statement, p: Property) {
     current_layer.set_text_rendering_mode(TextRenderingMode::Fill);
 
     current_layer.begin_text_section();
+    current_layer.use_text(c.name, HEADER_SIZE, left_column, y_level, &font);
+    y_level -= Mm(10.0);
     current_layer.use_text(
-        format!("CW Holdings LLC"),
+        c.contact_info.email,
         HEADER_SIZE,
         left_column,
         y_level,
@@ -142,7 +144,7 @@ pub fn write_with_printpdf(s: Statement, p: Property) {
     );
     y_level += Mm(10.0);
     current_layer.use_text(
-        format!("Please Remit To: MAILING ADDRESS"),
+        format!("Please Remit To: {}", c.remittence_address),
         BODY_SIZE,
         left_column,
         y_level,

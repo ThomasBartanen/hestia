@@ -1,4 +1,5 @@
 use crate::{
+    companies::Company,
     pdf_formatting::write_with_printpdf,
     properties::Property,
     tenant::{FeeStructure, Tenant},
@@ -58,6 +59,6 @@ pub fn calculate_share(rate: f32, total: f32) -> f32 {
     total * rate
 }
 
-pub fn create_statement(statement: Statement, property: Property) {
-    write_with_printpdf(statement, property);
+pub fn create_statement(statement: Statement, property: Property, company: Company) {
+    write_with_printpdf(statement, property, company);
 }

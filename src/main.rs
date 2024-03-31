@@ -5,6 +5,7 @@ use statements::Statement;
 use tenant::{CAMRates, InsuranceRate, Lease, PropertyTaxRate, Rent};
 
 use crate::{
+    companies::Company,
     database::{add_expense, add_property, get_current_expenses, initialize_database},
     expenses::*,
     properties::{Address, Property},
@@ -12,6 +13,7 @@ use crate::{
     tenant::{ContactInformation, Tenant},
 };
 
+mod companies;
 mod database;
 mod expenses;
 mod pdf_formatting;
@@ -27,6 +29,17 @@ async fn main() {
 }
 
 async fn test_database(instances: &sqlx::Pool<Sqlite>) {
+    let company = Company::new(
+        "Company".to_owned(),
+        "PO BOX 8314598289543 Place, State 81235".to_owned(),
+        ContactInformation::new(
+            "Handler".to_owned(),
+            "Smith".to_owned(),
+            "HandlerSmith@Company.com".to_owned(),
+            "555-555-5555".to_owned(),
+        ),
+    );
+
     let mut property = Property::new(
         0,
         "name".to_string(),
@@ -158,5 +171,5 @@ async fn test_database(instances: &sqlx::Pool<Sqlite>) {
     );
     //println!("New Statement: {:#?}", statement);
 
-    create_statement(statement, property);
+    create_statement(statement, property, company);
 }
