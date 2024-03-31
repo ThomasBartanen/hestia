@@ -8,6 +8,7 @@ use crate::{
     companies::Company,
     database::{
         add_expense, add_property, add_statement, get_current_expenses, initialize_database,
+        update_property,
     },
     expenses::*,
     properties::{Address, Property},
@@ -182,5 +183,11 @@ async fn test_database(instances: &sqlx::Pool<Sqlite>) {
     }
     //println!("New Statement: {:#?}", statement);
 
-    create_statement(statement, property, company);
+    create_statement(statement, property.clone(), company);
+
+    property.business_insurance += 100.0;
+    match update_property(instances, &property).await {
+        Ok(_) => println!("Successfully updated PROPERTY. ID: {}", property.id),
+        Err(e) => println!("Error when adding STATEMENT: {}", e),
+    }
 }

@@ -1,3 +1,4 @@
+#[derive(Debug, Clone)]
 pub struct Property {
     pub id: u16,
     pub name: String,
@@ -27,6 +28,7 @@ impl Property {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct Address {
     pub street_address: String,
     pub city: String,
