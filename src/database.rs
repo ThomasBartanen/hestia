@@ -250,3 +250,22 @@ pub async fn add_statement(
 
     Ok(x)
 }
+
+pub async fn update_property(
+    pool: &sqlx::Pool<Sqlite>,
+    property: &Property,
+) -> Result<SqliteQueryResult, sqlx::Error> {
+    let x = sqlx::query("UPDATE properties SET (property_name, property_tax, business_insurance, address, city, state, zip_code, num_units) WHERE id == ? VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
+        .bind(property.id)
+        .bind(&property.name)
+        .bind(property.property_tax)
+        .bind(property.business_insurance)
+        .bind(&property.address.street_address)
+        .bind(&property.address.city)
+        .bind(&property.address.state)
+        .bind(&property.address.zip_code)
+        .bind(property.num_units)
+        .execute(pool)
+        .await?;
+    Ok(x)
+}
