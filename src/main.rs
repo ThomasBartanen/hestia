@@ -31,7 +31,12 @@ async fn main() {
 async fn test_database(instances: &sqlx::Pool<Sqlite>) {
     let company = Company::new(
         "Company".to_owned(),
-        "PO BOX 8314598289543 Place, State 81235".to_owned(),
+        Address::new(
+            "PO BOX 8314598289543".to_owned(),
+            "Place".to_owned(),
+            "State".to_owned(),
+            "81235".to_owned(),
+        ),
         ContactInformation::new(
             "Handler".to_owned(),
             "Smith".to_owned(),

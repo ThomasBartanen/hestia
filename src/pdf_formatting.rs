@@ -142,9 +142,19 @@ pub fn write_with_printpdf(s: Statement, p: Property, c: Company) {
         y_level,
         &font,
     );
+    current_layer.use_text(
+        format!(
+            "{}, {} {}",
+            c.remittence_address.city, c.remittence_address.state, c.remittence_address.zip_code
+        ),
+        BODY_SIZE,
+        left_column,
+        y_level,
+        &font,
+    );
     y_level += Mm(10.0);
     current_layer.use_text(
-        format!("Please Remit To: {}", c.remittence_address),
+        c.remittence_address.street_address,
         BODY_SIZE,
         left_column,
         y_level,
@@ -157,6 +167,8 @@ pub fn write_with_printpdf(s: Statement, p: Property, c: Company) {
         y_level,
         &font,
     );
+    y_level += Mm(10.0);
+    current_layer.use_text("Please Remit To:", BODY_SIZE, left_column, y_level, &font);
 
     // Save the PDF to a file
     doc.save(&mut BufWriter::new(
