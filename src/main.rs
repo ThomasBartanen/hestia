@@ -6,7 +6,9 @@ use tenant::{CAMRates, InsuranceRate, Lease, PropertyTaxRate, Rent};
 
 use crate::{
     companies::Company,
-    database::{add_expense, add_property, get_current_expenses, initialize_database},
+    database::{
+        add_expense, add_property, add_statement, get_current_expenses, initialize_database,
+    },
     expenses::*,
     properties::{Address, Property},
     statements::create_statement,
@@ -174,6 +176,10 @@ async fn test_database(instances: &sqlx::Pool<Sqlite>) {
         )
         .await,
     );
+    match add_statement(instances, &statement).await {
+        Ok(_) => println!("Successfully added STATEMENT"),
+        Err(e) => println!("Error when adding STATEMENT: {}", e),
+    }
     //println!("New Statement: {:#?}", statement);
 
     create_statement(statement, property, company);

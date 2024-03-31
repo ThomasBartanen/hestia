@@ -237,7 +237,7 @@ pub async fn get_current_expenses(
 
 pub async fn add_statement(
     pool: &sqlx::Pool<Sqlite>,
-    statement: Statement,
+    statement: &Statement,
 ) -> Result<SqliteQueryResult, sqlx::Error> {
     let x = sqlx::query(
         "INSERT INTO statements (tenant_id, amount_due, amount_paid, statement_path) VALUES (?, ?, ?, ?)")
