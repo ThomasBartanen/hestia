@@ -107,7 +107,7 @@ pub async fn add_maint_request(
         .bind(request.request_date.to_string())
         .bind(maint_type_str)
         .bind(&request.description)
-        .bind(request.status.to_string())
+        .bind(RequestStatus::Received.to_string())
         .execute(pool)
         .await?;
     Ok(())
