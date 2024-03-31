@@ -1,3 +1,5 @@
+use std::fmt;
+
 use chrono::NaiveDate;
 use sqlx::{sqlite::SqliteRow, FromRow, Row};
 
@@ -32,6 +34,18 @@ pub enum RequestStatus {
     Completed,
     Cancelled,
     OnHold,
+}
+
+impl fmt::Display for RequestStatus {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            RequestStatus::Received => write!(f, "RequestStatus: Received"),
+            RequestStatus::InProgress => write!(f, "RequestStatus: In Progress"),
+            RequestStatus::Completed => write!(f, "RequestStatus: Completed"),
+            RequestStatus::Cancelled => write!(f, "RequestStatus: Cancelled"),
+            RequestStatus::OnHold => write!(f, "RequestStatus: On Hold"),
+        }
+    }
 }
 
 #[derive(Debug)]

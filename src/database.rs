@@ -50,6 +50,7 @@ pub async fn create_schema(db_url: &str) -> Result<SqliteQueryResult, sqlx::Erro
         request_id          INTEGER PRIMARY KEY AUTOINCREMENT,
         tenant_id           INTEGER,
         request_date        TEXT,
+        maintenance_type    TEXT,
         description         TEXT,
         status              TEXT,
         completion_date     TEXT null,        
@@ -101,8 +102,12 @@ pub async fn add_maint_request(
         MaintenanceType::Landscaping => String::from("Maintenance: Landscaping"),
         MaintenanceType::Other => String::from("Maintenance: Other"),
     };
-    sqlx::query("INSERT INTO maintenance_requests")
-        .bind(&request.tenant_id)
+    sqlx::query("INSERT INTO maintenance_requests (tenant_id, request_date, maintenance_type, description, status, completion_date) VALUES (?, ?, ?, ?, ?, ?)")
+        .bind(request.tenant_id)
+        .bind(request.request_date.to_string())
+        .bind(maint_type_str)
+        .bind(&request.description)
+        .bind(request.status.to_string())
         .execute(pool)
         .await?;
     Ok(())
