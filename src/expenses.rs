@@ -95,9 +95,9 @@ impl<'r> FromRow<'r, SqliteRow> for Expense {
 
         let mut parts = expense_type.split(':');
         let expense_main_type = parts.next().unwrap_or("").trim();
-        println!("{}", format!("Main Expense Type: {expense_main_type}"));
+        println!("Main Expense Type: {expense_main_type}");
         let expense_sub_type = parts.next().unwrap_or("").trim();
-        println!("{}", format!("Sub Expense Type: {expense_sub_type}"));
+        println!("Sub Expense Type: {expense_sub_type}");
 
         let expense_type = match expense_main_type {
             "Maintenance" => match expense_sub_type {

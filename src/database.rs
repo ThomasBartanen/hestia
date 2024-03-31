@@ -25,7 +25,7 @@ pub async fn initialize_database() -> sqlx::Pool<Sqlite> {
 }
 
 pub async fn create_schema(db_url: &str) -> Result<SqliteQueryResult, sqlx::Error> {
-    let pool = SqlitePool::connect(&db_url).await?;
+    let pool = SqlitePool::connect(db_url).await?;
     let qry = "
     PRAGMA foreign_keys = ON;
     CREATE TABLE IF NOT EXISTS leases (
@@ -53,7 +53,7 @@ pub async fn create_schema(db_url: &str) -> Result<SqliteQueryResult, sqlx::Erro
         maintenance_type    TEXT,
         description         TEXT,
         status              TEXT,
-        completion_date     TEXT null,        
+        completion_date     TEXT null,
         FOREIGN KEY (tenant_id) REFERENCES tenants(tenant_id)
     );
     CREATE TABLE IF NOT EXISTS tenants (
@@ -83,13 +83,13 @@ pub async fn create_schema(db_url: &str) -> Result<SqliteQueryResult, sqlx::Erro
         tenant_id           INTEGER,
         amount_due          INTEGER,
         amount_paid         INTEGER,
-        statement_path      TEXT
+        statement_path      TEXT,
         FOREIGN KEY (tenant_id) REFERENCES tenants(tenant_id)
     )";
     //maintenance_id      integer FOREIGN KEY REFERENCES maintenance_requests(request_id) null,
-    let result = sqlx::query(&qry).execute(&pool).await;
+    let result = sqlx::query(qry).execute(&pool).await;
     pool.close().await;
-    return result;
+    result
 }
 
 pub async fn add_maint_request(
@@ -133,7 +133,7 @@ pub async fn add_expense(pool: &sqlx::Pool<Sqlite>, expense: &Expense) -> Result
 
     sqlx::query(
         "INSERT INTO expenses (property_id, expense_type, amount, date_incurred, description) VALUES (?, ?, ?, ?, ?)")
-        .bind(&expense.property_id)
+        .bind(expense.property_id)
         .bind(&expense_type_str)
         .bind(expense.amount)
         .bind(expense.date.to_string())
@@ -150,12 +150,12 @@ pub async fn add_property(
     let x = sqlx::query(
         "INSERT INTO properties (property_name, property_tax, business_insurance, address, city, state, zip_code, num_units) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
         .bind(&property.name)
-        .bind(&property.property_tax)
-        .bind(&property.business_insurance)
-        .bind(&property.address)
-        .bind(&property.city)
-        .bind(&property.state)
-        .bind(&property.zip_code)
+        .bind(property.property_tax)
+        .bind(property.business_insurance)
+        .bind(&property.address.street_address)
+        .bind(&property.address.city)
+        .bind(&property.address.state)
+        .bind(&property.address.zip_code)
         .bind(property.num_units)
         .execute(pool)
         .await?;
@@ -205,10 +205,10 @@ pub async fn add_tenant(
         "INSERT INTO tenants (lease_id, property_id, first_name, last_name, email, phone_number, move_in_date) VALUES (?, ?, ?, ?, ?, ?, ?)")
         .bind(lease_id)
         .bind(property_id)
-        .bind(&tenant.first_name)
-        .bind(&tenant.last_name)
-        .bind(&tenant.email)
-        .bind(&tenant.phone_number)
+        .bind(&tenant.contact_info.first_name)
+        .bind(&tenant.contact_info.last_name)
+        .bind(&tenant.contact_info.email)
+        .bind(&tenant.contact_info.phone_number)
         .bind(&tenant.move_in_date.to_string())
         .execute(pool)
         .await?;

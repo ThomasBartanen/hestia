@@ -38,7 +38,10 @@ pub fn write_with_printpdf(s: Statement, p: Property) {
     );
     y_level -= Mm(30.0);
     current_layer.use_text(
-        format!("{} {}", tenant.first_name, tenant.last_name),
+        format!(
+            "{} {}",
+            tenant.contact_info.first_name, tenant.contact_info.last_name
+        ),
         HEADER_SIZE,
         left_column,
         y_level,
@@ -57,8 +60,6 @@ pub fn write_with_printpdf(s: Statement, p: Property) {
     ]);
     current_layer.add_line(line);
 
-    let table_top_level: Mm;
-    let table_bottom_level: Mm;
     y_level -= Mm(10.0);
     current_layer.begin_text_section();
     //current_layer.set_line_height(10.0);
@@ -87,7 +88,7 @@ pub fn write_with_printpdf(s: Statement, p: Property) {
         &font,
     );
     y_level -= Mm(10.0);
-    table_top_level = y_level;
+    let table_top_level: Mm = y_level;
     y_level -= Mm(10.0);
     let mut current_iter = 0;
     left_column += Mm(15.0);
@@ -111,7 +112,7 @@ pub fn write_with_printpdf(s: Statement, p: Property) {
             current_x = right_column + Mm(20.0);
         }
     }
-    table_bottom_level = y_level;
+    let table_bottom_level: Mm = y_level;
     y_level -= Mm(20.0);
     left_column = LEFT_COLUMN;
     current_layer.use_text(total_due, BODY_SIZE, right_column, y_level, &font);
@@ -133,7 +134,7 @@ pub fn write_with_printpdf(s: Statement, p: Property) {
 
     y_level = Mm(15.0);
     current_layer.use_text(
-        format!("Thank You"),
+        "Thank You".to_owned(),
         BODY_SIZE,
         right_column,
         y_level,
@@ -148,7 +149,7 @@ pub fn write_with_printpdf(s: Statement, p: Property) {
         &font,
     );
     current_layer.use_text(
-        format!("Payment Due 1st of Coming Month"),
+        "Payment Due 1st of Coming Month".to_owned(),
         BODY_SIZE,
         right_column,
         y_level,
@@ -161,5 +162,3 @@ pub fn write_with_printpdf(s: Statement, p: Property) {
     ))
     .unwrap();
 }
-
-fn write_with_pdfgen(s: Statement) {}

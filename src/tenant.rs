@@ -18,8 +18,8 @@ impl FeeStructure {
         bus_insurance: f32,
     ) -> Vec<String> {
         let mut lines: Vec<String> = vec![];
-        let mut property_tax_total: f32 = prop_tax;
-        let mut insurance_total: f32 = bus_insurance;
+        let property_tax_total: f32 = prop_tax;
+        let insurance_total: f32 = bus_insurance;
         let mut elect_total: f32 = 0.0;
         let mut garb_recycl_total: f32 = 0.0;
         let mut water_total: f32 = 0.0;
@@ -54,7 +54,7 @@ impl FeeStructure {
                 let tax_due = calculate_share(t.property_tax, property_tax_total);
                 total += r.base_rent + tax_due;
                 lines.push(format!("Total Due: {:.2}", total));
-                lines.push(format!("Rent:"));
+                lines.push("Rent:".to_owned());
                 lines.push(format!("{:.2}", r.base_rent));
                 lines.push(format!("Property Tax ({:.2}%):", t.property_tax));
                 lines.push(format!("{:.2}", tax_due));
@@ -64,7 +64,7 @@ impl FeeStructure {
                 let insurance_due = calculate_share(i.building_insurance, insurance_total);
                 total += r.base_rent + tax_due + insurance_due;
                 lines.push(format!("Total Due: {:.2}", total));
-                lines.push(format!("Rent:"));
+                lines.push("Rent:".to_owned());
                 lines.push(format!("{:.2}", r.base_rent));
                 lines.push(format!("Property Tax ({:.2}%):", t.property_tax));
                 lines.push(format!("{:.2}", tax_due));
@@ -89,7 +89,7 @@ impl FeeStructure {
                     + landscaping_due
                     + misc_due;
                 lines.push(format!("Total Due: {:.2}", total));
-                lines.push(format!("Rent:"));
+                lines.push("Rent:".to_owned());
                 lines.push(format!("{:.2}", r.base_rent));
                 lines.push(format!("Property Tax ({:.2}%):", t.property_tax));
                 lines.push(format!("{:.2}", tax_due));
@@ -98,7 +98,7 @@ impl FeeStructure {
                 lines.push(format!("Electricity ({:.2}%):", c.electicity));
                 lines.push(format!("{:.2}", elec_due));
                 lines.push(format!(
-                    "Garbage/Recycling ({:.2}% / {:.2}):",
+                    "Garbage/Recycling ({:.2}% / {:.2}%):",
                     c.garbage, c.recycling
                 ));
                 lines.push(format!("{:.2}", garb_recycl_due));
@@ -155,14 +155,35 @@ impl Default for CAMRates {
 }
 
 #[derive(Debug, Clone)]
-pub struct Tenant {
-    pub id: u16,
-    pub lease: Lease,
-    pub property_id: u16,
+pub struct ContactInformation {
     pub first_name: String,
     pub last_name: String,
     pub email: String,
     pub phone_number: String,
+}
+
+impl ContactInformation {
+    pub fn new(
+        first_name: String,
+        last_name: String,
+        email: String,
+        phone_number: String,
+    ) -> ContactInformation {
+        ContactInformation {
+            first_name,
+            last_name,
+            email,
+            phone_number,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct Tenant {
+    pub id: u16,
+    pub lease: Lease,
+    pub property_id: u16,
+    pub contact_info: ContactInformation,
     pub move_in_date: NaiveDate,
 }
 
@@ -171,20 +192,14 @@ impl Tenant {
         id: u16,
         lease: Lease,
         property_id: u16,
-        first_name: String,
-        last_name: String,
-        email: String,
-        phone_number: String,
+        contact_info: ContactInformation,
         move_in_date: NaiveDate,
     ) -> Tenant {
         Tenant {
             id,
             lease,
             property_id,
-            first_name,
-            last_name,
-            email,
-            phone_number,
+            contact_info,
             move_in_date,
         }
     }

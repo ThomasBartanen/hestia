@@ -1,5 +1,10 @@
+use crate::{
+    pdf_formatting::write_with_printpdf,
+    properties::Property,
+    tenant::{FeeStructure, Tenant},
+    Expense,
+};
 use chrono::NaiveDate;
-use crate::{pdf_formatting::write_with_printpdf, properties::Property, tenant::{FeeStructure, Tenant}, Expense};
 
 #[derive(Debug)]
 pub struct Statement {
@@ -7,7 +12,7 @@ pub struct Statement {
     pub tenant: Tenant,
     pub rates: FeeStructure,
     pub fees: Vec<Expense>,
-    pub total: f32
+    pub total: f32,
 }
 
 impl Statement {
@@ -18,36 +23,35 @@ impl Statement {
             tenant,
             rates: tenant_clone.clone().lease.fee_structure,
             fees,
-            total: calculate_total(tenant_clone.lease.fee_structure, 1000.0)
+            total: calculate_total(tenant_clone.lease.fee_structure, 1000.0),
         }
     }
 }
 
 pub fn calculate_total(fee_structure: FeeStructure, building_fees: f32) -> f32 {
     match fee_structure {
-        FeeStructure::Gross(rent) => return rent.base_rent,
-        FeeStructure::SingleNet(rent, tax) => return {
-            rent.base_rent + 
-            calculate_share(tax.property_tax, building_fees)
-        },
-        FeeStructure::DoubleNet(rent, tax, insurance) => return{
-            rent.base_rent + 
-            calculate_share(tax.property_tax, building_fees) + 
-            calculate_share(insurance.building_insurance, building_fees)
-        },
-        FeeStructure::TripleNet(rent, tax, insurance, cam) => return {
-            rent.base_rent + 
-            calculate_share(tax.property_tax, building_fees) + 
-            calculate_share(insurance.building_insurance, building_fees) + 
-            calculate_share(cam.amenities, building_fees) + 
-            calculate_share(cam.electicity, building_fees) + 
-            calculate_share(cam.garbage, building_fees) + 
-            calculate_share(cam.landscaping, building_fees) + 
-            calculate_share(cam.misc, building_fees) + 
-            calculate_share(cam.recycling, building_fees) +
-            calculate_share(cam.water, building_fees)
-        },
-    };
+        FeeStructure::Gross(rent) => rent.base_rent,
+        FeeStructure::SingleNet(rent, tax) => {
+            rent.base_rent + calculate_share(tax.property_tax, building_fees)
+        }
+        FeeStructure::DoubleNet(rent, tax, insurance) => {
+            rent.base_rent
+                + calculate_share(tax.property_tax, building_fees)
+                + calculate_share(insurance.building_insurance, building_fees)
+        }
+        FeeStructure::TripleNet(rent, tax, insurance, cam) => {
+            rent.base_rent
+                + calculate_share(tax.property_tax, building_fees)
+                + calculate_share(insurance.building_insurance, building_fees)
+                + calculate_share(cam.amenities, building_fees)
+                + calculate_share(cam.electicity, building_fees)
+                + calculate_share(cam.garbage, building_fees)
+                + calculate_share(cam.landscaping, building_fees)
+                + calculate_share(cam.misc, building_fees)
+                + calculate_share(cam.recycling, building_fees)
+                + calculate_share(cam.water, building_fees)
+        }
+    }
 }
 
 pub fn calculate_share(rate: f32, total: f32) -> f32 {

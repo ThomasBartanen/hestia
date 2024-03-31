@@ -7,9 +7,9 @@ use tenant::{CAMRates, InsuranceRate, Lease, PropertyTaxRate, Rent};
 use crate::{
     database::{add_expense, add_property, get_current_expenses, initialize_database},
     expenses::*,
-    properties::Property,
+    properties::{Address, Property},
     statements::create_statement,
-    tenant::Tenant,
+    tenant::{ContactInformation, Tenant},
 };
 
 mod database;
@@ -30,15 +30,17 @@ async fn test_database(instances: &sqlx::Pool<Sqlite>) {
     let mut property = Property::new(
         0,
         "name".to_string(),
+        Address::new(
+            "address".to_string(),
+            "city".to_string(),
+            "state".to_string(),
+            "zip_code".to_string(),
+        ),
         1000.0,
         950.0,
-        "address".to_string(),
-        "city".to_string(),
-        "state".to_string(),
-        "zip_code".to_string(),
         10,
     );
-    match add_property(&instances, &property).await {
+    match add_property(instances, &property).await {
         Ok(r) => {
             //converting i64 to u16. This may cause issues. Keep an eye on this
             property.id = r.last_insert_rowid() as u16;
@@ -46,6 +48,13 @@ async fn test_database(instances: &sqlx::Pool<Sqlite>) {
         }
         Err(e) => println!("Error when adding PROPERTY: {}", e),
     };
+
+    let contact = ContactInformation::new(
+        "John".to_string(),
+        "Smith".to_string(),
+        "JohnSmith@gmail.com".to_string(),
+        "2064445555".to_string(),
+    );
 
     let lease = Lease::new(
         NaiveDate::from_ymd_opt(2024, 3, 1).unwrap(),
@@ -72,13 +81,10 @@ async fn test_database(instances: &sqlx::Pool<Sqlite>) {
         0,
         lease.clone(),
         property.id,
-        "John".to_string(),
-        "Smith".to_string(),
-        "JohnSmith@gmail.com".to_string(),
-        "2064445555".to_string(),
+        contact,
         NaiveDate::from_ymd_opt(2024, 3, 1).unwrap(),
     );
-    match add_tenant(&instances, &tenant, 1).await {
+    match add_tenant(instances, &tenant, 1).await {
         Ok(t) => {
             tenant.id = t.last_insert_rowid() as u16;
             println!("Successfully added TENANT")
@@ -94,7 +100,7 @@ async fn test_database(instances: &sqlx::Pool<Sqlite>) {
         dt.unwrap(),
         "Normal Maintenance".to_string(),
     );
-    match add_expense(&instances, &expense).await {
+    match add_expense(instances, &expense).await {
         Ok(_) => println!("Successfully added EXPENSE"),
         Err(e) => println!("Error when adding EXPENSE: {}", e),
     }
@@ -106,7 +112,7 @@ async fn test_database(instances: &sqlx::Pool<Sqlite>) {
         dt.unwrap(),
         "Electricity Bill".to_string(),
     );
-    match add_expense(&instances, &expense).await {
+    match add_expense(instances, &expense).await {
         Ok(_) => println!("Successfully added EXPENSE"),
         Err(e) => println!("Error when adding EXPENSE: {}", e),
     }
@@ -118,7 +124,7 @@ async fn test_database(instances: &sqlx::Pool<Sqlite>) {
         dt.unwrap(),
         "Water Bill".to_string(),
     );
-    match add_expense(&instances, &expense).await {
+    match add_expense(instances, &expense).await {
         Ok(_) => println!("Successfully added EXPENSE"),
         Err(e) => println!("Error when adding EXPENSE: {}", e),
     }
@@ -130,7 +136,7 @@ async fn test_database(instances: &sqlx::Pool<Sqlite>) {
         dt.unwrap(),
         "Rat Abatement".to_string(),
     );
-    match add_expense(&instances, &expense).await {
+    match add_expense(instances, &expense).await {
         Ok(_) => println!("Successfully added EXPENSE"),
         Err(e) => println!("Error when adding EXPENSE: {}", e),
     }
@@ -144,7 +150,7 @@ async fn test_database(instances: &sqlx::Pool<Sqlite>) {
         NaiveDate::from_ymd_opt(2024, 3, 1).unwrap(),
         tenant,
         get_current_expenses(
-            &instances,
+            instances,
             property.id,
             NaiveDate::from_ymd_opt(2024, 2, 1).unwrap(),
         )
