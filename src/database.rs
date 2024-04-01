@@ -6,7 +6,7 @@ use crate::{
     expenses::*,
     properties::Property,
     statements::Statement,
-    tenant::{FeeStructure, Tenant},
+    tenant::{FeeStructure, Lease, Tenant},
 };
 
 pub async fn initialize_database() -> sqlx::Pool<Sqlite> {
@@ -244,5 +244,40 @@ pub async fn update_property(
         .bind(property.id)
         .execute(pool)
         .await?;
+    Ok(x)
+}
+
+pub async fn update_tenant(
+    pool: &sqlx::Pool<Sqlite>,
+    tenant: &Tenant,
+) -> Result<SqliteQueryResult, sqlx::Error> {
+    let x = sqlx::query(
+        "UPDATE tenants SET (lease_id, property_id, first_name, last_name, email, phone_number, move_in_date) = (?, ?, ?, ?, ?, ?, ?) WHERE tenant_id == ?"
+    )
+        .bind(tenant.lease.id)
+        .bind(tenant.property_id)
+        .bind(&tenant.contact_info.first_name)
+        .bind(&tenant.contact_info.last_name)
+        .bind(&tenant.contact_info.email)
+        .bind(&tenant.contact_info.phone_number)
+        .bind(&tenant.move_in_date.to_string())
+        .bind(tenant.id)
+        .execute(pool)
+        .await?;
+    Ok(x)
+}
+
+pub async fn update_lease(
+    pool: &sqlx::Pool<Sqlite>,
+    new_lease: &Lease,
+) -> Result<SqliteQueryResult, sqlx::Error> {
+    let x = sqlx::query(
+        "UPDATE leases SET (start_date, end_date, fee_structure) = (?, ?, ?) WHERE lease_id == ?",
+    )
+    .bind(new_lease.start_date.to_string())
+    .bind(new_lease.end_date.to_string())
+    .bind(new_lease.fee_structure.encode_to_database_string())
+    .execute(pool)
+    .await?;
     Ok(x)
 }
