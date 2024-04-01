@@ -168,35 +168,12 @@ pub async fn add_tenant(
     property_id: u16,
 ) -> Result<SqliteQueryResult, sqlx::Error> {
     let lease = &tenant.lease;
-    let fee_structure: String = match lease.fee_structure {
-        FeeStructure::Gross(rent) => {
-            format!("Gross: Base Rent {}", rent.base_rent)
-        }
-        FeeStructure::SingleNet(rent, tax_rate) => {
-            format!(
-                "Single Net: Base Rent {}, Property Tax Rate {}",
-                rent.base_rent, tax_rate.property_tax
-            )
-        }
-        FeeStructure::DoubleNet(rent, tax_rate, insurance_rate) => {
-            format!(
-                "Double Net: Base Rent {}, Property Tax Rate {}, Insurance Rate {}",
-                rent.base_rent, tax_rate.property_tax, insurance_rate.building_insurance
-            )
-        }
-        FeeStructure::TripleNet(rent, tax_rate, insurance_rate, cam_rates) => {
-            format!(
-                "Triple Net: Base Rent {}, Property Tax Rate {}, Insurance Rate {}, CAM Rates {:?}",
-                rent.base_rent, tax_rate.property_tax, insurance_rate.building_insurance, cam_rates
-            )
-        }
-    };
 
     let lease_id =
         sqlx::query("INSERT INTO leases (start_date, end_date, fee_structure) VALUES (?, ?, ?)")
             .bind(lease.start_date.to_string())
             .bind(lease.end_date.to_string())
-            .bind(fee_structure.to_string())
+            .bind(tenant.lease.fee_structure.encode_to_database_string())
             .execute(pool)
             .await?
             .last_insert_rowid();
