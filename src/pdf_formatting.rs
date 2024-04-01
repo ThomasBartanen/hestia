@@ -2,7 +2,9 @@ use std::{fs::File, io::BufWriter};
 
 use printpdf::{BuiltinFont, Line, Mm, PdfDocument, Point, TextRenderingMode};
 
-use crate::{companies::Company, properties::Property, statements::Statement};
+use crate::{
+    app_settings::PathSettings, companies::Company, properties::Property, statements::Statement,
+};
 
 const LEFT_COLUMN: Mm = Mm(20.0);
 const RIGHT_COLUMN: Mm = Mm(115.0);
@@ -13,13 +15,18 @@ const HEADER_SIZE: f32 = 16.0;
 const BODY_SIZE: f32 = 13.0;
 const DETAILS_SIZE: f32 = 12.0;
 
-pub fn write_with_printpdf(s: Statement, p: Property, c: Company) {
+pub fn write_with_printpdf(
+    statement: Statement,
+    property: Property,
+    company: Company,
+    settings: PathSettings,
+) {
     // Max dimension values in mm 215.9 x 279.4
     let (doc, page1, layer1) =
         PdfDocument::new("Monthly Statement", RIGHT_EDGE, TOP_EDGE, "Layer 1");
     let current_layer = doc.get_page(page1).get_layer(layer1);
     let font = doc.add_builtin_font(BuiltinFont::Helvetica).unwrap();
-    let tenant = s.tenant;
+    let tenant = statement.tenant;
 
     let mut y_level = Mm(270.0);
     let mut left_column = LEFT_COLUMN;
@@ -29,10 +36,10 @@ pub fn write_with_printpdf(s: Statement, p: Property, c: Company) {
     current_layer.set_text_rendering_mode(TextRenderingMode::Fill);
 
     current_layer.begin_text_section();
-    current_layer.use_text(c.name, HEADER_SIZE, left_column, y_level, &font);
+    current_layer.use_text(company.name, HEADER_SIZE, left_column, y_level, &font);
     y_level -= Mm(10.0);
     current_layer.use_text(
-        c.contact_info.email,
+        company.contact_info.email,
         HEADER_SIZE,
         left_column,
         y_level,
@@ -52,7 +59,13 @@ pub fn write_with_printpdf(s: Statement, p: Property, c: Company) {
     y_level -= Mm(10.0);
     current_layer.use_text("ADDRESS TODO", HEADER_SIZE, left_column, y_level, &font);
     y_level -= Mm(10.0);
-    current_layer.use_text(s.date.to_string(), HEADER_SIZE, left_column, y_level, &font);
+    current_layer.use_text(
+        statement.date.to_string(),
+        HEADER_SIZE,
+        left_column,
+        y_level,
+        &font,
+    );
     y_level -= Mm(20.0);
     current_layer.end_text_section();
 
@@ -96,10 +109,11 @@ pub fn write_with_printpdf(s: Statement, p: Property, c: Company) {
     left_column += Mm(15.0);
     let mut current_x: Mm = left_column;
     let mut total_due: String = String::new();
-    for line in s
-        .rates
-        .display_amounts_due(s.fees, p.property_tax, p.business_insurance)
-    {
+    for line in statement.rates.display_amounts_due(
+        statement.fees,
+        property.property_tax,
+        property.business_insurance,
+    ) {
         if total_due.is_empty() {
             total_due.push_str(&line);
             continue;
@@ -145,7 +159,9 @@ pub fn write_with_printpdf(s: Statement, p: Property, c: Company) {
     current_layer.use_text(
         format!(
             "{}, {} {}",
-            c.remittence_address.city, c.remittence_address.state, c.remittence_address.zip_code
+            company.remittence_address.city,
+            company.remittence_address.state,
+            company.remittence_address.zip_code
         ),
         BODY_SIZE,
         left_column,
@@ -154,7 +170,7 @@ pub fn write_with_printpdf(s: Statement, p: Property, c: Company) {
     );
     y_level += Mm(10.0);
     current_layer.use_text(
-        c.remittence_address.street_address,
+        company.remittence_address.street_address,
         BODY_SIZE,
         left_column,
         y_level,
@@ -172,7 +188,11 @@ pub fn write_with_printpdf(s: Statement, p: Property, c: Company) {
 
     // Save the PDF to a file
     doc.save(&mut BufWriter::new(
-        File::create("test_statement.pdf").unwrap(),
+        File::create(format!(
+            "{}statement_{}_{}.pdf",
+            settings.statements_path, tenant.contact_info.first_name, tenant.contact_info.last_name
+        ))
+        .unwrap(),
     ))
     .unwrap();
 }

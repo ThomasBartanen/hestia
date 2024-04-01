@@ -1,3 +1,4 @@
+use app_settings::PathSettings;
 use chrono::NaiveDate;
 use database::add_tenant;
 use sqlx::Sqlite;
@@ -16,6 +17,7 @@ use crate::{
     tenant::{ContactInformation, Tenant},
 };
 
+mod app_settings;
 mod companies;
 mod database;
 mod expenses;
@@ -27,11 +29,20 @@ mod tenant;
 #[async_std::main]
 async fn main() {
     let instances = initialize_database().await;
+    let settings = test_settings().await;
+    let (company, tenant, mut property) = test_database(&instances).await;
+    test_expenses(&instances, &property).await;
+    test_statements(&instances, &mut property, tenant, company, settings).await;
+
     test_database(&instances).await;
     instances.close().await;
 }
 
-async fn test_database(instances: &sqlx::Pool<Sqlite>) {
+async fn test_settings() -> PathSettings {
+    PathSettings::default()
+}
+
+async fn test_database(instances: &sqlx::Pool<Sqlite>) -> (Company, Tenant, Property) {
     let company = Company::new(
         "Company".to_owned(),
         Address::new(
@@ -111,8 +122,11 @@ async fn test_database(instances: &sqlx::Pool<Sqlite>) {
             println!("Successfully added TENANT")
         }
         Err(e) => println!("Error when adding TENANT: {}", e),
-    }
+    };
+    (company, tenant, property)
+}
 
+pub async fn test_expenses(instances: &sqlx::Pool<Sqlite>, property: &Property) {
     let dt = NaiveDate::from_ymd_opt(2024, 3, 10);
     let expense = Expense::new(
         property.id,
@@ -161,12 +175,15 @@ async fn test_database(instances: &sqlx::Pool<Sqlite>) {
         Ok(_) => println!("Successfully added EXPENSE"),
         Err(e) => println!("Error when adding EXPENSE: {}", e),
     }
+}
 
-    println!(
-        "Property ID: {}, Tenant's Property ID: {}, Lease ID: {}",
-        property.id, tenant.property_id, tenant.lease.id
-    );
-
+pub async fn test_statements(
+    instances: &sqlx::Pool<Sqlite>,
+    property: &mut Property,
+    tenant: Tenant,
+    company: Company,
+    settings: PathSettings,
+) {
     let statement = Statement::new(
         NaiveDate::from_ymd_opt(2024, 3, 1).unwrap(),
         tenant,
@@ -183,10 +200,10 @@ async fn test_database(instances: &sqlx::Pool<Sqlite>) {
     }
     //println!("New Statement: {:#?}", statement);
 
-    create_statement(statement, property.clone(), company);
+    create_statement(statement, property.clone(), company, settings);
 
     property.business_insurance += 100.0;
-    match update_property(instances, &property).await {
+    match update_property(instances, property).await {
         Ok(_) => println!("Successfully updated PROPERTY. ID: {}", property.id),
         Err(e) => println!("Error when adding STATEMENT: {}", e),
     }

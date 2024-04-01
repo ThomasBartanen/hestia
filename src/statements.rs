@@ -1,4 +1,5 @@
 use crate::{
+    app_settings::PathSettings,
     companies::Company,
     pdf_formatting::write_with_printpdf,
     properties::Property,
@@ -7,7 +8,7 @@ use crate::{
 };
 use chrono::NaiveDate;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Statement {
     pub date: NaiveDate,
     pub tenant: Tenant,
@@ -59,6 +60,11 @@ pub fn calculate_share(rate: f32, total: f32) -> f32 {
     total * rate
 }
 
-pub fn create_statement(statement: Statement, property: Property, company: Company) {
-    write_with_printpdf(statement, property, company);
+pub fn create_statement(
+    statement: Statement,
+    property: Property,
+    company: Company,
+    settings: PathSettings,
+) {
+    write_with_printpdf(statement, property, company, settings);
 }

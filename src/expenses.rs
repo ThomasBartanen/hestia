@@ -3,14 +3,14 @@ use std::fmt;
 use chrono::NaiveDate;
 use sqlx::{sqlite::SqliteRow, FromRow, Row};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum ExpenseType {
     Maintenance(MaintenanceType),
     Utilities(UtilitiesType),
     Other,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum MaintenanceType {
     Repairs,
     Cleaning,
@@ -18,7 +18,7 @@ pub enum MaintenanceType {
     Other,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum UtilitiesType {
     Water,
     Electricity,
@@ -27,7 +27,7 @@ pub enum UtilitiesType {
     Other,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum RequestStatus {
     Received,
     InProgress,
@@ -48,7 +48,7 @@ impl fmt::Display for RequestStatus {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct MaintenanceRequest {
     pub request_id: u16,
     pub tenant_id: u16,
@@ -59,7 +59,7 @@ pub struct MaintenanceRequest {
     pub completion_date: Option<NaiveDate>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Expense {
     pub property_id: u16,
     pub expense_type: ExpenseType,
