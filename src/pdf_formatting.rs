@@ -1,5 +1,6 @@
 use std::{fs::File, io::BufWriter};
 
+use chrono::{Datelike, NaiveDate};
 use printpdf::{BuiltinFont, Line, Mm, PdfDocument, Point, TextRenderingMode};
 
 use crate::{
@@ -189,10 +190,32 @@ pub fn write_with_printpdf(
     // Save the PDF to a file
     doc.save(&mut BufWriter::new(
         File::create(format!(
-            "{}statement_{}_{}.pdf",
-            settings.statements_path, tenant.contact_info.first_name, tenant.contact_info.last_name
+            "{}{}_Statement_{}.{}.pdf",
+            settings.statements_path,
+            get_word_date(statement.date),
+            tenant.contact_info.first_name,
+            tenant.contact_info.last_name
         ))
         .unwrap(),
     ))
     .unwrap();
+}
+
+pub fn get_word_date(date: NaiveDate) -> String {
+    let month = match date.month() {
+        1 => "January",
+        2 => "February",
+        3 => "March",
+        4 => "April",
+        5 => "May",
+        6 => "June",
+        7 => "July",
+        8 => "August",
+        9 => "September",
+        10 => "October",
+        11 => "November",
+        12 => "December",
+        _ => "NullDate",
+    };
+    format!("{}.{}", month, date.year_ce().1)
 }
