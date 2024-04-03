@@ -1,3 +1,5 @@
+#![windows_subsystem = "windows"]
+
 use app_settings::PathSettings;
 use chrono::NaiveDate;
 use database::add_tenant;
@@ -28,6 +30,7 @@ mod tenant;
 
 #[async_std::main]
 async fn main() {
+    println!("{:?}", std::env::current_exe());
     let instances = initialize_database().await;
     let settings = test_settings().await;
     let (company, tenant, mut property) = test_database(&instances).await;
