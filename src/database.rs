@@ -9,10 +9,17 @@ use crate::{
     tenant::{FeeStructure, Lease, Tenant},
 };
 
-pub async fn initialize_database() -> sqlx::Pool<Sqlite> {
-    let db_url = String::from("sqlite://sqlite.db");
+pub async fn initialize_database(location: Option<String>) -> sqlx::Pool<Sqlite> {
+    let db_url = match location {
+        Some(l) => l,
+        None => String::from("sqlite://sqlite.db"),
+    };
+    println!("Trying to initialize database at: {}", db_url);
     if !Sqlite::database_exists(&db_url).await.unwrap_or(false) {
-        Sqlite::create_database(&db_url).await.unwrap();
+        match Sqlite::create_database(&db_url).await {
+            Ok(_) => println!("Created new database file"),
+            Err(e) => println!("Error {}", e),
+        };
         match create_schema(&db_url).await {
             Ok(_) => println!("Database created successfully"),
             Err(e) => panic!("{}", e),

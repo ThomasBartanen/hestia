@@ -1,4 +1,6 @@
-#![windows_subsystem = "windows"]
+//#![windows_subsystem = "windows"]
+
+use std::path::Path;
 
 use app_settings::PathSettings;
 use chrono::NaiveDate;
@@ -30,9 +32,33 @@ mod tenant;
 
 #[async_std::main]
 async fn main() {
-    println!("{:?}", std::env::current_exe());
-    let instances = initialize_database().await;
-    let settings = test_settings().await;
+    let current_exe_location = std::env::current_exe().unwrap();
+    let mut location_confirmation = String::new();
+    let mut custom_location = String::new();
+    let mut settings = test_settings().await;
+    println!("Current exe location: {:?}", current_exe_location);
+    println!("Is this where you'd like database and statement files to be created? (y/n)");
+    match std::io::stdin().read_line(&mut location_confirmation) {
+        Ok(_) => match location_confirmation.trim_end() {
+            "y" | "Y" | "Yes" | "yes" => {
+                settings.database_path = format!("{:?}/database/", current_exe_location.to_str());
+                settings.statements_path =
+                    format!("{:?}/statements/", current_exe_location.to_str());
+            }
+            "n" | "N" | "no" | "No" => {
+                println!("Enter custom path");
+                let _ = std::io::stdin().read_line(&mut custom_location).unwrap();
+                settings = create_path_settings(custom_location).await;
+            }
+            _ => println!(
+                "Invalid response, try again. Input: {}",
+                location_confirmation
+            ),
+        },
+        Err(e) => println!("Invalid Input: {}", e),
+    }
+
+    let instances = initialize_database(Some(settings.database_path.clone())).await;
     let (company, tenant, mut property) = test_database(&instances).await;
     test_expenses(&instances, &property).await;
     test_statements(&instances, &mut property, tenant, company, settings).await;
@@ -209,5 +235,17 @@ pub async fn test_statements(
     match update_property(instances, property).await {
         Ok(_) => println!("Successfully updated PROPERTY. ID: {}", property.id),
         Err(e) => println!("Error when adding STATEMENT: {}", e),
+    }
+}
+
+pub async fn create_path_settings(root: String) -> PathSettings {
+    let trimmed_root = root.trim().to_string();
+    let mut db_path = trimmed_root.clone();
+    let mut st_path = trimmed_root.clone();
+    db_path.push_str("/Database/");
+    st_path.push_str("/Statements/");
+    PathSettings {
+        database_path: db_path,
+        statements_path: st_path,
     }
 }
