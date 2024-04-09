@@ -54,6 +54,7 @@ async fn test_database(instances: &sqlx::Pool<Sqlite>) -> (Company, Tenant, Prop
             "State".to_owned(),
             "81235".to_owned(),
         ),
+        3241523,
         ContactInformation::new(
             "Handler".to_owned(),
             "Smith".to_owned(),
