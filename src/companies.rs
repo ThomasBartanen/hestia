@@ -1,4 +1,4 @@
-use crate::{properties::Address, tenant::ContactInformation};
+use crate::{lease::ContactInformation, properties::Address};
 
 pub struct Company {
     pub name: String,

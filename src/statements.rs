@@ -1,9 +1,9 @@
 use crate::{
     app_settings::PathSettings,
     companies::Company,
+    lease::{FeeStructure, Tenant},
     pdf_formatting::write_with_printpdf,
     properties::Property,
-    tenant::{FeeStructure, Tenant},
     Expense,
 };
 use chrono::NaiveDate;

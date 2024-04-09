@@ -4,9 +4,9 @@ use std::result::Result;
 
 use crate::{
     expenses::*,
+    lease::{FeeStructure, Lease, Tenant},
     properties::Property,
     statements::Statement,
-    tenant::{FeeStructure, Lease, Tenant},
 };
 
 pub async fn initialize_database() -> sqlx::Pool<Sqlite> {

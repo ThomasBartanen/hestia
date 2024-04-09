@@ -3,9 +3,9 @@
 use app_settings::PathSettings;
 use chrono::NaiveDate;
 use database::add_tenant;
+use lease::{CAMRates, InsuranceRate, Lease, PropertyTaxRate, Rent};
 use sqlx::Sqlite;
 use statements::Statement;
-use tenant::{CAMRates, InsuranceRate, Lease, PropertyTaxRate, Rent};
 
 use crate::{
     companies::Company,
@@ -14,19 +14,19 @@ use crate::{
         update_property,
     },
     expenses::*,
+    lease::{ContactInformation, Tenant},
     properties::{Address, Property},
     statements::create_statement,
-    tenant::{ContactInformation, Tenant},
 };
 
 mod app_settings;
 mod companies;
 mod database;
 mod expenses;
+mod lease;
 mod pdf_formatting;
 mod properties;
 mod statements;
-mod tenant;
 
 #[async_std::main]
 async fn main() {
@@ -94,7 +94,7 @@ async fn test_database(instances: &sqlx::Pool<Sqlite>) -> (Company, Tenant, Prop
     let lease = Lease::new(
         NaiveDate::from_ymd_opt(2024, 3, 1).unwrap(),
         NaiveDate::from_ymd_opt(2025, 2, 28).unwrap(),
-        tenant::FeeStructure::TripleNet(
+        lease::FeeStructure::TripleNet(
             Rent { base_rent: 1700.0 },
             PropertyTaxRate { property_tax: 0.2 },
             InsuranceRate {
