@@ -51,7 +51,7 @@ impl fmt::Display for RequestStatus {
 #[derive(Debug, Clone)]
 pub struct MaintenanceRequest {
     pub request_id: u16,
-    pub tenant_id: u16,
+    pub leaseholder_id: u16,
     pub request_date: NaiveDate,
     pub request_type: MaintenanceType,
     pub description: String,

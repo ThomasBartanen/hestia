@@ -182,57 +182,6 @@ impl Default for CAMRates {
 }
 
 #[derive(Debug, Clone)]
-pub struct ContactInformation {
-    pub first_name: String,
-    pub last_name: String,
-    pub email: String,
-    pub phone_number: String,
-}
-
-impl ContactInformation {
-    pub fn new(
-        first_name: String,
-        last_name: String,
-        email: String,
-        phone_number: String,
-    ) -> ContactInformation {
-        ContactInformation {
-            first_name,
-            last_name,
-            email,
-            phone_number,
-        }
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct Tenant {
-    pub id: u16,
-    pub lease: Lease,
-    pub property_id: u16,
-    pub contact_info: ContactInformation,
-    pub move_in_date: NaiveDate,
-}
-
-impl Tenant {
-    pub fn new(
-        id: u16,
-        lease: Lease,
-        property_id: u16,
-        contact_info: ContactInformation,
-        move_in_date: NaiveDate,
-    ) -> Tenant {
-        Tenant {
-            id,
-            lease,
-            property_id,
-            contact_info,
-            move_in_date,
-        }
-    }
-}
-
-#[derive(Debug, Clone)]
 pub struct Lease {
     pub id: u16,
     pub start_date: NaiveDate,

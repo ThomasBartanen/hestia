@@ -1,8 +1,9 @@
-#![windows_subsystem = "windows"]
+//#![windows_subsystem = "windows"]
 
 use app_settings::PathSettings;
 use chrono::NaiveDate;
-use database::add_tenant;
+use companies::{ContactInformation, Individual, Leaseholder, LeaseholderType};
+use database::add_leaseholders;
 use lease::{CAMRates, InsuranceRate, Lease, PropertyTaxRate, Rent};
 use sqlx::Sqlite;
 use statements::Statement;
@@ -14,7 +15,6 @@ use crate::{
         update_property,
     },
     expenses::*,
-    lease::{ContactInformation, Tenant},
     properties::{Address, Property},
     statements::create_statement,
 };
@@ -39,11 +39,9 @@ async fn main() {
 async fn activate_test_mode(activate: bool, instances: &sqlx::Pool<Sqlite>) {
     if activate {
         let settings = test_settings().await;
-        let (company, tenant, mut property) = test_database(instances).await;
+        let (company, leaseholder, mut property) = test_database(instances).await;
         test_expenses(instances, &property).await;
-        test_statements(instances, &mut property, tenant, company, settings).await;
-
-        test_database(instances).await;
+        test_statements(instances, &mut property, leaseholder, company, settings).await;
     }
 }
 
@@ -51,23 +49,9 @@ async fn test_settings() -> PathSettings {
     PathSettings::default()
 }
 
-async fn test_database(instances: &sqlx::Pool<Sqlite>) -> (Company, Tenant, Property) {
-    let company = Company::new(
-        "Company".to_owned(),
-        Address::new(
-            "PO BOX 8314598289543".to_owned(),
-            "Place".to_owned(),
-            "State".to_owned(),
-            "81235".to_owned(),
-        ),
-        3241523,
-        ContactInformation::new(
-            "Handler".to_owned(),
-            "Smith".to_owned(),
-            "HandlerSmith@Company.com".to_owned(),
-            "555-555-5555".to_owned(),
-        ),
-    );
+async fn test_database(instances: &sqlx::Pool<Sqlite>) -> (Company, Leaseholder, Property) {
+    println!("- - - Testing Database - - -");
+    let company = Company::new("Company".to_owned(), 3241523);
 
     let mut property = Property::new(
         0,
@@ -92,8 +76,12 @@ async fn test_database(instances: &sqlx::Pool<Sqlite>) -> (Company, Tenant, Prop
     };
 
     let contact = ContactInformation::new(
-        "John".to_string(),
-        "Smith".to_string(),
+        Address::new(
+            "3322 S 55th Street".to_string(),
+            "Seattle".to_string(),
+            "WA".to_string(),
+            "97132".to_string(),
+        ),
         "JohnSmith@gmail.com".to_string(),
         "2064445555".to_string(),
     );
@@ -119,24 +107,29 @@ async fn test_database(instances: &sqlx::Pool<Sqlite>) -> (Company, Tenant, Prop
         ),
         "Check".to_string(),
     );
-    let mut tenant = Tenant::new(
+    let mut leaseholder = Leaseholder::new(
         0,
         lease.clone(),
         property.id,
+        LeaseholderType::IndividualLeaseholder(Individual {
+            first_name: "John".to_owned(),
+            last_name: "Example".to_owned(),
+        }),
         contact,
         NaiveDate::from_ymd_opt(2024, 3, 1).unwrap(),
     );
-    match add_tenant(instances, &tenant, 1).await {
+    match add_leaseholders(instances, &leaseholder, property.id).await {
         Ok(t) => {
-            tenant.id = t.last_insert_rowid() as u16;
-            println!("Successfully added TENANT")
+            leaseholder.id = t.last_insert_rowid() as u16;
+            println!("Successfully added LEASEHOLDER")
         }
-        Err(e) => println!("Error when adding TENANT: {}", e),
+        Err(e) => println!("Error when adding LEASEHOLDER: {}", e),
     };
-    (company, tenant, property)
+    (company, leaseholder, property)
 }
 
 pub async fn test_expenses(instances: &sqlx::Pool<Sqlite>, property: &Property) {
+    println!("- - - Testing Expenses - - -");
     let dt = NaiveDate::from_ymd_opt(2024, 3, 10);
     let expense = Expense::new(
         property.id,
@@ -190,13 +183,14 @@ pub async fn test_expenses(instances: &sqlx::Pool<Sqlite>, property: &Property) 
 pub async fn test_statements(
     instances: &sqlx::Pool<Sqlite>,
     property: &mut Property,
-    tenant: Tenant,
+    leaseholder: Leaseholder,
     company: Company,
     settings: PathSettings,
 ) {
+    println!("- - - Testing Statements - - -");
     let statement = Statement::new(
         NaiveDate::from_ymd_opt(2024, 3, 1).unwrap(),
-        tenant,
+        leaseholder,
         get_current_expenses(
             instances,
             property.id,

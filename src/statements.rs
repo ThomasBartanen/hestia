@@ -1,7 +1,7 @@
 use crate::{
     app_settings::PathSettings,
-    companies::Company,
-    lease::{FeeStructure, Tenant},
+    companies::{Company, Leaseholder},
+    lease::FeeStructure,
     pdf_formatting::write_with_printpdf,
     properties::Property,
     Expense,
@@ -11,18 +11,18 @@ use chrono::NaiveDate;
 #[derive(Debug, Clone)]
 pub struct Statement {
     pub date: NaiveDate,
-    pub tenant: Tenant,
+    pub leaseholder: Leaseholder,
     pub rates: FeeStructure,
     pub fees: Vec<Expense>,
     pub total: f32,
 }
 
 impl Statement {
-    pub fn new(date: NaiveDate, tenant: Tenant, fees: Vec<Expense>) -> Statement {
+    pub fn new(date: NaiveDate, tenant: Leaseholder, fees: Vec<Expense>) -> Statement {
         let tenant_clone = tenant.clone();
         Statement {
             date,
-            tenant,
+            leaseholder: tenant,
             rates: tenant_clone.clone().lease.fee_structure,
             fees,
             total: calculate_total(tenant_clone.lease.fee_structure, 1000.0),
