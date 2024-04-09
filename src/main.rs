@@ -32,13 +32,19 @@ mod statements;
 async fn main() {
     println!("{:?}", std::env::current_exe());
     let instances = initialize_database().await;
-    let settings = test_settings().await;
-    let (company, tenant, mut property) = test_database(&instances).await;
-    test_expenses(&instances, &property).await;
-    test_statements(&instances, &mut property, tenant, company, settings).await;
-
-    test_database(&instances).await;
+    activate_test_mode(true, &instances).await;
     instances.close().await;
+}
+
+async fn activate_test_mode(activate: bool, instances: &sqlx::Pool<Sqlite>) {
+    if activate {
+        let settings = test_settings().await;
+        let (company, tenant, mut property) = test_database(instances).await;
+        test_expenses(instances, &property).await;
+        test_statements(instances, &mut property, tenant, company, settings).await;
+
+        test_database(instances).await;
+    }
 }
 
 async fn test_settings() -> PathSettings {
