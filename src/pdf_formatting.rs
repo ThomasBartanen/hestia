@@ -4,7 +4,7 @@ use chrono::{Datelike, NaiveDate};
 use printpdf::{BuiltinFont, Line, Mm, PdfDocument, Point, TextRenderingMode};
 
 use crate::{
-    app_settings::PathSettings, companies::Company, properties::Property, statements::Statement,
+    app_settings::PathSettings, leaseholders::Company, properties::Property, statements::Statement,
 };
 
 const LEFT_COLUMN: Mm = Mm(20.0);

@@ -2,28 +2,28 @@
 
 use app_settings::PathSettings;
 use chrono::NaiveDate;
-use companies::{ContactInformation, Individual, Leaseholder, LeaseholderType};
 use database::add_leaseholders;
 use lease::{CAMRates, InsuranceRate, Lease, PropertyTaxRate, Rent};
+use leaseholders::{ContactInformation, Individual, Leaseholder, LeaseholderType};
 use sqlx::Sqlite;
 use statements::Statement;
 
 use crate::{
-    companies::Company,
     database::{
         add_expense, add_property, add_statement, get_current_expenses, initialize_database,
         update_property,
     },
     expenses::*,
+    leaseholders::Company,
     properties::{Address, Property},
     statements::create_statement,
 };
 
 mod app_settings;
-mod companies;
 mod database;
 mod expenses;
 mod lease;
+mod leaseholders;
 mod pdf_formatting;
 mod properties;
 mod statements;

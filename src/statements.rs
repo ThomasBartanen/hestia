@@ -1,7 +1,7 @@
 use crate::{
     app_settings::PathSettings,
-    companies::{Company, Leaseholder},
     lease::FeeStructure,
+    leaseholders::{Company, Leaseholder},
     pdf_formatting::write_with_printpdf,
     properties::Property,
     Expense,

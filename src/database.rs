@@ -3,7 +3,8 @@ use sqlx::{migrate::MigrateDatabase, sqlite::SqliteQueryResult, FromRow, Sqlite,
 use std::result::Result;
 
 use crate::{
-    companies::Leaseholder, expenses::*, lease::Lease, properties::Property, statements::Statement,
+    expenses::*, lease::Lease, leaseholders::Leaseholder, properties::Property,
+    statements::Statement,
 };
 
 pub async fn initialize_database() -> sqlx::Pool<Sqlite> {
