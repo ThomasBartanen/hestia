@@ -1,0 +1,55 @@
+
+import { Button } from "std-widgets.slint";
+export component NavigationPane inherits Rectangle {
+    Rectangle {
+        background: green;
+        padding: 5px;
+        VerticalLayout {
+            spacing: 10px;
+            padding: 10px;
+            Button {
+                text: "Home";
+            }
+            Button {
+                text: "Lessee";
+            }
+            Button {
+                text: "Properties";
+            }            
+            Button {
+                text: "Expenses";
+            }            
+            Button {
+                text: "About";
+            }
+        }
+    }
+}
+
+export component ContentPane inherits Rectangle {
+    
+}
+
+export component App inherits Window { 
+    // === Window ===
+    title: "Hestia";
+    always-on-top: true;
+    //no-frame: true;
+
+    // === Sizing ===
+    min-width: 400px;
+    preferred-width: 800px;
+    min-height: 300px;
+    preferred-height: 600px;
+
+    // === Elements ===
+    padding: 10px;
+
+    // === Colors ===
+    background: transparent;
+
+    HorizontalLayout {
+        NavigationPane { }
+        ContentPane { }
+    }
+}
