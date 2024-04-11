@@ -1,5 +1,11 @@
 //#![windows_subsystem = "windows"]
 
+mod generated_code {
+    slint::include_modules!();
+}
+
+pub use generated_code::*;
+
 use app_settings::PathSettings;
 use chrono::NaiveDate;
 use database::add_leaseholders;
