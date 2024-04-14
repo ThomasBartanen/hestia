@@ -1,0 +1,42 @@
+import { Button, TabWidget } from "std-widgets.slint";
+export component PropertyMenu inherits Rectangle {
+    background: green.mix(gray, 500);
+    Rectangle {
+        TabWidget {
+            Tab {
+                title: "Open Properties List";
+                HorizontalLayout {
+                    padding: 10px;
+                    spacing: 10px;
+                    Rectangle {
+                        min-width: 50px;
+                        border-radius: 2px;
+                        border-color: black;
+                        VerticalLayout {
+                            TouchArea {
+                                Text {
+                                    text: "Property 1";
+                                }
+                            }
+                        }
+                    }
+                    
+                    Rectangle {
+                        GridLayout {
+                            TextInput {
+                                text: "Property Name";
+                                input-type: InputType.text;
+                            }
+                        }
+                    }
+                    Rectangle {
+            
+                    }
+                }
+            }
+            Tab {
+                title: "Add new Property";
+            }
+        }
+    }
+}

@@ -1,0 +1,37 @@
+import { Button, TabWidget } from "std-widgets.slint";
+export component StatementMenu inherits Rectangle {
+    background: blue.mix(gray, 20%);
+    Rectangle {
+        TabWidget {
+            Tab {
+                title: "Open Statements List";
+                HorizontalLayout {
+                    padding: 10px;
+                    spacing: 10px;
+                    Rectangle {
+                        min-width: 50px;
+                        border-radius: 2px;
+                        border-color: black;
+                        VerticalLayout {
+                        }
+                    }
+                    
+                    Rectangle {
+                        GridLayout {
+                            TextInput {
+                                text: "Statement Recipient";
+                                input-type: InputType.text;
+                            }
+                        }
+                    }
+                    Rectangle {
+            
+                    }
+                }
+            }
+            Tab {
+                title: "Add new Statement";
+            }
+        }
+    }
+}

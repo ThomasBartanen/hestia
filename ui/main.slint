@@ -1,33 +1,36 @@
 
-import { Button } from "std-widgets.slint";
+import { Button, TabWidget } from "std-widgets.slint";
+import { PropertyMenu } from "properties.slint";
+import { StatementMenu } from "statements.slint";
+import { ExpenseMenu } from "expenses.slint";
 export component NavigationPane inherits Rectangle {
     Rectangle {
-        background: green;
-        padding: 5px;
-        VerticalLayout {
-            spacing: 10px;
-            padding: 10px;
-            Button {
-                text: "Home";
+        TabWidget {
+            Tab {
+                title: "Home";
             }
-            Button {
-                text: "Lessee";
+            Tab {
+                title: "Statements";
+                Rectangle {
+                    statement_menu := StatementMenu { }
+                }
             }
-            Button {
-                text: "Properties";
-            }            
-            Button {
-                text: "Expenses";
-            }            
-            Button {
-                text: "About";
+            Tab {
+                title: "Properties";
+                Rectangle {
+                    padding: 20px;
+                    prop_menu := PropertyMenu { }
+                }
+            }
+            Tab {
+                title: "Expenses";
+                expense_menu := ExpenseMenu { }
+            }
+            Tab {
+                title: "About";
             }
         }
     }
-}
-
-export component ContentPane inherits Rectangle {
-    
 }
 
 export component App inherits Window { 
@@ -47,9 +50,6 @@ export component App inherits Window {
 
     // === Colors ===
     background: transparent;
-
-    HorizontalLayout {
-        NavigationPane { }
-        ContentPane { }
-    }
+    
+    NavigationPane { }
 }

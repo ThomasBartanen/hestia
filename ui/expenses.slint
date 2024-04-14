@@ -1,0 +1,87 @@
+import { TabWidget, LineEdit, GridBox, ComboBox, SpinBox } from "std-widgets.slint";
+
+component AddExpenseMenu inherits Rectangle {
+    max-width: 120px;
+    border-width: 2px;
+    border-radius: 5px;
+    border-color: black;
+    GridBox {
+        spacing: 20px;
+        padding: 10px;
+        y: 10px;
+        preferred-width: parent.width / 2;
+        max-width: parent.max-width;
+        height: 100px;
+        LineEdit {
+            col: 0;
+            row: 0;
+            placeholder-text: "Description";
+            input-type: InputType.text;
+        }
+        LineEdit {
+            col: 1;
+            row: 0;
+            placeholder-text: "Amount";
+            input-type: InputType.decimal;
+        }
+        LineEdit {
+            col: 2;
+            row: 0;
+            placeholder-text: "Date";
+            input-type: InputType.number;
+        }
+    }
+    Rectangle {
+        max-width: 200px;
+        min-width: 100px;
+        preferred-width: 150px;
+        padding: 5px;
+        HorizontalLayout {
+            max-width: 200px;
+            min-width: 100px;
+            preferred-width: 150px;
+            spacing: 10px;
+            padding: 10px;
+            Rectangle {
+                expense-type := ComboBox {
+                    model: ["Utility", "Maintenance", "Other"];
+                }
+            }
+            Rectangle {
+                if expense-type.current-value == "Utility" : utility-subtype := ComboBox {
+                    model: [
+                        "Water",
+                        "Electricity",
+                        "Garbage",
+                        "Gas",
+                        "Other"
+                    ];
+                }
+                if expense-type.current-value == "Maintenance" : maint-subtype := ComboBox {
+                    model: [
+                        "Repairs",
+                        "Cleaning",
+                        "Landscaping",
+                        "Other"
+                    ];
+                }
+            }
+        }
+    }    
+}
+export component ExpenseMenu inherits Rectangle {
+    background: red.mix(gray, 20%);
+    Rectangle {
+        TabWidget {
+            Tab {
+                title: "Expense History";
+            }
+            Tab {
+                title: "Add Expense";
+                add-expense-menu := AddExpenseMenu {
+
+                }
+            }
+        }
+    }
+}
