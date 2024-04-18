@@ -27,6 +27,27 @@ pub enum UtilitiesType {
     Other,
 }
 
+impl ExpenseType {
+    pub fn parse_string(maintype: &str, subtype: &str) -> ExpenseType {
+        match maintype {
+            "Maintenance" => match subtype {
+                "Repairs" => ExpenseType::Maintenance(MaintenanceType::Repairs),
+                "Cleaning" => ExpenseType::Maintenance(MaintenanceType::Cleaning),
+                "Landscaping" => ExpenseType::Maintenance(MaintenanceType::Landscaping),
+                _ => ExpenseType::Maintenance(MaintenanceType::Other),
+            },
+            "Utilities" => match subtype {
+                "Water" => ExpenseType::Utilities(UtilitiesType::Water),
+                "Electricity" => ExpenseType::Utilities(UtilitiesType::Electricity),
+                "Garbage" => ExpenseType::Utilities(UtilitiesType::Garbage),
+                "Gas" => ExpenseType::Utilities(UtilitiesType::Gas),
+                _ => ExpenseType::Utilities(UtilitiesType::Other),
+            },
+            _ => ExpenseType::Other,
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub enum RequestStatus {
     Received,
@@ -97,22 +118,7 @@ impl<'r> FromRow<'r, SqliteRow> for Expense {
         let expense_main_type = parts.next().unwrap_or("").trim();
         let expense_sub_type = parts.next().unwrap_or("").trim();
 
-        let expense_type = match expense_main_type {
-            "Maintenance" => match expense_sub_type {
-                "Repairs" => ExpenseType::Maintenance(MaintenanceType::Repairs),
-                "Cleaning" => ExpenseType::Maintenance(MaintenanceType::Cleaning),
-                "Landscaping" => ExpenseType::Maintenance(MaintenanceType::Landscaping),
-                _ => ExpenseType::Maintenance(MaintenanceType::Other),
-            },
-            "Utilities" => match expense_sub_type {
-                "Water" => ExpenseType::Utilities(UtilitiesType::Water),
-                "Electricity" => ExpenseType::Utilities(UtilitiesType::Electricity),
-                "Garbage" => ExpenseType::Utilities(UtilitiesType::Garbage),
-                "Gas" => ExpenseType::Utilities(UtilitiesType::Gas),
-                _ => ExpenseType::Utilities(UtilitiesType::Other),
-            },
-            _ => ExpenseType::Other,
-        };
+        let expense_type = ExpenseType::parse_string(expense_main_type, expense_sub_type);
 
         let naive_date = NaiveDate::parse_from_str(date.as_str(), "%Y-%m-%d")
             .map_err(|e| sqlx::Error::Decode(Box::new(e)))?;
