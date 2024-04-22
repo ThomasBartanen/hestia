@@ -4,7 +4,7 @@ use chrono::{Datelike, NaiveDate};
 use printpdf::{BuiltinFont, Line, Mm, PdfDocument, Point, TextRenderingMode};
 
 use crate::{
-    app_settings::PathSettings, companies::Company, properties::Property, statements::Statement,
+    app_settings::PathSettings, leaseholders::Company, properties::Property, statements::Statement,
 };
 
 const LEFT_COLUMN: Mm = Mm(20.0);
@@ -27,7 +27,8 @@ pub fn write_with_printpdf(
         PdfDocument::new("Monthly Statement", RIGHT_EDGE, TOP_EDGE, "Layer 1");
     let current_layer = doc.get_page(page1).get_layer(layer1);
     let font = doc.add_builtin_font(BuiltinFont::Helvetica).unwrap();
-    let tenant = statement.tenant;
+    let leaseholder = statement.leaseholder;
+    let contact_info = leaseholder.contact_info;
 
     let mut y_level = Mm(270.0);
     let mut left_column = LEFT_COLUMN;
@@ -39,19 +40,10 @@ pub fn write_with_printpdf(
     current_layer.begin_text_section();
     current_layer.use_text(company.name, HEADER_SIZE, left_column, y_level, &font);
     y_level -= Mm(10.0);
-    current_layer.use_text(
-        company.contact_info.email,
-        HEADER_SIZE,
-        left_column,
-        y_level,
-        &font,
-    );
+    current_layer.use_text(contact_info.email, HEADER_SIZE, left_column, y_level, &font);
     y_level -= Mm(30.0);
     current_layer.use_text(
-        format!(
-            "{} {}",
-            tenant.contact_info.first_name, tenant.contact_info.last_name
-        ),
+        leaseholder.leaseholder_type.get_name(),
         HEADER_SIZE,
         left_column,
         y_level,
@@ -160,9 +152,9 @@ pub fn write_with_printpdf(
     current_layer.use_text(
         format!(
             "{}, {} {}",
-            company.remittence_address.city,
-            company.remittence_address.state,
-            company.remittence_address.zip_code
+            contact_info.remittence_address.city,
+            contact_info.remittence_address.state,
+            contact_info.remittence_address.zip_code
         ),
         BODY_SIZE,
         left_column,
@@ -171,7 +163,7 @@ pub fn write_with_printpdf(
     );
     y_level += Mm(10.0);
     current_layer.use_text(
-        company.remittence_address.street_address,
+        contact_info.remittence_address.street_address,
         BODY_SIZE,
         left_column,
         y_level,
@@ -190,11 +182,10 @@ pub fn write_with_printpdf(
     // Save the PDF to a file
     doc.save(&mut BufWriter::new(
         File::create(format!(
-            "{}{}_Statement_{}.{}.pdf",
+            "{}{}_Statement_{}.pdf",
             settings.statements_path,
             get_word_date(statement.date),
-            tenant.contact_info.first_name,
-            tenant.contact_info.last_name
+            leaseholder.leaseholder_type.get_name()
         ))
         .unwrap(),
     ))

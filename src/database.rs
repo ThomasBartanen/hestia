@@ -3,10 +3,8 @@ use sqlx::{migrate::MigrateDatabase, sqlite::SqliteQueryResult, FromRow, Sqlite,
 use std::result::Result;
 
 use crate::{
-    expenses::*,
-    properties::Property,
+    expenses::*, lease::Lease, leaseholders::Leaseholder, properties::Property,
     statements::Statement,
-    tenant::{FeeStructure, Lease, Tenant},
 };
 
 pub async fn initialize_database() -> sqlx::Pool<Sqlite> {
@@ -48,20 +46,19 @@ pub async fn create_schema(db_url: &str) -> Result<SqliteQueryResult, sqlx::Erro
     );
     CREATE TABLE IF NOT EXISTS maintenance_requests (
         request_id          INTEGER PRIMARY KEY AUTOINCREMENT,
-        tenant_id           INTEGER,
+        leaseholder_id      INTEGER,
         request_date        TEXT,
         maintenance_type    TEXT,
         description         TEXT,
         status              TEXT,
         completion_date     TEXT null,
-        FOREIGN KEY (tenant_id) REFERENCES tenants(tenant_id)
+        FOREIGN KEY (leaseholder_id) REFERENCES leaseholders(leaseholder_id)
     );
-    CREATE TABLE IF NOT EXISTS tenants (
-        tenant_id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    CREATE TABLE IF NOT EXISTS leaseholders (
+        leaseholder_id      INTEGER PRIMARY KEY AUTOINCREMENT,
         lease_id            INTEGER,
         property_id         INTEGER,
-        first_name          TEXT,
-        last_name           TEXT,
+        remittence_address  TEXT,
         email               TEXT,
         phone_number        TEXT,
         move_in_date        TEXT,
@@ -80,11 +77,11 @@ pub async fn create_schema(db_url: &str) -> Result<SqliteQueryResult, sqlx::Erro
     );
     CREATE TABLE IF NOT EXISTS statements (
         statement_id        INTEGER PRIMARY KEY AUTOINCREMENT,
-        tenant_id           INTEGER,
+        leaseholder_id      INTEGER,
         amount_due          INTEGER,
         amount_paid         INTEGER,
         statement_path      TEXT,
-        FOREIGN KEY (tenant_id) REFERENCES tenants(tenant_id)
+        FOREIGN KEY (leaseholder_id) REFERENCES leaseholders(leaseholder_id)
     )";
     //maintenance_id      integer FOREIGN KEY REFERENCES maintenance_requests(request_id) null,
     let result = sqlx::query(qry).execute(&pool).await;
@@ -102,8 +99,8 @@ pub async fn add_maint_request(
         MaintenanceType::Landscaping => String::from("Maintenance: Landscaping"),
         MaintenanceType::Other => String::from("Maintenance: Other"),
     };
-    sqlx::query("INSERT INTO maintenance_requests (tenant_id, request_date, maintenance_type, description, status, completion_date) VALUES (?, ?, ?, ?, ?, ?)")
-        .bind(request.tenant_id)
+    sqlx::query("INSERT INTO maintenance_requests (leaseholder_id, request_date, maintenance_type, description, status, completion_date) VALUES (?, ?, ?, ?, ?, ?)")
+        .bind(request.leaseholder_id)
         .bind(request.request_date.to_string())
         .bind(maint_type_str)
         .bind(&request.description)
@@ -162,34 +159,33 @@ pub async fn add_property(
     Ok(x)
 }
 
-pub async fn add_tenant(
+pub async fn add_leaseholders(
     pool: &sqlx::Pool<Sqlite>,
-    tenant: &Tenant,
+    leaseholder: &Leaseholder,
     property_id: u16,
 ) -> Result<SqliteQueryResult, sqlx::Error> {
-    let lease = &tenant.lease;
+    let lease = &leaseholder.lease;
 
     let lease_id =
         sqlx::query("INSERT INTO leases (start_date, end_date, fee_structure) VALUES (?, ?, ?)")
             .bind(lease.start_date.to_string())
             .bind(lease.end_date.to_string())
-            .bind(tenant.lease.fee_structure.encode_to_database_string())
+            .bind(leaseholder.lease.fee_structure.encode_to_database_string())
             .execute(pool)
             .await?
             .last_insert_rowid();
 
-    let tenant_result = sqlx::query(
-        "INSERT INTO tenants (lease_id, property_id, first_name, last_name, email, phone_number, move_in_date) VALUES (?, ?, ?, ?, ?, ?, ?)")
+    let leaseholder_result = sqlx::query(
+        "INSERT INTO leaseholders (lease_id, property_id, remittence_address, email, phone_number, move_in_date) VALUES (?, ?, ?, ?, ?, ?)")
         .bind(lease_id)
         .bind(property_id)
-        .bind(&tenant.contact_info.first_name)
-        .bind(&tenant.contact_info.last_name)
-        .bind(&tenant.contact_info.email)
-        .bind(&tenant.contact_info.phone_number)
-        .bind(&tenant.move_in_date.to_string())
+        .bind(&leaseholder.contact_info.get_address_string())
+        .bind(&leaseholder.contact_info.email)
+        .bind(&leaseholder.contact_info.phone_number)
+        .bind(&leaseholder.move_in_date.to_string())
         .execute(pool)
         .await?;
-    Ok(tenant_result)
+    Ok(leaseholder_result)
 }
 
 pub async fn get_current_expenses(
@@ -217,8 +213,8 @@ pub async fn add_statement(
     statement: &Statement,
 ) -> Result<SqliteQueryResult, sqlx::Error> {
     let x = sqlx::query(
-        "INSERT INTO statements (tenant_id, amount_due, amount_paid, statement_path) VALUES (?, ?, ?, ?)")
-        .bind(statement.tenant.id)
+        "INSERT INTO statements (leaseholder_id, amount_due, amount_paid, statement_path) VALUES (?, ?, ?, ?)")
+        .bind(statement.leaseholder.id)
         .bind(statement.total)
         .bind(0)
         .bind("test_statement")
@@ -247,21 +243,20 @@ pub async fn update_property(
     Ok(x)
 }
 
-pub async fn update_tenant(
+pub async fn update_leaseholder(
     pool: &sqlx::Pool<Sqlite>,
-    tenant: &Tenant,
+    leaseholder: &Leaseholder,
 ) -> Result<SqliteQueryResult, sqlx::Error> {
     let x = sqlx::query(
-        "UPDATE tenants SET (lease_id, property_id, first_name, last_name, email, phone_number, move_in_date) = (?, ?, ?, ?, ?, ?, ?) WHERE tenant_id == ?"
+        "UPDATE leaseholders SET (lease_id, property_id, remittence_address, email, phone_number, move_in_date) = (?, ?, ?, ?, ?, ?) WHERE leaseholder_id == ?"
     )
-        .bind(tenant.lease.id)
-        .bind(tenant.property_id)
-        .bind(&tenant.contact_info.first_name)
-        .bind(&tenant.contact_info.last_name)
-        .bind(&tenant.contact_info.email)
-        .bind(&tenant.contact_info.phone_number)
-        .bind(&tenant.move_in_date.to_string())
-        .bind(tenant.id)
+        .bind(leaseholder.lease.id)
+        .bind(leaseholder.property_id)
+        .bind(&leaseholder.contact_info.get_address_string())
+        .bind(&leaseholder.contact_info.email)
+        .bind(&leaseholder.contact_info.phone_number)
+        .bind(&leaseholder.move_in_date.to_string())
+        .bind(leaseholder.id)
         .execute(pool)
         .await?;
     Ok(x)
