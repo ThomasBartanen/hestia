@@ -2,8 +2,11 @@
 import { Button, TabWidget } from "std-widgets.slint";
 import { PropertyMenu } from "properties.slint";
 import { StatementMenu } from "statements.slint";
-import { ExpenseMenu } from "expenses.slint";
+import { ExpenseMenu, ExpenseInput } from "expenses.slint";
 export component NavigationPane inherits Rectangle {
+    pure callback new-expense <=> expense-menu.new-expense;
+
+    in-out property <[ExpenseInput]> expenses <=> expense-menu.expenses;
     Rectangle {
         TabWidget {
             Tab {
@@ -49,7 +52,13 @@ export component App inherits Window {
     padding: 10px;
 
     // === Colors ===
-    background: transparent;
+    background: white;
+
+    // === Callbacks ===
+    pure callback new-expense <=> nav-pane.new-expense; 
+
+    // === Properties ===
+    in-out property <[ExpenseInput]> expenses <=> nav-pane.expenses;
     
-    NavigationPane { }
+    nav-pane := NavigationPane { }
 }
