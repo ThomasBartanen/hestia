@@ -1,33 +1,36 @@
 
 import { Button, TabWidget } from "std-widgets.slint";
-import { PropertyMenu } from "properties.slint";
-import { StatementMenu } from "statements.slint";
+import { PropertyMenu, PropertyInput } from "properties.slint";
+import { StatementMenu, StatementInput } from "statements.slint";
 import { ExpenseMenu, ExpenseInput } from "expenses.slint";
+import { LesseeMenu } from "leaseholders.slint";
 export component NavigationPane inherits Rectangle {
     pure callback new-expense <=> expense-menu.new-expense;
 
     in-out property <[ExpenseInput]> expenses <=> expense-menu.expenses;
+    in-out property <[PropertyInput]> properties <=> prop-menu.properties;
+    in-out property <[StatementInput]> statements <=> statement-menu.statements;
+    
     Rectangle {
         TabWidget {
             Tab {
                 title: "Home";
             }
             Tab {
-                title: "Statements";
-                Rectangle {
-                    statement_menu := StatementMenu { }
-                }
+                title: "Leaseholders";
+                lessee-menu := LesseeMenu {}
             }
             Tab {
                 title: "Properties";
-                Rectangle {
-                    padding: 20px;
-                    prop_menu := PropertyMenu { }
-                }
+                prop-menu := PropertyMenu { }
             }
             Tab {
                 title: "Expenses";
-                expense_menu := ExpenseMenu { }
+                expense-menu := ExpenseMenu { }
+            }
+            Tab {
+                title: "Statements";
+                statement-menu := StatementMenu { }
             }
             Tab {
                 title: "About";
@@ -59,6 +62,8 @@ export component App inherits Window {
 
     // === Properties ===
     in-out property <[ExpenseInput]> expenses <=> nav-pane.expenses;
+    in-out property <[PropertyInput]> properties <=> nav-pane.properties;
+    in-out property <[StatementInput]> statements <=> nav-pane.statements;
     
     nav-pane := NavigationPane { }
 }

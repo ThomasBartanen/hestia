@@ -1,6 +1,13 @@
 import { Button, TabWidget } from "std-widgets.slint";
+
+export struct StatementInput {
+    date-mm-yy: string,
+    leaseholder: string,
+}
 export component StatementMenu inherits Rectangle {
     background: blue.mix(gray, 20%);
+    
+    in-out property <[StatementInput]> statements;
     Rectangle {
         TabWidget {
             Tab {
