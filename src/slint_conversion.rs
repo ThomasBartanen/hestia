@@ -1,5 +1,6 @@
-use crate::ExpenseInput;
+use crate::properties::Property;
 use crate::{database::get_expenses, App, Expense};
+use crate::{ExpenseInput, PropertyInput};
 use slint::{ModelRc, VecModel};
 use sqlx::Sqlite;
 
@@ -13,4 +14,16 @@ pub async fn initialize_slint_expenses(ui: &App, pool: &sqlx::Pool<Sqlite>, prop
     let converted_expenses = ModelRc::new(VecModel::from(expenses));
 
     ui.set_expenses(converted_expenses);
+}
+
+pub async fn initialize_slint_properties(ui: &App, pool: &sqlx::Pool<Sqlite>) {
+    let expenses: Vec<PropertyInput> = crate::database::get_properties(pool)
+        .await
+        .iter()
+        .map(Property::convert_to_slint)
+        .collect();
+
+    let converted_expenses = ModelRc::new(VecModel::from(expenses));
+
+    ui.set_properties(converted_expenses);
 }

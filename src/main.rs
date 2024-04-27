@@ -8,7 +8,9 @@ pub use generated_code::*;
 use slint::Model;
 
 use crate::{
-    app_settings::initialize_data_paths, expenses::*, slint_conversion::initialize_slint_expenses,
+    app_settings::initialize_data_paths,
+    expenses::*,
+    slint_conversion::{initialize_slint_expenses, initialize_slint_properties},
 };
 
 mod app_settings;
@@ -33,6 +35,7 @@ async fn main() {
     let weak_app = app.as_weak();
 
     initialize_slint_expenses(&weak_app.upgrade().unwrap(), &instances, 1).await;
+    initialize_slint_properties(&weak_app.upgrade().unwrap(), &instances).await;
 
     let expense_instances = instances.clone();
     let expense_worker = ExpenseWorker::new(&app, &expense_instances);
