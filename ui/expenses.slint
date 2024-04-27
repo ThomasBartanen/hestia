@@ -1,86 +1,193 @@
-import { TabWidget, LineEdit, GridBox, ComboBox, SpinBox } from "std-widgets.slint";
+import { TabWidget, LineEdit, GridBox, ComboBox, SpinBox, StandardButton, ListView } from "std-widgets.slint";
 
-component AddExpenseMenu inherits Rectangle {
-    max-width: 120px;
+export struct ExpenseInput {
+    description: string,
+    amount: float,
+    date: string,
+    expense-type: string,
+    expense-subtype: string
+}
+
+export component AddExpenseMenu inherits Rectangle {
+    public function clear-expense-menu() {
+        description-input.text = "";
+        amount-input.text = "";
+        date-input.text = "";
+    
+        expense-type.current-value = "Select Expense Type";
+    }
+    
+    public function submit-expense() {
+        new-expense({
+            description: description-input.text,
+            amount: amount-input.text.to-float(),
+            date: date-input.text,
+            expense-type: expense-type.current-value,
+            expense-subtype: subtype.current-value
+        });
+    }
+
+    pure callback new-expense(ExpenseInput);
+    property <string> expense-subtype-string;
+    
+
+    //max-width: 120px;
     border-width: 2px;
     border-radius: 5px;
     border-color: black;
-    GridBox {
-        spacing: 20px;
+    padding: 10px;
+
+    HorizontalLayout {
+        GridBox {
+            spacing: 20px;
+            padding: 10px;
+            y: 10px;
+            preferred-width: parent.width / 2;
+            //max-width: parent.max-width;
+            height: 50px;
+            Text {
+                text: "Add expenses";
+                col: 0;
+                row: 0;
+            }
+            description-input := LineEdit {
+                col: 0;
+                row: 1;
+                placeholder-text: "Description";
+                input-type: InputType.text;
+            }
+            amount-input := LineEdit {
+                col: 1;
+                row: 1;
+                placeholder-text: "Amount";
+                input-type: InputType.decimal;
+            }
+            date-input := LineEdit {
+                col: 2;
+                row: 1;
+                placeholder-text: "Date";
+                input-type: InputType.number;
+            }
+            Rectangle {
+                col: 0;
+                row: 2;
+                min-width: 100px;
+                preferred-width: 150px;
+                padding: 5px;
+                HorizontalLayout {
+                    alignment: LayoutAlignment.start;
+                    //max-width: 200px;
+                    min-width: 100px;
+                    preferred-width: 150px;
+                    spacing: 100px;
+                    padding: 20px;
+                    Rectangle {
+                        expense-type := ComboBox {
+                            model: [
+                                "Select Expense Type", 
+                                "Utility", 
+                                "Maintenance", 
+                                "Other"
+                            ];
+                        }
+                    }
+                    Rectangle {
+                        subtype := ComboBox {
+                            model: [""];
+                            enabled: true;
+                            states [
+                                Utility when expense-type.current-value == "Utility": {
+                                    enabled: true;
+                                    subtype.model: [
+                                        "Water",
+                                        "Electricity",
+                                        "Garbage",
+                                        "Gas",
+                                        "Other"
+                                    ];
+                                }
+                                Maintenance when expense-type.current-value == "Maintenance": {
+                                    enabled: true;
+                                    subtype.model: [
+                                        "Repairs",
+                                        "Cleaning",
+                                        "Landscaping",
+                                        "Other"
+                                    ];
+                                }
+                                None when expense-type.current-value != "Utility" && expense-type.current-value != "Maintenance" : {
+                                    subtype.enabled : false;
+                                }
+                            ]
+                        }                        
+                    }
+                }
+            }
+            Rectangle {
+                col: 0;
+                row: 3;
+                HorizontalLayout {
+                    StandardButton {
+                        kind: ok;
+                        clicked => {
+                            submit-expense();
+                            clear-expense-menu();
+                        }
+                    }
+                    StandardButton {
+                        kind: cancel;
+                        clicked => {
+                            clear-expense-menu();
+                        }
+                    }
+                }
+            }
+        } 
+    }
+}
+
+export component ExpenseHistory inherits VerticalLayout {
+    in-out property <[ExpenseInput]> expenses;
+
+    HorizontalLayout {
         padding: 10px;
-        y: 10px;
-        preferred-width: parent.width / 2;
-        max-width: parent.max-width;
-        height: 100px;
-        LineEdit {
-            col: 0;
-            row: 0;
-            placeholder-text: "Description";
-            input-type: InputType.text;
+        spacing: 10px;
+        alignment: start;
+        Rectangle {
+            min-width: 200px;
+            max-width: 400px;
+            border-radius: 2px;
+            border-color: black;
+            ListView {
+                padding: 20px;
+                for x in expenses: expense-button := TouchArea {
+                    Text {
+                        text: x.description;
+                    }
+                }
+            }
         }
-        LineEdit {
-            col: 1;
-            row: 0;
-            placeholder-text: "Amount";
-            input-type: InputType.decimal;
-        }
-        LineEdit {
-            col: 2;
-            row: 0;
-            placeholder-text: "Date";
-            input-type: InputType.number;
+        Rectangle {
+
         }
     }
-    Rectangle {
-        max-width: 200px;
-        min-width: 100px;
-        preferred-width: 150px;
-        padding: 5px;
-        HorizontalLayout {
-            max-width: 200px;
-            min-width: 100px;
-            preferred-width: 150px;
-            spacing: 10px;
-            padding: 10px;
-            Rectangle {
-                expense-type := ComboBox {
-                    model: ["Utility", "Maintenance", "Other"];
-                }
-            }
-            Rectangle {
-                if expense-type.current-value == "Utility" : utility-subtype := ComboBox {
-                    model: [
-                        "Water",
-                        "Electricity",
-                        "Garbage",
-                        "Gas",
-                        "Other"
-                    ];
-                }
-                if expense-type.current-value == "Maintenance" : maint-subtype := ComboBox {
-                    model: [
-                        "Repairs",
-                        "Cleaning",
-                        "Landscaping",
-                        "Other"
-                    ];
-                }
-            }
-        }
-    }    
 }
+
 export component ExpenseMenu inherits Rectangle {
+    pure callback new-expense <=> add-expense-menu.new-expense;
+
+    in-out property <[ExpenseInput]> expenses <=> expense-history.expenses;
+
     background: red.mix(gray, 20%);
     Rectangle {
         TabWidget {
             Tab {
                 title: "Expense History";
+                expense-history := ExpenseHistory {}
             }
             Tab {
                 title: "Add Expense";
-                add-expense-menu := AddExpenseMenu {
-
-                }
+                add-expense-menu := AddExpenseMenu {}
             }
         }
     }
