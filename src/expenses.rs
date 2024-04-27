@@ -1,7 +1,15 @@
 use std::fmt;
 
+use crate::{
+    database::add_expense, slint_conversion::initialize_slint_expenses, App, ExpenseInput,
+};
+use async_std::task;
 use chrono::NaiveDate;
+
+use futures::future::FutureExt;
+use slint::ComponentHandle;
 use sqlx::{sqlite::SqliteRow, FromRow, Row};
+use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 
 #[derive(Debug, Clone)]
 pub enum ExpenseType {
@@ -44,6 +52,48 @@ impl ExpenseType {
                 _ => ExpenseType::Utilities(UtilitiesType::Other),
             },
             _ => ExpenseType::Other,
+        }
+    }
+    pub fn to_string(&self) -> String {
+        match self {
+            ExpenseType::Maintenance(maintenance_type) => match maintenance_type {
+                MaintenanceType::Repairs => String::from("Maintenance: Repairs"),
+                MaintenanceType::Cleaning => String::from("Maintenance: Cleaning"),
+                MaintenanceType::Landscaping => String::from("Maintenance: Landscaping"),
+                MaintenanceType::Other => String::from("Maintenance: Other"),
+            },
+            ExpenseType::Utilities(utilities_type) => match utilities_type {
+                UtilitiesType::Water => String::from("Utilities: Water"),
+                UtilitiesType::Electricity => String::from("Utilities: Electricity"),
+                UtilitiesType::Garbage => String::from("Utilities: Garbage/Recycle"),
+                UtilitiesType::Gas => String::from("Utilities: Gas"),
+                UtilitiesType::Other => String::from("Utilities: Other"),
+            },
+            ExpenseType::Other => String::from("Other"),
+        }
+    }
+    pub fn to_split_strings(&self) -> (String, String) {
+        match self {
+            ExpenseType::Maintenance(maintenance_type) => match maintenance_type {
+                MaintenanceType::Repairs => (String::from("Maintenance"), String::from("Repairs")),
+                MaintenanceType::Cleaning => {
+                    (String::from("Maintenance"), String::from("Cleaning"))
+                }
+                MaintenanceType::Landscaping => {
+                    (String::from("Maintenance"), String::from("Landscaping"))
+                }
+                MaintenanceType::Other => (String::from("Maintenance"), String::from("Other")),
+            },
+            ExpenseType::Utilities(utilities_type) => match utilities_type {
+                UtilitiesType::Water => (String::from("Utilities"), String::from("Water")),
+                UtilitiesType::Electricity => {
+                    (String::from("Utilities"), String::from("Electricity"))
+                }
+                UtilitiesType::Garbage => (String::from("Utilities"), String::from("Garbage")),
+                UtilitiesType::Gas => (String::from("Utilities"), String::from("Gas")),
+                UtilitiesType::Other => (String::from("Utilities"), String::from("Other")),
+            },
+            ExpenseType::Other => (String::from("Other"), String::from("")),
         }
     }
 }
@@ -105,6 +155,27 @@ impl Expense {
             description,
         }
     }
+    pub fn convert_from_slint(input: ExpenseInput) -> Expense {
+        Expense::new(
+            1,
+            ExpenseType::parse_string(input.expense_type.as_str(), input.expense_subtype.as_str()),
+            input.amount,
+            NaiveDate::from_ymd_opt(2022, 3, 3).unwrap(),
+            input.description.to_string(),
+        )
+    }
+
+    pub fn convert_to_slint(expense: &Expense) -> ExpenseInput {
+        let (main, sub) = ExpenseType::to_split_strings(&expense.expense_type);
+        let cur_expense = expense.clone();
+        ExpenseInput {
+            amount: cur_expense.amount,
+            date: cur_expense.date.to_string().into(),
+            description: cur_expense.description.into(),
+            expense_subtype: sub.into(),
+            expense_type: main.into(),
+        }
+    }
 }
 impl<'r> FromRow<'r, SqliteRow> for Expense {
     fn from_row(row: &'r SqliteRow) -> Result<Self, sqlx::Error> {
@@ -130,5 +201,67 @@ impl<'r> FromRow<'r, SqliteRow> for Expense {
             date: naive_date,
             description,
         })
+    }
+}
+
+pub enum ExpenseMessage {
+    ExpenseCreated(ExpenseInput),
+    ExpenseUpdate(ExpenseInput),
+    Quit,
+}
+
+pub struct ExpenseWorker {
+    pub channel: UnboundedSender<ExpenseMessage>,
+    pub worker_thread: std::thread::JoinHandle<()>,
+}
+
+impl ExpenseWorker {
+    pub fn new(ui: &App, pool: &sqlx::Pool<sqlx::Sqlite>) -> Self {
+        println!("Create new Expense Worker");
+        let (sender, r) = tokio::sync::mpsc::unbounded_channel();
+        let worker_thread = std::thread::spawn({
+            let new_pool = pool.clone();
+            move || {
+                tokio::runtime::Runtime::new()
+                    .unwrap()
+                    .block_on(expense_worker_loop(new_pool, r))
+            }
+        });
+        Self {
+            channel: sender,
+            worker_thread,
+        }
+    }
+    pub fn join(self) -> std::thread::Result<()> {
+        let _ = self.channel.send(ExpenseMessage::Quit);
+        self.worker_thread.join()
+    }
+}
+
+async fn expense_worker_loop(
+    pool: sqlx::Pool<sqlx::Sqlite>,
+    mut r: UnboundedReceiver<ExpenseMessage>,
+) {
+    loop {
+        let m = r.recv().await;
+
+        let res = match m {
+            Some(s) => match s {
+                ExpenseMessage::ExpenseCreated(create) => create,
+                ExpenseMessage::ExpenseUpdate(update) => update,
+                ExpenseMessage::Quit => {
+                    println!("Quitting");
+                    continue;
+                }
+            },
+            None => continue,
+        };
+
+        let converted_expense = Expense::convert_from_slint(res);
+
+        match add_expense(&pool, &converted_expense).await {
+            Ok(_) => println!("Successfully added expense via slint"),
+            Err(e) => println!("Failed to add expense via slint: {e}"),
+        }
     }
 }

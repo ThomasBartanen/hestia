@@ -188,6 +188,20 @@ pub async fn add_leaseholders(
     Ok(leaseholder_result)
 }
 
+pub async fn get_expenses(pool: &sqlx::Pool<Sqlite>, property_id: u16) -> Vec<Expense> {
+    let mut expenses: Vec<Expense> = vec![];
+
+    let expense_rows = sqlx::query("SELECT * FROM expenses WHERE property_id = ?")
+        .bind(property_id)
+        .fetch_all(pool)
+        .await;
+    for row in expense_rows.unwrap() {
+        let expense = Expense::from_row(&row);
+        expenses.push(expense.unwrap());
+    }
+    expenses
+}
+
 pub async fn get_current_expenses(
     pool: &sqlx::Pool<Sqlite>,
     property_id: u16,

@@ -11,10 +11,12 @@ use chrono::NaiveDate;
 use database::add_leaseholders;
 use lease::{CAMRates, InsuranceRate, Lease, PropertyTaxRate, Rent};
 use leaseholders::{ContactInformation, Individual, Leaseholder, LeaseholderType};
-use sqlx::Sqlite;
+use slint::Model;
+use sqlx::{pool, Sqlite};
 use statements::Statement;
 
 use crate::{
+    app_settings::initialize_data_paths,
     database::{
         add_expense, add_property, add_statement, get_current_expenses, initialize_database,
         update_property,
@@ -22,6 +24,7 @@ use crate::{
     expenses::*,
     leaseholders::Company,
     properties::{Address, Property},
+    slint_conversion::initialize_slint_expenses,
     statements::create_statement,
 };
 
@@ -32,13 +35,51 @@ mod lease;
 mod leaseholders;
 mod pdf_formatting;
 mod properties;
+mod slint_conversion;
 mod statements;
 
 #[async_std::main]
 async fn main() {
-    println!("{:?}", std::env::current_exe());
+    //println!("{:?}", std::env::current_exe());
     let instances = initialize_database().await;
-    activate_test_mode(true, &instances).await;
+    initialize_data_paths().await;
+
+    activate_test_mode(false, &instances).await;
+    let app = App::new().unwrap();
+    let weak_app = app.as_weak();
+
+    initialize_slint_expenses(&weak_app.upgrade().unwrap(), &instances, 1).await;
+
+    let expense_instances = instances.clone();
+    let expense_worker = ExpenseWorker::new(&app, &expense_instances);
+
+    app.on_new_expense({
+        let expense_channel = expense_worker.channel.clone();
+        move |input| {
+            let input_clone = input.clone();
+            let res = expense_channel.send(ExpenseMessage::ExpenseCreated(input));
+            match res {
+                Ok(_) => println!("expense successfully sent"),
+                Err(_e) => println!("expense send failed"),
+            }
+            let res = weak_app.upgrade_in_event_loop(move |handle| {
+                let prev_expense = handle.get_expenses();
+                let new_expenses = prev_expense
+                    .as_any()
+                    .downcast_ref::<slint::VecModel<ExpenseInput>>()
+                    .expect("Expenses failed to downcast");
+                new_expenses.push(input_clone);
+            });
+            match res {
+                Ok(_) => (),
+                Err(e) => println!("Failed to upgrade ui: {e}"),
+            };
+        }
+    });
+
+    app.run().unwrap();
+
+    let _expense_result = expense_worker.join();
     instances.close().await;
 }
 
