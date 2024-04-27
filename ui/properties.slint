@@ -1,5 +1,12 @@
-import { Button, TabWidget } from "std-widgets.slint";
+import { Button, TabWidget, ListView } from "std-widgets.slint";
+
+export struct PropertyInput {
+    name: string,
+    unit-count: int
+}
+
 export component PropertyMenu inherits Rectangle {
+    in-out property <[PropertyInput]> properties;
     background: green.mix(gray, 20%);
     Rectangle {
         TabWidget {
@@ -8,24 +15,18 @@ export component PropertyMenu inherits Rectangle {
                 HorizontalLayout {
                     padding: 10px;
                     spacing: 10px;
+                    alignment: start;
                     Rectangle {
-                        min-width: 50px;
+                        min-width: 200px;
+                        max-width: 400px;
                         border-radius: 2px;
                         border-color: black;
-                        VerticalLayout {
-                            TouchArea {
+                        ListView {
+                            padding: 20px;
+                            for x in properties: expense-button := TouchArea {
                                 Text {
-                                    text: "Property 1";
+                                    text: x.name;
                                 }
-                            }
-                        }
-                    }
-                    
-                    Rectangle {
-                        GridLayout {
-                            TextInput {
-                                text: "Property Name";
-                                input-type: InputType.text;
                             }
                         }
                     }
