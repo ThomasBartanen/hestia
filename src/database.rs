@@ -89,6 +89,8 @@ pub async fn create_schema(db_url: &str) -> Result<SqliteQueryResult, sqlx::Erro
     result
 }
 
+// -------------------------------------- ADD ---------------------------------------------
+
 pub async fn add_maint_request(
     pool: &sqlx::Pool<Sqlite>,
     request: &MaintenanceRequest,
@@ -188,6 +190,36 @@ pub async fn add_leaseholders(
     Ok(leaseholder_result)
 }
 
+pub async fn add_statement(
+    pool: &sqlx::Pool<Sqlite>,
+    statement: &Statement,
+) -> Result<SqliteQueryResult, sqlx::Error> {
+    let x = sqlx::query(
+        "INSERT INTO statements (leaseholder_id, amount_due, amount_paid, statement_path) VALUES (?, ?, ?, ?)")
+        .bind(statement.leaseholder.id)
+        .bind(statement.total)
+        .bind(0)
+        .bind("test_statement")
+        .execute(pool)
+        .await?;
+
+    Ok(x)
+}
+
+// -------------------------------------- GET ---------------------------------------------
+pub async fn get_properties(pool: &sqlx::Pool<Sqlite>) -> Vec<Property> {
+    let mut properties: Vec<Property> = vec![];
+
+    let property_rows = sqlx::query("SELECT * FROM properties")
+        .fetch_all(pool)
+        .await;
+    for row in property_rows.unwrap() {
+        let property = Property::from_row(&row);
+        properties.push(property.unwrap());
+    }
+    properties
+}
+
 pub async fn get_expenses(pool: &sqlx::Pool<Sqlite>, property_id: u16) -> Vec<Expense> {
     let mut expenses: Vec<Expense> = vec![];
 
@@ -222,21 +254,7 @@ pub async fn get_current_expenses(
     expenses
 }
 
-pub async fn add_statement(
-    pool: &sqlx::Pool<Sqlite>,
-    statement: &Statement,
-) -> Result<SqliteQueryResult, sqlx::Error> {
-    let x = sqlx::query(
-        "INSERT INTO statements (leaseholder_id, amount_due, amount_paid, statement_path) VALUES (?, ?, ?, ?)")
-        .bind(statement.leaseholder.id)
-        .bind(statement.total)
-        .bind(0)
-        .bind("test_statement")
-        .execute(pool)
-        .await?;
-
-    Ok(x)
-}
+// -------------------------------------- UPDATE ---------------------------------------------
 
 pub async fn update_property(
     pool: &sqlx::Pool<Sqlite>,
