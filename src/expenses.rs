@@ -1,13 +1,7 @@
 use std::fmt;
 
-use crate::{
-    database::add_expense, slint_conversion::initialize_slint_expenses, App, ExpenseInput,
-};
-use async_std::task;
+use crate::{database::add_expense, App, ExpenseInput};
 use chrono::NaiveDate;
-
-use futures::future::FutureExt;
-use slint::ComponentHandle;
 use sqlx::{sqlite::SqliteRow, FromRow, Row};
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 
