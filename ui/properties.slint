@@ -1,4 +1,4 @@
-import { Button, TabWidget, ListView } from "std-widgets.slint";
+import { Button, TabWidget, ListView, GridBox, LineEdit, StandardButton } from "std-widgets.slint";
 
 export struct PropertyInput {
     id: int,
@@ -9,11 +9,128 @@ export struct PropertyInput {
     zip-code: string,
     property_tax: float,
     business_insurance: float,
-    unit-count: int
+    unit-count: string
+}
+
+component AddPropertyMenu inherits Rectangle {
+    public function clear-prop-menu() {
+        name-input.text = name-input.placeholder-text;
+        unit-count-input.text = unit-count-input.placeholder-text;
+        street-input.text = street-input.placeholder-text;
+        city-input.text = city-input.placeholder-text;
+        state-input.text = state-input.placeholder-text;
+        zip-input.text = zip-input.placeholder-text;
+        prop-tax-input.text = prop-tax-input.placeholder-text;
+        bus-ins-input.text = bus-ins-input.placeholder-text;
+    }
+    public function submit-prop() {
+        new-property({
+            id: 0,
+            name: name-input.text,
+            address-number: street-input.text,
+            city: city-input.text,
+            state: state-input.text,
+            zip-code: zip-input.text,
+            property_tax: prop-tax-input.text.to-float(),
+            business_insurance: bus-ins-input.text.to-float(),
+            unit-count: unit-count-input.text
+        });
+
+        clear-prop-menu();
+    }
+    pure callback new-property(PropertyInput);
+    
+    border-width: 2px;
+    border-radius: 5px;
+    border-color: black;
+    padding: 10px;
+
+    HorizontalLayout {
+        GridBox {            
+            spacing: 20px;
+            padding: 10px;
+            y: 10px;
+            height: 50px;
+            Text {
+                text: "Add Property";
+                col: 0;
+                row: 0;
+                font-weight: 3;
+            }
+            name-input := LineEdit {
+                col: 0;
+                row: 1;
+                placeholder-text: "Property Name";
+                input-type: InputType.text;
+            }
+            unit-count-input := LineEdit {
+                col: 1;
+                row: 1;
+                placeholder-text: "Unit Count";
+                input-type: InputType.number;
+            }
+            street-input := LineEdit {
+                col: 0;
+                row: 2;
+                placeholder-text: "Street Address";
+                input-type: InputType.text;
+            }
+            city-input := LineEdit {
+                col: 1;
+                row: 2;
+                placeholder-text: "City";
+                input-type: InputType.text;
+            }
+            state-input := LineEdit {
+                col: 2;
+                row: 2;
+                placeholder-text: "State";
+                input-type: InputType.text;
+            }
+            zip-input := LineEdit {
+                col: 3;
+                row: 2;
+                placeholder-text: "Zip-Code";
+                input-type: InputType.number;
+            }
+            prop-tax-input := LineEdit {
+                col: 0;
+                row: 3;
+                placeholder-text: "Property Tax Total";
+                input-type: InputType.decimal;
+            }
+            bus-ins-input := LineEdit {
+                col: 1;
+                row: 3;
+                placeholder-text: "Business Insurance Total";
+                input-type: InputType.decimal;
+            }
+            HorizontalLayout {
+                col: 0;
+                row: 4;
+                colspan: 2;
+                StandardButton {
+                    kind: ok;
+                    clicked => {
+                        submit-prop();
+                        clear-prop-menu();
+                    }
+                }
+                StandardButton {
+                    kind: cancel;
+                    clicked => {
+                        clear-prop-menu();
+                    }
+                }
+            }
+        }
+    }
 }
 
 export component PropertyMenu inherits Rectangle {
     in-out property <[PropertyInput]> properties;
+
+    pure callback new-property <=> add-prop-menu.new-property;
     background: green.mix(gray, 20%);
     Rectangle {
         TabWidget {
@@ -31,8 +148,11 @@ export component PropertyMenu inherits Rectangle {
                         ListView {
                             padding: 20px;
                             for x in properties: expense-button := TouchArea {
-                                Text {
-                                    text: x.name;
+                                Rectangle {
+                                    background: cornsilk;
+                                    Text {
+                                        text: x.name;
+                                    }
                                 }
                             }
                         }
@@ -44,7 +164,7 @@ export component PropertyMenu inherits Rectangle {
             }
             Tab {
                 title: "Add new Property";
-                
+                add-prop-menu := AddPropertyMenu {}
             }
         }
     }

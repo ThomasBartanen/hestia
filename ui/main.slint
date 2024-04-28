@@ -6,6 +6,7 @@ import { ExpenseMenu, ExpenseInput } from "expenses.slint";
 import { LesseeMenu } from "leaseholders.slint";
 export component NavigationPane inherits Rectangle {
     pure callback new-expense <=> expense-menu.new-expense;
+    pure callback new-property <=> prop-menu.new-property;
 
     in-out property <[ExpenseInput]> expenses <=> expense-menu.expenses;
     in-out property <[PropertyInput]> properties <=> prop-menu.properties;
@@ -59,6 +60,7 @@ export component App inherits Window {
 
     // === Callbacks ===
     pure callback new-expense <=> nav-pane.new-expense; 
+    pure callback new-property <=> nav-pane.new-property;
 
     // === Properties ===
     in-out property <[ExpenseInput]> expenses <=> nav-pane.expenses;

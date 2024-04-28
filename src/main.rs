@@ -5,6 +5,7 @@ mod generated_code {
 }
 
 pub use generated_code::*;
+use properties::PropertyWorker;
 use slint::Model;
 
 use crate::{
@@ -39,9 +40,11 @@ async fn main() {
 
     let worker_instances = instances.clone();
     let expense_worker = ExpenseWorker::new(&worker_instances);
+    let property_worker = PropertyWorker::new(&worker_instances);
 
     app.on_new_expense({
         let expense_channel = expense_worker.channel.clone();
+        let local_app = weak_app.clone();
         move |input| {
             let input_clone = input.clone();
             let res = expense_channel.send(ExpenseMessage::ExpenseCreated(input));
@@ -49,7 +52,7 @@ async fn main() {
                 Ok(_) => println!("expense successfully sent"),
                 Err(_e) => println!("expense send failed"),
             }
-            let res = weak_app.upgrade_in_event_loop(move |handle| {
+            let res = local_app.upgrade_in_event_loop(move |handle| {
                 let prev_expense = handle.get_expenses();
                 let new_expenses = prev_expense
                     .as_any()
@@ -64,8 +67,34 @@ async fn main() {
         }
     });
 
+    app.on_new_property({
+        let property_channel = property_worker.channel.clone();
+        let local_app = weak_app.clone();
+        move |input| {
+            let input_clone = input.clone();
+            let res = property_channel.send(properties::PropertyMessage::PropertyCreated(input));
+            match res {
+                Ok(_) => println!("property successfully sent"),
+                Err(_e) => println!("property send failed"),
+            }
+            let res = local_app.upgrade_in_event_loop(move |handle| {
+                let prev_property = handle.get_properties();
+                let new_properties = prev_property
+                    .as_any()
+                    .downcast_ref::<slint::VecModel<PropertyInput>>()
+                    .expect("Properties failed to downcast");
+                new_properties.push(input_clone);
+            });
+            match res {
+                Ok(_) => (),
+                Err(e) => println!("Failed to upgrade ui: {e}"),
+            };
+        }
+    });
+
     app.run().unwrap();
 
     let _expense_result = expense_worker.join();
+    let _property_result = property_worker.join();
     instances.close().await;
 }

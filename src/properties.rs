@@ -1,5 +1,9 @@
-use crate::PropertyInput;
+use crate::{
+    database::{add_property, update_property},
+    App, PropertyInput,
+};
 use sqlx::{sqlite::SqliteRow, Row};
+use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 
 #[derive(Debug, Clone)]
 pub struct Property {
@@ -42,7 +46,7 @@ impl Property {
             },
             property_tax: input.property_tax,
             business_insurance: input.business_insurance,
-            num_units: input.unit_count as u32,
+            num_units: input.unit_count.to_string().parse::<u32>().unwrap(),
         }
     }
 
@@ -61,7 +65,7 @@ impl Property {
             zip_code: zip_code.into(),
             property_tax: self.property_tax,
             business_insurance: self.business_insurance,
-            unit_count: self.num_units as i32,
+            unit_count: self.num_units.to_string().into(),
         }
     }
 }
@@ -110,5 +114,74 @@ impl Address {
             state,
             zip_code,
         }
+    }
+}
+
+pub enum PropertyMessage {
+    PropertyCreated(PropertyInput),
+    PropertyUpdate(PropertyInput),
+    Quit,
+}
+
+pub struct PropertyWorker {
+    pub channel: UnboundedSender<PropertyMessage>,
+    pub worker_thread: std::thread::JoinHandle<()>,
+}
+
+impl PropertyWorker {
+    pub fn new(pool: &sqlx::Pool<sqlx::Sqlite>) -> Self {
+        println!("Create new Property Worker");
+        let (sender, r) = tokio::sync::mpsc::unbounded_channel();
+        let worker_thread = std::thread::spawn({
+            let new_pool = pool.clone();
+            move || {
+                tokio::runtime::Runtime::new()
+                    .unwrap()
+                    .block_on(property_worker_loop(new_pool, r))
+            }
+        });
+        Self {
+            channel: sender,
+            worker_thread,
+        }
+    }
+    pub fn join(self) -> std::thread::Result<()> {
+        let _ = self.channel.send(PropertyMessage::Quit);
+        self.worker_thread.join()
+    }
+}
+
+async fn property_worker_loop(
+    pool: sqlx::Pool<sqlx::Sqlite>,
+    mut r: UnboundedReceiver<PropertyMessage>,
+) {
+    loop {
+        let m = r.recv().await;
+
+        match m {
+            Some(s) => match s {
+                PropertyMessage::PropertyCreated(create) => {
+                    let converted_property = Property::convert_from_slint(create);
+
+                    match add_property(&pool, &converted_property).await {
+                        Ok(_) => println!("Successfully added property via slint"),
+                        Err(e) => println!("Failed to add property via slint: {e}"),
+                    }
+                }
+                PropertyMessage::PropertyUpdate(update) => {
+                    let converted_property = Property::convert_from_slint(update);
+
+                    match update_property(&pool, &converted_property).await {
+                        Ok(_) => println!("Successfully added property via slint"),
+                        Err(e) => println!("Failed to add property via slint: {e}"),
+                    }
+                }
+                PropertyMessage::Quit => {
+                    println!("Quitting");
+                    continue;
+                }
+            },
+            None => continue,
+        };
     }
 }
