@@ -113,23 +113,7 @@ pub async fn add_maint_request(
 }
 
 pub async fn add_expense(pool: &sqlx::Pool<Sqlite>, expense: &Expense) -> Result<(), sqlx::Error> {
-    let expense_type_str = match &expense.expense_type {
-        ExpenseType::Maintenance(maintenance_type) => match maintenance_type {
-            MaintenanceType::Repairs => String::from("Maintenance: Repairs"),
-            MaintenanceType::Cleaning => String::from("Maintenance: Cleaning"),
-            MaintenanceType::Landscaping => String::from("Maintenance: Landscaping"),
-            MaintenanceType::Other => String::from("Maintenance: Other"),
-        },
-        ExpenseType::Utilities(utilities_type) => match utilities_type {
-            UtilitiesType::Water => String::from("Utilities: Water"),
-            UtilitiesType::Electricity => String::from("Utilities: Electricity"),
-            UtilitiesType::Garbage => String::from("Utilities: Garbage/Recycle"),
-            UtilitiesType::Gas => String::from("Utilities: Gas"),
-            UtilitiesType::Other => String::from("Utilities: Other"),
-        },
-        ExpenseType::Other => String::from("Other"),
-    };
-
+    let expense_type_str = &expense.expense_type.to_string();
     sqlx::query(
         "INSERT INTO expenses (property_id, expense_type, amount, date_incurred, description) VALUES (?, ?, ?, ?, ?)")
         .bind(expense.property_id)
@@ -270,6 +254,25 @@ pub async fn update_property(
         .bind(&property.address.zip_code)
         .bind(property.num_units)
         .bind(property.id)
+        .execute(pool)
+        .await?;
+    Ok(x)
+}
+
+pub async fn update_expense(
+    pool: &sqlx::Pool<Sqlite>,
+    expense: &Expense,
+) -> Result<SqliteQueryResult, sqlx::Error> {
+    let expense_type_str = &expense.expense_type.to_string();
+
+    let x = sqlx::query(
+        "UPDATE expenses SET (property_id, expense_type, amount, date_incurred, description) = (?, ?, ?, ?, ?) WHERE expense_id == ?")
+        .bind(expense.property_id)
+        .bind(expense_type_str)
+        .bind(expense.amount)
+        .bind(expense.date.to_string())
+        .bind(&expense.description)
+        .bind(expense.id)
         .execute(pool)
         .await?;
     Ok(x)

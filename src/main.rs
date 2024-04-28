@@ -37,8 +37,8 @@ async fn main() {
     initialize_slint_expenses(&weak_app.upgrade().unwrap(), &instances, 1).await;
     initialize_slint_properties(&weak_app.upgrade().unwrap(), &instances).await;
 
-    let expense_instances = instances.clone();
-    let expense_worker = ExpenseWorker::new(&app, &expense_instances);
+    let worker_instances = instances.clone();
+    let expense_worker = ExpenseWorker::new(&worker_instances);
 
     app.on_new_expense({
         let expense_channel = expense_worker.channel.clone();

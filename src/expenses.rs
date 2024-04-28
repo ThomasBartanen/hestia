@@ -29,6 +29,28 @@ pub enum UtilitiesType {
     Other,
 }
 
+impl fmt::Display for ExpenseType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let res = match self {
+            ExpenseType::Maintenance(maintenance_type) => match maintenance_type {
+                MaintenanceType::Repairs => String::from("Maintenance: Repairs"),
+                MaintenanceType::Cleaning => String::from("Maintenance: Cleaning"),
+                MaintenanceType::Landscaping => String::from("Maintenance: Landscaping"),
+                MaintenanceType::Other => String::from("Maintenance: Other"),
+            },
+            ExpenseType::Utilities(utilities_type) => match utilities_type {
+                UtilitiesType::Water => String::from("Utilities: Water"),
+                UtilitiesType::Electricity => String::from("Utilities: Electricity"),
+                UtilitiesType::Garbage => String::from("Utilities: Garbage/Recycle"),
+                UtilitiesType::Gas => String::from("Utilities: Gas"),
+                UtilitiesType::Other => String::from("Utilities: Other"),
+            },
+            ExpenseType::Other => String::from("Other"),
+        };
+        write!(f, "{res}")
+    }
+}
+
 impl ExpenseType {
     pub fn parse_string(maintype: &str, subtype: &str) -> ExpenseType {
         match maintype {
@@ -46,24 +68,6 @@ impl ExpenseType {
                 _ => ExpenseType::Utilities(UtilitiesType::Other),
             },
             _ => ExpenseType::Other,
-        }
-    }
-    pub fn to_string(&self) -> String {
-        match self {
-            ExpenseType::Maintenance(maintenance_type) => match maintenance_type {
-                MaintenanceType::Repairs => String::from("Maintenance: Repairs"),
-                MaintenanceType::Cleaning => String::from("Maintenance: Cleaning"),
-                MaintenanceType::Landscaping => String::from("Maintenance: Landscaping"),
-                MaintenanceType::Other => String::from("Maintenance: Other"),
-            },
-            ExpenseType::Utilities(utilities_type) => match utilities_type {
-                UtilitiesType::Water => String::from("Utilities: Water"),
-                UtilitiesType::Electricity => String::from("Utilities: Electricity"),
-                UtilitiesType::Garbage => String::from("Utilities: Garbage/Recycle"),
-                UtilitiesType::Gas => String::from("Utilities: Gas"),
-                UtilitiesType::Other => String::from("Utilities: Other"),
-            },
-            ExpenseType::Other => String::from("Other"),
         }
     }
     pub fn to_split_strings(&self) -> (String, String) {
@@ -126,6 +130,7 @@ pub struct MaintenanceRequest {
 
 #[derive(Debug, Clone)]
 pub struct Expense {
+    pub id: u32,
     pub property_id: u32,
     pub expense_type: ExpenseType,
     pub amount: f32,
@@ -142,6 +147,7 @@ impl Expense {
         description: String,
     ) -> Expense {
         Expense {
+            id: 0,
             property_id,
             expense_type,
             amount,
@@ -173,6 +179,7 @@ impl Expense {
 }
 impl<'r> FromRow<'r, SqliteRow> for Expense {
     fn from_row(row: &'r SqliteRow) -> Result<Self, sqlx::Error> {
+        let id = row.try_get("expense_id")?;
         let property_id = row.try_get("property_id")?;
         let expense_type: String = row.try_get("expense_type")?;
         let amount = row.try_get("amount")?;
@@ -189,6 +196,7 @@ impl<'r> FromRow<'r, SqliteRow> for Expense {
             .map_err(|e| sqlx::Error::Decode(Box::new(e)))?;
 
         Ok(Expense {
+            id,
             property_id,
             expense_type,
             amount,
@@ -210,7 +218,7 @@ pub struct ExpenseWorker {
 }
 
 impl ExpenseWorker {
-    pub fn new(ui: &App, pool: &sqlx::Pool<sqlx::Sqlite>) -> Self {
+    pub fn new(pool: &sqlx::Pool<sqlx::Sqlite>) -> Self {
         println!("Create new Expense Worker");
         let (sender, r) = tokio::sync::mpsc::unbounded_channel();
         let worker_thread = std::thread::spawn({
