@@ -30,8 +30,6 @@ export component AddExpenseMenu inherits Rectangle {
     pure callback new-expense(ExpenseInput);
     property <string> expense-subtype-string;
     
-
-    //max-width: 120px;
     border-width: 2px;
     border-radius: 5px;
     border-color: black;
@@ -42,7 +40,7 @@ export component AddExpenseMenu inherits Rectangle {
             spacing: 20px;
             padding: 10px;
             y: 10px;
-            preferred-width: parent.width / 2;
+            //preferred-width: parent.width / 2;
             //max-width: parent.max-width;
             height: 50px;
             Text {
@@ -146,29 +144,22 @@ export component AddExpenseMenu inherits Rectangle {
     }
 }
 
-export component ExpenseHistory inherits VerticalLayout {
+export component ExpenseHistory inherits Rectangle {
     in-out property <[ExpenseInput]> expenses;
 
-    HorizontalLayout {
-        padding: 10px;
-        spacing: 10px;
-        alignment: start;
-        Rectangle {
-            min-width: 200px;
-            max-width: 400px;
-            border-radius: 2px;
-            border-color: black;
-            ListView {
-                padding: 20px;
-                for x in expenses: expense-button := TouchArea {
+    border-radius: 2px;
+    border-color: black;
+    VerticalLayout {
+        ListView {
+            padding: 20px;
+            for x in expenses: expense-button := TouchArea {
+                Rectangle {
+                    background: cornsilk;
                     Text {
                         text: x.description;
                     }
                 }
             }
-        }
-        Rectangle {
-
         }
     }
 }
@@ -179,16 +170,17 @@ export component ExpenseMenu inherits Rectangle {
     in-out property <[ExpenseInput]> expenses <=> expense-history.expenses;
 
     background: red.mix(gray, 20%);
-    Rectangle {
-        TabWidget {
-            Tab {
-                title: "Expense History";
-                expense-history := ExpenseHistory {}
-            }
-            Tab {
-                title: "Add Expense";
-                add-expense-menu := AddExpenseMenu {}
-            }
+    HorizontalLayout {
+        Rectangle {
+            min-width: 100px;
+            max-width: 300px;
+            expense-history := ExpenseHistory {}
+        }
+        Rectangle {
+            min-width: 400px;
+            preferred-width: 600px;
+            max-width: 1000px;
+            add-expense-menu := AddExpenseMenu {}
         }
     }
 }
