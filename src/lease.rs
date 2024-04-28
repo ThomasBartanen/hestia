@@ -183,7 +183,7 @@ impl Default for CAMRates {
 
 #[derive(Debug, Clone)]
 pub struct Lease {
-    pub id: u16,
+    pub id: u32,
     pub start_date: NaiveDate,
     pub end_date: NaiveDate,
     pub fee_structure: FeeStructure,

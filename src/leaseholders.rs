@@ -34,9 +34,9 @@ impl ContactInformation {
 
 #[derive(Debug, Clone)]
 pub struct Leaseholder {
-    pub id: u16,
+    pub id: u32,
     pub lease: Lease,
-    pub property_id: u16,
+    pub property_id: u32,
     pub leaseholder_type: LeaseholderType,
     pub contact_info: ContactInformation,
     pub move_in_date: NaiveDate,
@@ -44,9 +44,9 @@ pub struct Leaseholder {
 
 impl Leaseholder {
     pub fn new(
-        id: u16,
+        id: u32,
         lease: Lease,
-        property_id: u16,
+        property_id: u32,
         leaseholder_type: LeaseholderType,
         contact_info: ContactInformation,
         move_in_date: NaiveDate,

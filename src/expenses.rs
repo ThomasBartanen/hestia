@@ -115,8 +115,8 @@ impl fmt::Display for RequestStatus {
 
 #[derive(Debug, Clone)]
 pub struct MaintenanceRequest {
-    pub request_id: u16,
-    pub leaseholder_id: u16,
+    pub request_id: u32,
+    pub leaseholder_id: u32,
     pub request_date: NaiveDate,
     pub request_type: MaintenanceType,
     pub description: String,
@@ -126,7 +126,7 @@ pub struct MaintenanceRequest {
 
 #[derive(Debug, Clone)]
 pub struct Expense {
-    pub property_id: u16,
+    pub property_id: u32,
     pub expense_type: ExpenseType,
     pub amount: f32,
     pub date: NaiveDate,
@@ -135,7 +135,7 @@ pub struct Expense {
 
 impl Expense {
     pub fn new(
-        property_id: u16,
+        property_id: u32,
         expense_type: ExpenseType,
         amount: f32,
         date: NaiveDate,
@@ -159,9 +159,9 @@ impl Expense {
         )
     }
 
-    pub fn convert_to_slint(expense: &Expense) -> ExpenseInput {
-        let (main, sub) = ExpenseType::to_split_strings(&expense.expense_type);
-        let cur_expense = expense.clone();
+    pub fn convert_to_slint(&self) -> ExpenseInput {
+        let (main, sub) = ExpenseType::to_split_strings(&self.expense_type);
+        let cur_expense = self.clone();
         ExpenseInput {
             amount: cur_expense.amount,
             date: cur_expense.date.to_string().into(),

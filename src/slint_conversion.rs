@@ -4,7 +4,7 @@ use crate::{ExpenseInput, PropertyInput};
 use slint::{ModelRc, VecModel};
 use sqlx::Sqlite;
 
-pub async fn initialize_slint_expenses(ui: &App, pool: &sqlx::Pool<Sqlite>, property_id: u16) {
+pub async fn initialize_slint_expenses(ui: &App, pool: &sqlx::Pool<Sqlite>, property_id: u32) {
     let expenses: Vec<ExpenseInput> = get_expenses(pool, property_id)
         .await
         .iter()

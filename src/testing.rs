@@ -46,7 +46,7 @@ async fn test_database(instances: &sqlx::Pool<Sqlite>) -> (Company, Leaseholder,
     match add_property(instances, &property).await {
         Ok(r) => {
             //converting i64 to u16. This may cause issues. Keep an eye on this
-            property.id = r.last_insert_rowid() as u16;
+            property.id = r.last_insert_rowid() as u32;
             println!("Successfully added PROPERTY");
         }
         Err(e) => println!("Error when adding PROPERTY: {}", e),
@@ -97,7 +97,7 @@ async fn test_database(instances: &sqlx::Pool<Sqlite>) -> (Company, Leaseholder,
     );
     match add_leaseholders(instances, &leaseholder, property.id).await {
         Ok(t) => {
-            leaseholder.id = t.last_insert_rowid() as u16;
+            leaseholder.id = t.last_insert_rowid() as u32;
             println!("Successfully added LEASEHOLDER")
         }
         Err(e) => println!("Error when adding LEASEHOLDER: {}", e),

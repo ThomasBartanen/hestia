@@ -1,7 +1,14 @@
 import { Button, TabWidget, ListView } from "std-widgets.slint";
 
 export struct PropertyInput {
+    id: int,
     name: string,
+    address-number: string,
+    city: string,
+    state: string,
+    zip-code: string,
+    property_tax: float,
+    business_insurance: float,
     unit-count: int
 }
 
@@ -37,6 +44,7 @@ export component PropertyMenu inherits Rectangle {
             }
             Tab {
                 title: "Add new Property";
+                
             }
         }
     }
