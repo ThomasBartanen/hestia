@@ -1,6 +1,9 @@
 import { Button, TabWidget, ListView, GridBox, LineEdit, StandardButton } from "std-widgets.slint";
 
+export enum MessageType {create, update, delete}
+
 export struct PropertyInput {
+    message: MessageType,
     id: int,
     name: string,
     address-number: string,
@@ -12,19 +15,38 @@ export struct PropertyInput {
     unit-count: string
 }
 
+
+
 component AddPropertyMenu inherits Rectangle {
     public function clear-prop-menu() {
-        name-input.text = name-input.placeholder-text;
-        unit-count-input.text = unit-count-input.placeholder-text;
-        street-input.text = street-input.placeholder-text;
-        city-input.text = city-input.placeholder-text;
-        state-input.text = state-input.placeholder-text;
-        zip-input.text = zip-input.placeholder-text;
-        prop-tax-input.text = prop-tax-input.placeholder-text;
-        bus-ins-input.text = bus-ins-input.placeholder-text;
+        name-input.text = "";
+        unit-count-input.text = "";
+        street-input.text = "";
+        city-input.text = "";
+        state-input.text = "";
+        zip-input.text = "";
+        prop-tax-input.text = "";
+        bus-ins-input.text = "";
+
+        MessageType.create;
     }
+
+    public function open-prop(prop: PropertyInput) {
+        name-input.text = prop.name;
+        unit-count-input.text = prop.unit-count;
+        street-input.text = prop.address-number;
+        city-input.text = prop.city;
+        state-input.text = prop.state;
+        zip-input.text = prop.zip-code;
+        prop-tax-input.text = prop.property-tax;
+        bus-ins-input.text = prop.business-insurance;
+        
+        prop-action = MessageType.update;
+    }
+
     public function submit-prop() {
         new-property({
+            message: prop-action,
             id: 0,
             name: name-input.text,
             address-number: street-input.text,
@@ -39,6 +61,7 @@ component AddPropertyMenu inherits Rectangle {
         clear-prop-menu();
     }
     pure callback new-property(PropertyInput);
+    in-out property <MessageType> prop-action;
     
     border-width: 2px;
     border-radius: 5px;
@@ -46,7 +69,8 @@ component AddPropertyMenu inherits Rectangle {
     padding: 10px;
 
     HorizontalLayout {
-        GridBox {            
+        GridBox {
+            width: 300px;
             spacing: 20px;
             padding: 10px;
             y: 10px;
@@ -82,33 +106,32 @@ component AddPropertyMenu inherits Rectangle {
                 input-type: InputType.text;
             }
             state-input := LineEdit {
-                col: 2;
-                row: 2;
+                col: 0;
+                row: 3;
                 placeholder-text: "State";
                 input-type: InputType.text;
             }
             zip-input := LineEdit {
-                col: 3;
-                row: 2;
+                col: 1;
+                row: 3;
                 placeholder-text: "Zip-Code";
                 input-type: InputType.number;
             }
             prop-tax-input := LineEdit {
                 col: 0;
-                row: 3;
+                row: 4;
                 placeholder-text: "Property Tax Total";
                 input-type: InputType.decimal;
             }
             bus-ins-input := LineEdit {
                 col: 1;
-                row: 3;
+                row: 4;
                 placeholder-text: "Business Insurance Total";
                 input-type: InputType.decimal;
             }
             HorizontalLayout {
                 col: 0;
-                row: 4;
-                colspan: 2;
+                row: 5;
                 StandardButton {
                     kind: ok;
                     clicked => {
@@ -122,6 +145,14 @@ component AddPropertyMenu inherits Rectangle {
                         clear-prop-menu();
                     }
                 }
+                Button {
+                    enabled: prop-action == MessageType.update ? true : false;
+                    text: "Delete";
+                    clicked => {
+                        prop-action = MessageType.delete;
+                        submit-prop();
+                    }
+                }
             }
         }
     }
@@ -132,40 +163,34 @@ export component PropertyMenu inherits Rectangle {
 
     pure callback new-property <=> add-prop-menu.new-property;
     background: green.mix(gray, 20%);
-    Rectangle {
-        TabWidget {
-            Tab {
-                title: "Open Properties List";
-                HorizontalLayout {
-                    padding: 10px;
-                    spacing: 10px;
-                    alignment: start;
-                    Rectangle {
-                        min-width: 200px;
-                        max-width: 400px;
-                        border-radius: 2px;
-                        border-color: black;
-                        ListView {
-                            padding: 20px;
-                            for x in properties: expense-button := TouchArea {
-                                Rectangle {
-                                    background: cornsilk;
-                                    Text {
-                                        text: x.name;
-                                    }
-                                }
+    HorizontalLayout {
+        Rectangle {
+            min-width: 100px;
+            max-width: 300px;
+            border-radius: 2px;
+            border-color: black;
+            VerticalLayout {
+                ListView {
+                    padding: 20px;
+                    for x in properties: prop-button := TouchArea {
+                        ta-bg := Rectangle {
+                            background: prop-button.pressed ? red : prop-button.has-hover? cornsilk : root.background;
+                            Text {
+                                text: x.name;
                             }
                         }
-                    }
-                    Rectangle {
-            
+                        clicked => {
+                            add-prop-menu.open-prop(x);
+                        }
                     }
                 }
             }
-            Tab {
-                title: "Add new Property";
-                add-prop-menu := AddPropertyMenu {}
-            }
+        }
+        Rectangle {             
+            min-width: 400px;
+            preferred-width: 600px;
+            max-width: 1000px;
+            add-prop-menu := AddPropertyMenu {}
         }
     }
 }

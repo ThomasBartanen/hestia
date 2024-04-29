@@ -72,7 +72,12 @@ async fn main() {
         let local_app = weak_app.clone();
         move |input| {
             let input_clone = input.clone();
-            let res = property_channel.send(properties::PropertyMessage::PropertyCreated(input));
+            let message = match input_clone.message {
+                crate::MessageType::Create => properties::PropertyMessage::PropertyCreated(input),
+                crate::MessageType::Update => properties::PropertyMessage::PropertyUpdate(input),
+                crate::MessageType::Delete => todo!(),
+            };
+            let res = property_channel.send(message);
             match res {
                 Ok(_) => println!("property successfully sent"),
                 Err(_e) => println!("property send failed"),

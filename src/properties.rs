@@ -57,6 +57,7 @@ impl Property {
         let state = &address.state;
         let zip_code = &address.zip_code;
         PropertyInput {
+            message: crate::MessageType::Update,
             id: self.id as i32,
             name: String::from(&self.name).into(),
             address_number: address_number.into(),
