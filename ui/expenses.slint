@@ -153,8 +153,8 @@ export component ExpenseHistory inherits Rectangle {
         ListView {
             padding: 20px;
             for x in expenses: expense-button := TouchArea {
-                Rectangle {
-                    background: cornsilk;
+                ta-bg := Rectangle {
+                    background: expense-button.has-hover? cornsilk : root.background;
                     Text {
                         text: x.description;
                     }
