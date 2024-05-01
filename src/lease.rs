@@ -1,6 +1,6 @@
 use chrono::NaiveDate;
 
-use crate::{statements::calculate_share, Expense, ExpenseType, MaintenanceType, UtilitiesType};
+use crate::{expenses::*, statements::calculate_share};
 
 #[derive(Debug, Clone)]
 pub enum FeeStructure {
