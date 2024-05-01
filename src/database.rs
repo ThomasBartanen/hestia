@@ -343,3 +343,60 @@ pub async fn remove_leaseholder(
         .await?;
     Ok(x)
 }
+
+// -------------------------------------- Get Max ID ---------------------------------------------
+pub async fn get_max_expense_id(pool: &sqlx::Pool<Sqlite>) -> u32 {
+    let res = sqlx::query("SELECT * FROM expenses ORDER BY expense_id DESC LIMIT 1;")
+        .fetch_one(pool)
+        .await;
+    match res {
+        Ok(r) => match Expense::from_row(&r) {
+            Ok(o) => o.id + 1,
+            Err(e) => {
+                println!("Error parsing expense record for expense id: {}", e);
+                0
+            }
+        },
+        Err(e) => {
+            println!("Error getting max expense id: {}", e);
+            0
+        }
+    }
+}
+pub async fn get_max_property_id(pool: &sqlx::Pool<Sqlite>) -> u32 {
+    let res = sqlx::query("SELECT * FROM properties ORDER BY property_id DESC LIMIT 1;")
+        .fetch_one(pool)
+        .await;
+    match res {
+        Ok(r) => match Property::from_row(&r) {
+            Ok(o) => o.id + 1,
+            Err(e) => {
+                println!("Error parsing property record for property id: {}", e);
+                0
+            }
+        },
+        Err(e) => {
+            println!("Error getting max property id: {}", e);
+            0
+        }
+    }
+}
+
+pub async fn get_max_leaseholder_id(pool: &sqlx::Pool<Sqlite>) -> u32 {
+    let res = sqlx::query("SELECT * FROM leaseholders ORDER BY leaseholder_id DESC LIMIT 1;")
+        .fetch_one(pool)
+        .await;
+    match res {
+        Ok(r) => match Leaseholder::from_row(&r) {
+            Ok(o) => o.id + 1,
+            Err(e) => {
+                println!("Error parsing leaseholder record for leaseholder id: {}", e);
+                0
+            }
+        },
+        Err(e) => {
+            println!("Error getting max leaseholder id: {}", e);
+            0
+        }
+    }
+}

@@ -61,6 +61,8 @@ component AddPropertyMenu inherits Rectangle {
         clear-prop-menu();
     }
     pure callback new-property(PropertyInput);
+    in-out property <int> potential-prop-id;
+    property <int> selected-prop-id;
     in-out property <MessageType> prop-action;
     
     border-width: 2px;
@@ -160,6 +162,7 @@ component AddPropertyMenu inherits Rectangle {
 
 export component PropertyMenu inherits Rectangle {
     in-out property <[PropertyInput]> properties;
+    in-out property <int> potential-prop-id <=> add-prop-menu.potential-prop-id;
 
     pure callback new-property <=> add-prop-menu.new-property;
     background: green.mix(gray, 20%);

@@ -37,10 +37,27 @@ async fn main() {
 
     initialize_slint_expenses(&weak_app.upgrade().unwrap(), &instances, 1).await;
     initialize_slint_properties(&weak_app.upgrade().unwrap(), &instances).await;
+    let valid_ids = get_ids(&instances).await;
 
     let worker_instances = instances.clone();
     let expense_worker = ExpenseWorker::new(&worker_instances);
     let property_worker = PropertyWorker::new(&worker_instances);
+#[derive(Debug)]
+struct ValidIds {
+    expense_id: u32,
+    property_id: u32,
+    leaseholder_id: u32,
+}
+
+async fn get_ids(pool: &sqlx::Pool<Sqlite>) -> ValidIds {
+    let ids = ValidIds {
+        expense_id: database::get_max_expense_id(pool).await,
+        property_id: database::get_max_property_id(pool).await,
+        leaseholder_id: database::get_max_leaseholder_id(pool).await,
+    };
+    println!("Created ID Struct: {:#?}", ids);
+    ids
+}
 
     app.on_new_expense({
         let expense_channel = expense_worker.channel.clone();

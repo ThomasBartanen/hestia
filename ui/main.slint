@@ -11,6 +11,9 @@ export component NavigationPane inherits Rectangle {
     in-out property <[ExpenseInput]> expenses <=> expense-menu.expenses;
     in-out property <[PropertyInput]> properties <=> prop-menu.properties;
     in-out property <[StatementInput]> statements <=> statement-menu.statements;
+    in-out property <int> potential-expense-id <=> expense-menu.potential-expense-id;
+    in-out property <int> potential-prop-id <=> prop-menu.potential-prop-id;
+    in-out property <int> potential-lessee-id <=> lessee-menu.potential-lessee-id;
     
     Rectangle {
         TabWidget {
@@ -66,6 +69,9 @@ export component App inherits Window {
     in-out property <[ExpenseInput]> expenses <=> nav-pane.expenses;
     in-out property <[PropertyInput]> properties <=> nav-pane.properties;
     in-out property <[StatementInput]> statements <=> nav-pane.statements;
+    in-out property <int> potential-expense-id <=> nav-pane.potential-expense-id;
+    in-out property <int> potential-prop-id <=> nav-pane.potential-prop-id;
+    in-out property <int> potential-lessee-id <=> nav-pane.potential-lessee-id;
     
     nav-pane := NavigationPane { }
 }

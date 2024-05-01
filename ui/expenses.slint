@@ -1,4 +1,5 @@
 import { TabWidget, LineEdit, GridBox, ComboBox, SpinBox, StandardButton, ListView } from "std-widgets.slint";
+import { Validation, IdType } from "validation.slint";
 
 export struct ExpenseInput {
     description: string,
@@ -18,7 +19,9 @@ export component AddExpenseMenu inherits Rectangle {
     }
     
     public function submit-expense() {
+        potential-expense-id = Validation.get-valid-id(IdType.Expense);
         new-expense({
+            id: expense-action == MessageType.update ? selected-expense-id : expense-action == MessageType.delete ? selected-expense-id : potential-expense-id,
             description: description-input.text,
             amount: amount-input.text.to-float(),
             date: date-input.text,
@@ -29,6 +32,7 @@ export component AddExpenseMenu inherits Rectangle {
 
     pure callback new-expense(ExpenseInput);
     property <string> expense-subtype-string;
+    in-out property <int> potential-expense-id;
     
     border-width: 2px;
     border-radius: 5px;
@@ -168,6 +172,7 @@ export component ExpenseMenu inherits Rectangle {
     pure callback new-expense <=> add-expense-menu.new-expense;
 
     in-out property <[ExpenseInput]> expenses <=> expense-history.expenses;
+    in-out property <int> potential-expense-id <=> add-expense-menu.potential-expense-id;
 
     background: red.mix(gray, 20%);
     HorizontalLayout {
