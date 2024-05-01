@@ -1,10 +1,10 @@
 use crate::{
     app_settings::PathSettings,
+    expenses::*,
     lease::FeeStructure,
     leaseholders::{Company, Leaseholder},
     pdf_formatting::write_with_printpdf,
     properties::Property,
-    Expense,
 };
 use chrono::NaiveDate;
 
