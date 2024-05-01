@@ -1,9 +1,201 @@
-import { Button, TabWidget, ListView } from "std-widgets.slint";
+import { Button, TabWidget, ListView, GridBox, LineEdit, StandardButton, ComboBox } from "std-widgets.slint";
+
+export enum MessageType { create, update, delete }
 
 export struct LeaseholderInput {
+    message: MessageType,
+    id: int,
     name: string,
+    lease: int,
+    property-id: int,
+    street-address: string,
+    city: string,
+    state: string,
+    zip_code: string,
+    email: string,
+    phone-number: string,
+    move-in-date: string,
+}
+component AddLeaseholderMenu inherits Rectangle {
+    public function clear-lessee-menu() {
+        name-input.text = "";
+        street-input.text = "";
+        city-input.text = "";
+        state-input.text = "";
+        zip-input.text = "";
+        email-input.text = "";
+        phone-input.text = "";
+        move-in-input.text = "";
+        lessee-action = MessageType.create;
+    }
+
+    public function open-lessee(lessee: LeaseholderInput) {
+        name-input.text = lessee.name;
+        street-input.text = lessee.street-address;
+        city-input.text = lessee.city;
+        state-input.text = lessee.state;
+        zip-input.text = lessee.zip-code;
+        email-input.text = lessee.email;
+        phone-input.text = lessee.phone-number;
+        move-in-input.text = lessee.move-in-date;
+
+        selected-lessee-id = lessee.id;
+        selected-lessee = lessee;
+        lessee-action = MessageType.update;
+    }
+
+    public function submit-lessee() {
+        new-lessee({
+            message: lessee-action,
+            id: lessee-action == MessageType.update ? selected-lessee-id : lessee-action == MessageType.delete ? selected-lessee-id : potential-lessee-id,
+            lease: lessee-action == MessageType.update ? selected-lessee.lease : 0,
+            property-id: lessee-action == MessageType.update ? selected-lessee.property-id : 0,
+            name: name-input.text,
+            street_address: street-input.text,
+            city: city-input.text,
+            state: state-input.text,
+            zip_code: zip-input.text,
+            email: email-input.text,
+            phone_number: phone-input.text,
+            move_in_date: move-in-input.text,
+        });
+
+        clear-lessee-menu();
+    }
+    pure callback new-lessee(LeaseholderInput);
+    in-out property <int> potential-lessee-id;
+    in-out property <int> selected-lessee-id;
+    in-out property <LeaseholderInput> selected-lessee;
+    in-out property <MessageType> lessee-action;
+    
+    border-width: 2px;
+    border-radius: 5px;
+    border-color: black;
+    padding: 10px;
+
+    HorizontalLayout {
+        GridBox {
+            width: 300px;
+            spacing: 20px;
+            padding: 10px;
+            y: 10px;
+            height: 50px;
+            Text {
+                text: "Add Property";
+                col: 0;
+                row: 0;
+                font-weight: 3;
+            }
+            name-input := LineEdit {
+                col: 0;
+                row: 1;
+                placeholder-text: "Leaseholder Name";
+                input-type: InputType.text;
+            }
+            street-input := LineEdit {
+                col: 0;
+                row: 2;
+                placeholder-text: "Street Address";
+                input-type: InputType.text;
+            }
+            city-input := LineEdit {
+                col: 1;
+                row: 2;
+                placeholder-text: "City";
+                input-type: InputType.text;
+            }
+            state-input := LineEdit {
+                col: 0;
+                row: 3;
+                placeholder-text: "State";
+                input-type: InputType.text;
+            }
+            zip-input := LineEdit {
+                col: 1;
+                row: 3;
+                placeholder-text: "Zip-Code";
+                input-type: InputType.number;
+            }
+            email-input := LineEdit {
+                col: 0;
+                row: 4;
+                placeholder-text: "Email";
+                input-type: InputType.text;
+            }
+            phone-input := LineEdit {
+                col: 1;
+                row: 4;
+                placeholder-text: "Phone number";
+                input-type: InputType.decimal;
+            }
+            move-in-input := LineEdit {
+                col: 0;
+                row: 5;
+                placeholder-text: "Move-In Date";
+                input-type: InputType.text;
+            }
+            HorizontalLayout {
+                col: 0;
+                row: 6;
+                StandardButton {
+                    kind: ok;
+                    clicked => {
+                        submit-lessee();
+                    }
+                }
+                StandardButton {
+                    kind: cancel;
+                    clicked => {
+                        clear-lessee-menu();
+                    }
+                }
+                Button {
+                    enabled: lessee-action == MessageType.update ? true : false;
+                    text: "Delete";
+                    clicked => {
+                        lessee-action = MessageType.delete;
+                        submit-lessee();
+                    }
+                }
+            }
+        }
+    }
 }
 
-export component LesseeMenu inherits Rectangle { 
+export component LesseeMenu inherits Rectangle {
+    in-out property <[LeaseholderInput]> lessees;
+    in-out property <int> potential-lessee-id <=> add-lessee-menu.potential-lessee-id;
 
+    pure callback new-lessee <=> add-lessee-menu.new-lessee;
+
+    HorizontalLayout {
+        Rectangle {
+            min-width: 100px;
+            max-width: 300px;
+            border-radius: 2px;
+            border-color: black;
+            VerticalLayout {
+                ListView {
+                    padding: 20px;
+                    for x in lessees: lessee-button := TouchArea {
+                        ta-bg := Rectangle {
+                            background: lessee-button.pressed ? red : lessee-button.has-hover? cornsilk : root.background;
+                            Text {
+                                text: x.id + ". " + x.name;
+                            }
+                        }
+                        clicked => {
+                            add-lessee-menu.open-lessee(x);          
+                        }
+                    }
+                }
+            }
+        }
+        Rectangle {             
+            min-width: 400px;
+            preferred-width: 600px;
+            max-width: 1000px;
+            add-lessee-menu := AddLeaseholderMenu {}
+        }
+    }
 }

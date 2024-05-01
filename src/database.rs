@@ -58,7 +58,11 @@ pub async fn create_schema(db_url: &str) -> Result<SqliteQueryResult, sqlx::Erro
         leaseholder_id      INTEGER PRIMARY KEY AUTOINCREMENT,
         lease_id            INTEGER,
         property_id         INTEGER,
-        remittence_address  TEXT,
+        name                TEXT,
+        address             TEXT,
+        city                TEXT,
+        state               TEXT,
+        zip_code            TEXT,
         email               TEXT,
         phone_number        TEXT,
         move_in_date        TEXT,
@@ -84,7 +88,7 @@ pub async fn create_schema(db_url: &str) -> Result<SqliteQueryResult, sqlx::Erro
         FOREIGN KEY (leaseholder_id) REFERENCES leaseholders(leaseholder_id)
     )";
     //maintenance_id      integer FOREIGN KEY REFERENCES maintenance_requests(request_id) null,
-    let result = sqlx::query(qry).execute(&pool).await;
+    let result = sqlx::query(qry).execute(pool).await;
     pool.close().await;
     result
 }
@@ -150,6 +154,7 @@ pub async fn add_leaseholders(
     leaseholder: &Leaseholder,
     property_id: u32,
 ) -> Result<SqliteQueryResult, sqlx::Error> {
+    println!("Adding Leaseholder");
     let lease = &leaseholder.lease;
 
     let lease_id =
@@ -162,10 +167,14 @@ pub async fn add_leaseholders(
             .last_insert_rowid();
 
     let leaseholder_result = sqlx::query(
-        "INSERT INTO leaseholders (lease_id, property_id, remittence_address, email, phone_number, move_in_date) VALUES (?, ?, ?, ?, ?, ?)")
+        "INSERT INTO leaseholders (lease_id, property_id, name, address, city, state, zip_code, email, phone_number, move_in_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
         .bind(lease_id)
         .bind(property_id)
-        .bind(&leaseholder.contact_info.get_address_string())
+        .bind(&leaseholder.contact_info.name)
+        .bind(&leaseholder.contact_info.remittence_address.street_address)
+        .bind(&leaseholder.contact_info.remittence_address.city)
+        .bind(&leaseholder.contact_info.remittence_address.state)
+        .bind(&leaseholder.contact_info.remittence_address.zip_code)
         .bind(&leaseholder.contact_info.email)
         .bind(&leaseholder.contact_info.phone_number)
         .bind(&leaseholder.move_in_date.to_string())
@@ -202,6 +211,20 @@ pub async fn get_properties(pool: &sqlx::Pool<Sqlite>) -> Vec<Property> {
         properties.push(property.unwrap());
     }
     properties
+}
+
+pub async fn get_leaseholders(pool: &sqlx::Pool<Sqlite>) -> Vec<Leaseholder> {
+    let mut leaseholders: Vec<Leaseholder> = vec![];
+
+    let leaseholder_rows = sqlx::query("SELECT * FROM leaseholders")
+        .fetch_all(pool)
+        .await;
+
+    for row in leaseholder_rows.unwrap() {
+        let leaseholder = Leaseholder::from_row(&row);
+        leaseholders.push(leaseholder.unwrap());
+    }
+    leaseholders
 }
 
 pub async fn get_expenses(pool: &sqlx::Pool<Sqlite>, property_id: u32) -> Vec<Expense> {
@@ -283,11 +306,15 @@ pub async fn update_leaseholder(
     leaseholder: &Leaseholder,
 ) -> Result<SqliteQueryResult, sqlx::Error> {
     let x = sqlx::query(
-        "UPDATE leaseholders SET (lease_id, property_id, remittence_address, email, phone_number, move_in_date) = (?, ?, ?, ?, ?, ?) WHERE leaseholder_id == ?"
+        "UPDATE leaseholders SET (lease_id, property_id, name, remittence_address, email, phone_number, move_in_date) = (?, ?, ?, ?, ?, ?, ?) WHERE leaseholder_id == ?"
     )
         .bind(leaseholder.lease.id)
         .bind(leaseholder.property_id)
-        .bind(&leaseholder.contact_info.get_address_string())
+        .bind(&leaseholder.contact_info.name)
+        .bind(&leaseholder.contact_info.remittence_address.street_address)
+        .bind(&leaseholder.contact_info.remittence_address.city)
+        .bind(&leaseholder.contact_info.remittence_address.state)
+        .bind(&leaseholder.contact_info.remittence_address.zip_code)
         .bind(&leaseholder.contact_info.email)
         .bind(&leaseholder.contact_info.phone_number)
         .bind(&leaseholder.move_in_date.to_string())

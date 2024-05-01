@@ -35,13 +35,42 @@ async fn main() {
     let app = App::new().unwrap();
     let weak_app = app.as_weak();
 
-    initialize_slint_expenses(&weak_app.upgrade().unwrap(), &instances, 1).await;
-    initialize_slint_properties(&weak_app.upgrade().unwrap(), &instances).await;
     let valid_ids = get_ids(&instances).await;
 
+    slint_conversion::initialize_slint_properties(
+        &weak_app.upgrade().unwrap(),
+        &instances,
+        &valid_ids,
+    )
+    .await;
+    slint_conversion::initialize_slint_expenses(
+        &weak_app.upgrade().unwrap(),
+        &instances,
+        &valid_ids,
+        1,
+    )
+    .await;
+    slint_conversion::initialize_slint_leaseholders(
+        &weak_app.upgrade().unwrap(),
+        &instances,
+        &valid_ids,
+    )
+    .await;
+
     let worker_instances = instances.clone();
-    let expense_worker = ExpenseWorker::new(&worker_instances);
-    let property_worker = PropertyWorker::new(&worker_instances);
+    let expense_worker = expenses::ExpenseWorker::new(&worker_instances);
+    let property_worker = properties::PropertyWorker::new(&worker_instances);
+    let lessee_worker = leaseholders::LeaseholderWorker::new(&worker_instances);
+
+
+    app.run().unwrap();
+
+    instances.close().await;
+    let _expense_result = expense_worker.join();
+    let _property_result = property_worker.join();
+    let _lessee_result = lessee_worker.join();
+}
+
 #[derive(Debug)]
 struct ValidIds {
     expense_id: u32,

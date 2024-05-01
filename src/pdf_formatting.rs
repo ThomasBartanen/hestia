@@ -42,13 +42,7 @@ pub fn write_with_printpdf(
     y_level -= Mm(10.0);
     current_layer.use_text(contact_info.email, HEADER_SIZE, left_column, y_level, &font);
     y_level -= Mm(30.0);
-    current_layer.use_text(
-        leaseholder.leaseholder_type.get_name(),
-        HEADER_SIZE,
-        left_column,
-        y_level,
-        &font,
-    );
+    current_layer.use_text(&contact_info.name, HEADER_SIZE, left_column, y_level, &font);
     y_level -= Mm(10.0);
     current_layer.use_text("ADDRESS TODO", HEADER_SIZE, left_column, y_level, &font);
     y_level -= Mm(10.0);
@@ -185,7 +179,7 @@ pub fn write_with_printpdf(
             "{}{}_Statement_{}.pdf",
             settings.statements_path,
             get_word_date(statement.date),
-            leaseholder.leaseholder_type.get_name()
+            &contact_info.name
         ))
         .unwrap(),
     ))

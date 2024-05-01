@@ -1,3 +1,4 @@
+use crate::leaseholders::Leaseholder;
 use crate::properties::Property;
 use crate::{expenses::*, App};
 use crate::{ExpenseInput, PropertyInput, ValidIds};
@@ -31,4 +32,20 @@ pub async fn initialize_slint_properties(ui: &App, pool: &sqlx::Pool<Sqlite>, ma
     let converted_expenses = ModelRc::new(VecModel::from(expenses));
     ui.set_potential_prop_id(max_ids.property_id as i32);
     ui.set_properties(converted_expenses);
+}
+
+pub async fn initialize_slint_leaseholders(
+    ui: &App,
+    pool: &sqlx::Pool<Sqlite>,
+    max_ids: &ValidIds,
+) {
+    let leaseholders: Vec<crate::LeaseholderInput> = crate::database::get_leaseholders(pool)
+        .await
+        .iter()
+        .map(Leaseholder::convert_to_slint)
+        .collect();
+
+    let converted_leaseholders = ModelRc::new(VecModel::from(leaseholders));
+    ui.set_potential_lessee_id(max_ids.leaseholder_id as i32);
+    ui.set_lessees(converted_leaseholders);
 }
