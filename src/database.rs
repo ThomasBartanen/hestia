@@ -99,6 +99,7 @@ pub async fn add_maint_request(
     pool: &sqlx::Pool<Sqlite>,
     request: &MaintenanceRequest,
 ) -> Result<(), sqlx::Error> {
+    println!("Adding Maintenence Request");
     let maint_type_str = match request.request_type {
         MaintenanceType::Repairs => String::from("Maintenance: Repairs"),
         MaintenanceType::Cleaning => String::from("Maintenance: Cleaning"),
@@ -189,6 +190,7 @@ pub async fn add_statement(
     pool: &sqlx::Pool<Sqlite>,
     statement: &Statement,
 ) -> Result<SqliteQueryResult, sqlx::Error> {
+    println!("Adding Statement");
     let x = sqlx::query(
         "INSERT INTO statements (leaseholder_id, amount_due, amount_paid, statement_path) VALUES (?, ?, ?, ?)")
         .bind(statement.leaseholder.id)
