@@ -333,3 +333,13 @@ pub async fn remove_property(
         .await?;
     Ok(x)
 }
+pub async fn remove_leaseholder(
+    pool: &sqlx::Pool<Sqlite>,
+    lessee: &Leaseholder,
+) -> Result<SqliteQueryResult, sqlx::Error> {
+    let x = sqlx::query("DELETE FROM leaseholders WHERE expense_id == ?")
+        .bind(lessee.id)
+        .execute(pool)
+        .await?;
+    Ok(x)
+}
