@@ -117,11 +117,12 @@ pub async fn add_maint_request(
 }
 
 pub async fn add_expense(pool: &sqlx::Pool<Sqlite>, expense: &Expense) -> Result<(), sqlx::Error> {
+    println!("Adding Expense");
     let expense_type_str = &expense.expense_type.to_string();
     sqlx::query(
         "INSERT INTO expenses (property_id, expense_type, amount, date_incurred, description) VALUES (?, ?, ?, ?, ?)")
         .bind(expense.property_id)
-        .bind(&expense_type_str)
+        .bind(expense_type_str)
         .bind(expense.amount)
         .bind(expense.date.to_string())
         .bind(&expense.description)
@@ -134,6 +135,7 @@ pub async fn add_property(
     pool: &sqlx::Pool<Sqlite>,
     property: &Property,
 ) -> Result<SqliteQueryResult, sqlx::Error> {
+    println!("Adding Property");
     let x = sqlx::query(
         "INSERT INTO properties (property_name, property_tax, business_insurance, address, city, state, zip_code, num_units) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
         .bind(&property.name)

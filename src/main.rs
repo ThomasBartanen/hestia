@@ -5,14 +5,8 @@ mod generated_code {
 }
 
 pub use generated_code::*;
-use properties::PropertyWorker;
 use slint::Model;
-
-use crate::{
-    app_settings::initialize_data_paths,
-    expenses::*,
-    slint_conversion::{initialize_slint_expenses, initialize_slint_properties},
-};
+use sqlx::Sqlite;
 
 mod app_settings;
 mod database;
@@ -28,10 +22,10 @@ mod testing;
 #[async_std::main]
 async fn main() {
     //println!("{:?}", std::env::current_exe());
+    app_settings::initialize_data_paths().await;
     let instances = database::initialize_database().await;
-    initialize_data_paths().await;
 
-    testing::activate_test_mode(false, &instances).await;
+    testing::activate_test_mode(true, &instances).await;
     let app = App::new().unwrap();
     let weak_app = app.as_weak();
 
@@ -62,6 +56,7 @@ async fn main() {
     let property_worker = properties::PropertyWorker::new(&worker_instances);
     let lessee_worker = leaseholders::LeaseholderWorker::new(&worker_instances);
 
+    intialize_slint_callbacks(&app, &expense_worker, &property_worker);
 
     app.run().unwrap();
 
@@ -88,12 +83,25 @@ async fn get_ids(pool: &sqlx::Pool<Sqlite>) -> ValidIds {
     ids
 }
 
+fn intialize_slint_callbacks(
+    app: &App,
+    expense_worker: &expenses::ExpenseWorker,
+    property_worker: &properties::PropertyWorker,
+) {
+    let weak_app = app.as_weak();
+
+    //app.global::<Validation>().on_get_valid_id(move |input| {});
     app.on_new_expense({
         let expense_channel = expense_worker.channel.clone();
         let local_app = weak_app.clone();
         move |input| {
             let input_clone = input.clone();
-            let res = expense_channel.send(ExpenseMessage::ExpenseCreated(input));
+            let message = match input_clone.message {
+                crate::MessageType::Create => expenses::ExpenseMessage::ExpenseCreated(input),
+                crate::MessageType::Update => expenses::ExpenseMessage::ExpenseUpdate(input),
+                crate::MessageType::Delete => expenses::ExpenseMessage::ExpenseDelete(input),
+            };
+            let res = expense_channel.send(message);
             match res {
                 Ok(_) => println!("expense successfully sent"),
                 Err(_e) => println!("expense send failed"),
@@ -104,7 +112,30 @@ async fn get_ids(pool: &sqlx::Pool<Sqlite>) -> ValidIds {
                     .as_any()
                     .downcast_ref::<slint::VecModel<ExpenseInput>>()
                     .expect("Expenses failed to downcast");
-                new_expenses.push(input_clone);
+                match input_clone.message {
+                    MessageType::Create => new_expenses.push(input_clone),
+                    MessageType::Update => {
+                        let index = new_expenses
+                            .iter()
+                            .position(|r| {
+                                println!("r.id: {}. input_clone.id: {}", r.id, input_clone.id);
+                                r.id == input_clone.id
+                            })
+                            .unwrap();
+                        new_expenses.remove(index);
+                        new_expenses.insert(index, input_clone);
+                    }
+                    MessageType::Delete => {
+                        let index = new_expenses
+                            .iter()
+                            .position(|r| {
+                                println!("r.id: {}. input_clone.id: {}", r.id, input_clone.id);
+                                r.id == input_clone.id
+                            })
+                            .unwrap();
+                        new_expenses.remove(index);
+                    }
+                }
             });
             match res {
                 Ok(_) => (),
@@ -121,8 +152,9 @@ async fn get_ids(pool: &sqlx::Pool<Sqlite>) -> ValidIds {
             let message = match input_clone.message {
                 crate::MessageType::Create => properties::PropertyMessage::PropertyCreated(input),
                 crate::MessageType::Update => properties::PropertyMessage::PropertyUpdate(input),
-                crate::MessageType::Delete => todo!(),
+                crate::MessageType::Delete => properties::PropertyMessage::PropertyRemove(input),
             };
+            println!("New Property message sent: {}", message);
             let res = property_channel.send(message);
             match res {
                 Ok(_) => println!("property successfully sent"),
@@ -142,10 +174,4 @@ async fn get_ids(pool: &sqlx::Pool<Sqlite>) -> ValidIds {
             };
         }
     });
-
-    app.run().unwrap();
-
-    let _expense_result = expense_worker.join();
-    let _property_result = property_worker.join();
-    instances.close().await;
 }

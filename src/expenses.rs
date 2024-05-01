@@ -1,6 +1,9 @@
 use std::fmt;
 
-use crate::{database::add_expense, App, ExpenseInput};
+use crate::{
+    database::{add_expense, remove_expense, update_expense},
+    ExpenseInput,
+};
 use chrono::NaiveDate;
 use sqlx::{sqlite::SqliteRow, FromRow, Row};
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
@@ -169,6 +172,8 @@ impl Expense {
         let (main, sub) = ExpenseType::to_split_strings(&self.expense_type);
         let cur_expense = self.clone();
         ExpenseInput {
+            message: crate::MessageType::Update,
+            id: cur_expense.id as i32,
             amount: cur_expense.amount,
             date: cur_expense.date.to_string().into(),
             description: cur_expense.description.into(),
@@ -209,6 +214,7 @@ impl<'r> FromRow<'r, SqliteRow> for Expense {
 pub enum ExpenseMessage {
     ExpenseCreated(ExpenseInput),
     ExpenseUpdate(ExpenseInput),
+    ExpenseDelete(ExpenseInput),
     Quit,
 }
 
@@ -247,10 +253,29 @@ async fn expense_worker_loop(
     loop {
         let m = r.recv().await;
 
-        let res = match m {
+        match m {
             Some(s) => match s {
-                ExpenseMessage::ExpenseCreated(create) => create,
-                ExpenseMessage::ExpenseUpdate(update) => update,
+                ExpenseMessage::ExpenseCreated(create) => {
+                    let converted_expense = Expense::convert_from_slint(create);
+                    match add_expense(&pool, &converted_expense).await {
+                        Ok(_) => println!("Successfully added expense via slint"),
+                        Err(e) => println!("Failed to add expense via slint: {e}"),
+                    }
+                }
+                ExpenseMessage::ExpenseUpdate(update) => {
+                    let converted_expense = Expense::convert_from_slint(update);
+                    match update_expense(&pool, &converted_expense).await {
+                        Ok(_) => println!("Successfully updated expense via slint"),
+                        Err(e) => println!("Failed to update expense via slint: {e}"),
+                    }
+                }
+                ExpenseMessage::ExpenseDelete(remove) => {
+                    let converted_expense = Expense::convert_from_slint(remove);
+                    match remove_expense(&pool, &converted_expense).await {
+                        Ok(_) => println!("Successfully removed expense via slint"),
+                        Err(e) => println!("Failed to remove expense via slint: {e}"),
+                    }
+                }
                 ExpenseMessage::Quit => {
                     println!("Quitting");
                     continue;
@@ -258,12 +283,5 @@ async fn expense_worker_loop(
             },
             None => continue,
         };
-
-        let converted_expense = Expense::convert_from_slint(res);
-
-        match add_expense(&pool, &converted_expense).await {
-            Ok(_) => println!("Successfully added expense via slint"),
-            Err(e) => println!("Failed to add expense via slint: {e}"),
-        }
     }
 }

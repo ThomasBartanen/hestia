@@ -1,5 +1,5 @@
 use crate::{
-    database::{add_property, update_property},
+    database::{add_property, remove_property, update_property},
     App, PropertyInput,
 };
 use sqlx::{sqlite::SqliteRow, Row};
@@ -121,9 +121,21 @@ impl Address {
 pub enum PropertyMessage {
     PropertyCreated(PropertyInput),
     PropertyUpdate(PropertyInput),
+    PropertyRemove(PropertyInput),
     Quit,
 }
 
+impl fmt::Display for PropertyMessage {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let res = match self {
+            PropertyMessage::PropertyCreated(_) => String::from("Create"),
+            PropertyMessage::PropertyUpdate(_) => String::from("Update"),
+            PropertyMessage::PropertyRemove(_) => String::from("Remove"),
+            PropertyMessage::Quit => String::from("Quit"),
+        };
+        write!(f, "{res}")
+    }
+}
 pub struct PropertyWorker {
     pub channel: UnboundedSender<PropertyMessage>,
     pub worker_thread: std::thread::JoinHandle<()>,
@@ -175,6 +187,13 @@ async fn property_worker_loop(
                     match update_property(&pool, &converted_property).await {
                         Ok(_) => println!("Successfully added property via slint"),
                         Err(e) => println!("Failed to add property via slint: {e}"),
+                    }
+                }
+                PropertyMessage::PropertyRemove(remove) => {
+                    let converted_property = Property::convert_from_slint(remove);
+                    match remove_property(&pool, &converted_property).await {
+                        Ok(_) => println!("Successfully removed property via slint"),
+                        Err(e) => println!("Failed to remove property via slint: {e}"),
                     }
                 }
                 PropertyMessage::Quit => {

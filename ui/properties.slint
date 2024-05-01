@@ -15,8 +15,6 @@ export struct PropertyInput {
     unit-count: string
 }
 
-
-
 component AddPropertyMenu inherits Rectangle {
     public function clear-prop-menu() {
         name-input.text = "";
@@ -28,7 +26,7 @@ component AddPropertyMenu inherits Rectangle {
         prop-tax-input.text = "";
         bus-ins-input.text = "";
 
-        MessageType.create;
+        prop-action = MessageType.create;
     }
 
     public function open-prop(prop: PropertyInput) {
@@ -41,13 +39,14 @@ component AddPropertyMenu inherits Rectangle {
         prop-tax-input.text = prop.property-tax;
         bus-ins-input.text = prop.business-insurance;
         
+        selected-prop-id = prop.id;
         prop-action = MessageType.update;
     }
 
     public function submit-prop() {
         new-property({
             message: prop-action,
-            id: 0,
+            id: prop-action == MessageType.update ? selected-prop-id : prop-action == MessageType.delete ? selected-prop-id : potential-prop-id,
             name: name-input.text,
             address-number: street-input.text,
             city: city-input.text,
@@ -138,7 +137,6 @@ component AddPropertyMenu inherits Rectangle {
                     kind: ok;
                     clicked => {
                         submit-prop();
-                        clear-prop-menu();
                     }
                 }
                 StandardButton {
@@ -165,7 +163,6 @@ export component PropertyMenu inherits Rectangle {
     in-out property <int> potential-prop-id <=> add-prop-menu.potential-prop-id;
 
     pure callback new-property <=> add-prop-menu.new-property;
-    background: green.mix(gray, 20%);
     HorizontalLayout {
         Rectangle {
             min-width: 100px;
@@ -179,11 +176,11 @@ export component PropertyMenu inherits Rectangle {
                         ta-bg := Rectangle {
                             background: prop-button.pressed ? red : prop-button.has-hover? cornsilk : root.background;
                             Text {
-                                text: x.name;
+                                text: x.id + ". " + x.name;
                             }
                         }
                         clicked => {
-                            add-prop-menu.open-prop(x);
+                            add-prop-menu.open-prop(x);                            
                         }
                     }
                 }
