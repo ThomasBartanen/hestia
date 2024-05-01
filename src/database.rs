@@ -323,3 +323,13 @@ pub async fn remove_expense(
         .await?;
     Ok(x)
 }
+pub async fn remove_property(
+    pool: &sqlx::Pool<Sqlite>,
+    property: &Property,
+) -> Result<SqliteQueryResult, sqlx::Error> {
+    let x = sqlx::query("DELETE FROM properties WHERE property_id == ?")
+        .bind(property.id)
+        .execute(pool)
+        .await?;
+    Ok(x)
+}
