@@ -4,11 +4,11 @@ use crate::{
         add_expense, add_leaseholders, add_property, add_statement, get_current_expenses,
         update_property,
     },
+    expenses::*,
     lease::{self, *},
     leaseholders::*,
     properties::*,
     statements::{create_statement, Statement},
-    Expense, ExpenseType, MaintenanceType, UtilitiesType,
 };
 use chrono::NaiveDate;
 use sqlx::Sqlite;
@@ -53,6 +53,7 @@ async fn test_database(instances: &sqlx::Pool<Sqlite>) -> (Company, Leaseholder,
     };
 
     let contact = ContactInformation::new(
+        "Johann".to_owned(),
         Address::new(
             "3322 S 55th Street".to_string(),
             "Seattle".to_string(),
@@ -88,10 +89,6 @@ async fn test_database(instances: &sqlx::Pool<Sqlite>) -> (Company, Leaseholder,
         0,
         lease.clone(),
         property.id,
-        LeaseholderType::IndividualLeaseholder(Individual {
-            first_name: "John".to_owned(),
-            last_name: "Example".to_owned(),
-        }),
         contact,
         NaiveDate::from_ymd_opt(2024, 3, 1).unwrap(),
     );
