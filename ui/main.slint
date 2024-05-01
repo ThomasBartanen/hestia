@@ -1,5 +1,5 @@
 
-import { Button, TabWidget } from "std-widgets.slint";
+import { Button, TabWidget, AboutSlint } from "std-widgets.slint";
 import { PropertyMenu, PropertyInput } from "properties.slint";
 import { StatementMenu, StatementInput } from "statements.slint";
 import { ExpenseMenu, ExpenseInput } from "expenses.slint";
@@ -27,22 +27,43 @@ export component NavigationPane inherits Rectangle {
             }
             Tab {
                 title: "Leaseholders";
-                lessee-menu := LesseeMenu {}
+                lessee-menu := LesseeMenu {                     
+                    background: tan.mix(gray, 20%);
+                }
             }
             Tab {
                 title: "Properties";
-                prop-menu := PropertyMenu { }
+                prop-menu := PropertyMenu { 
+                    background: green.mix(gray, 20%);
+                }
             }
             Tab {
                 title: "Expenses";
-                expense-menu := ExpenseMenu { }
+                expense-menu := ExpenseMenu {
+                    background: red.mix(gray, 20%); 
+                }
             }
             Tab {
                 title: "Statements";
-                statement-menu := StatementMenu { }
+                statement-menu := StatementMenu {
+                    background: blue.mix(gray, 20%);
+                }
             }
             Tab {
                 title: "About";
+                GridLayout {
+                    Rectangle {
+                        col: 0;
+                        row: 0;
+                        Text {
+                            text: "Hestia was developed by Thomas Bartanen\nThe orignal goal was to ease a laziness in property management with an interest in software engineering.\n\nDeveloped with:\nRust\nSlint\nsqlx\ntokio\nprintPdf\nMore...";
+                        }
+                    }
+                    AboutSlint {
+                        col: 1;
+                        row: 0;
+                    }
+                }
             }
         }
     }
@@ -64,7 +85,7 @@ export component App inherits Window {
     padding: 10px;
 
     // === Colors ===
-    background: white;
+    //background: white;
 
     // === Callbacks ===
     pure callback new-expense <=> nav-pane.new-expense;
