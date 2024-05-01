@@ -311,3 +311,15 @@ pub async fn update_lease(
     .await?;
     Ok(x)
 }
+
+// -------------------------------------- REMOVE ---------------------------------------------
+pub async fn remove_expense(
+    pool: &sqlx::Pool<Sqlite>,
+    expense: &Expense,
+) -> Result<SqliteQueryResult, sqlx::Error> {
+    let x = sqlx::query("DELETE FROM expenses WHERE expense_id == ?")
+        .bind(expense.id)
+        .execute(pool)
+        .await?;
+    Ok(x)
+}
