@@ -87,8 +87,7 @@ pub async fn create_schema(db_url: &str) -> Result<SqliteQueryResult, sqlx::Erro
         statement_path      TEXT,
         FOREIGN KEY (leaseholder_id) REFERENCES leaseholders(leaseholder_id)
     )";
-    //maintenance_id      integer FOREIGN KEY REFERENCES maintenance_requests(request_id) null,
-    let result = sqlx::query(qry).execute(pool).await;
+    let result = sqlx::query(qry).execute(&pool).await;
     pool.close().await;
     result
 }
