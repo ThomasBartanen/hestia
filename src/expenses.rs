@@ -143,6 +143,7 @@ pub struct Expense {
 
 impl Expense {
     pub fn new(
+        id: u32,
         property_id: u32,
         expense_type: ExpenseType,
         amount: f32,
@@ -150,7 +151,7 @@ impl Expense {
         description: String,
     ) -> Expense {
         Expense {
-            id: 0,
+            id,
             property_id,
             expense_type,
             amount,
@@ -160,6 +161,7 @@ impl Expense {
     }
     pub fn convert_from_slint(input: ExpenseInput) -> Expense {
         Expense::new(
+            input.id as u32,
             1,
             ExpenseType::parse_string(input.expense_type.as_str(), input.expense_subtype.as_str()),
             input.amount,

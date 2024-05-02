@@ -106,6 +106,7 @@ pub async fn test_expenses(instances: &sqlx::Pool<Sqlite>, property: &Property) 
     println!("- - - Testing Expenses - - -");
     let dt = NaiveDate::from_ymd_opt(2024, 3, 10);
     let expense = Expense::new(
+        0,
         property.id,
         ExpenseType::Maintenance(MaintenanceType::Landscaping),
         100.0,
@@ -118,6 +119,7 @@ pub async fn test_expenses(instances: &sqlx::Pool<Sqlite>, property: &Property) 
     }
 
     let expense = Expense::new(
+        0,
         property.id,
         ExpenseType::Utilities(UtilitiesType::Electricity),
         1920.0,
@@ -130,6 +132,7 @@ pub async fn test_expenses(instances: &sqlx::Pool<Sqlite>, property: &Property) 
     }
 
     let expense = Expense::new(
+        0,
         property.id,
         ExpenseType::Utilities(UtilitiesType::Water),
         450.0,
@@ -142,6 +145,7 @@ pub async fn test_expenses(instances: &sqlx::Pool<Sqlite>, property: &Property) 
     }
 
     let expense = Expense::new(
+        0,
         property.id,
         ExpenseType::Other,
         100.0,
