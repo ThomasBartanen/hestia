@@ -70,6 +70,7 @@ struct ValidIds {
     expense_id: u32,
     property_id: u32,
     leaseholder_id: u32,
+    statement_id: u32,
 }
 
 async fn get_ids(pool: &sqlx::Pool<Sqlite>) -> ValidIds {
@@ -77,6 +78,7 @@ async fn get_ids(pool: &sqlx::Pool<Sqlite>) -> ValidIds {
         expense_id: database::get_max_expense_id(pool).await,
         property_id: database::get_max_property_id(pool).await,
         leaseholder_id: database::get_max_leaseholder_id(pool).await,
+        statement_id: 0,
     };
     println!("Created ID Struct: {:#?}", ids);
     ids
