@@ -52,7 +52,7 @@ pub async fn create_schema(db_url: &str) -> Result<SqliteQueryResult, sqlx::Erro
         description         TEXT,
         status              TEXT,
         completion_date     TEXT null,
-        FOREIGN KEY (leaseholder_id) REFERENCES leaseholders(leaseholder_id)
+        FOREIGN KEY (leaseholder_id) REFERENCES leaseholders(leaseholder_id) ON DELETE SET NULL
     );
     CREATE TABLE IF NOT EXISTS leaseholders (
         leaseholder_id      INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -66,8 +66,8 @@ pub async fn create_schema(db_url: &str) -> Result<SqliteQueryResult, sqlx::Erro
         email               TEXT,
         phone_number        TEXT,
         move_in_date        TEXT,
-        FOREIGN KEY (lease_id) REFERENCES leases(lease_id)
-        FOREIGN KEY (property_id) REFERENCES properties(property_id)
+        FOREIGN KEY (lease_id) REFERENCES leases(lease_id) ON DELETE SET NULL
+        FOREIGN KEY (property_id) REFERENCES properties(property_id) ON DELETE CASCADE
     );    
     CREATE TABLE IF NOT EXISTS expenses (
         expense_id          INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -77,7 +77,7 @@ pub async fn create_schema(db_url: &str) -> Result<SqliteQueryResult, sqlx::Erro
         date_incurred       TEXT,
         description         TEXT,
         receipt_url         TEXT null,
-        FOREIGN KEY (property_id) REFERENCES properties(property_id)
+        FOREIGN KEY (property_id) REFERENCES properties(property_id) ON DELETE SET NULL
     );
     CREATE TABLE IF NOT EXISTS statements (
         statement_id        INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -85,7 +85,7 @@ pub async fn create_schema(db_url: &str) -> Result<SqliteQueryResult, sqlx::Erro
         amount_due          INTEGER,
         amount_paid         INTEGER,
         statement_path      TEXT,
-        FOREIGN KEY (leaseholder_id) REFERENCES leaseholders(leaseholder_id)
+        FOREIGN KEY (leaseholder_id) REFERENCES leaseholders(leaseholder_id) ON DELETE CASCADE
     )";
     let result = sqlx::query(qry).execute(&pool).await;
     pool.close().await;
@@ -367,7 +367,7 @@ pub async fn remove_leaseholder(
     pool: &sqlx::Pool<Sqlite>,
     lessee: &Leaseholder,
 ) -> Result<SqliteQueryResult, sqlx::Error> {
-    let x = sqlx::query("DELETE FROM leaseholders WHERE expense_id == ?")
+    let x = sqlx::query("DELETE FROM leaseholders WHERE leaseholder_id == ?")
         .bind(lessee.id)
         .execute(pool)
         .await?;
