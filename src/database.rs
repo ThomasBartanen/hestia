@@ -358,6 +358,7 @@ pub async fn remove_expense(
     pool: &sqlx::Pool<Sqlite>,
     expense: &Expense,
 ) -> Result<SqliteQueryResult, sqlx::Error> {
+    println!("Removing Expense with id: {}", expense.id);
     let x = sqlx::query("DELETE FROM expenses WHERE expense_id == ?")
         .bind(expense.id)
         .execute(pool)
@@ -368,6 +369,7 @@ pub async fn remove_property(
     pool: &sqlx::Pool<Sqlite>,
     property: &Property,
 ) -> Result<SqliteQueryResult, sqlx::Error> {
+    println!("Removing Property with id: {}", property.id);
     let x = sqlx::query("DELETE FROM properties WHERE property_id == ?")
         .bind(property.id)
         .execute(pool)
@@ -378,6 +380,7 @@ pub async fn remove_leaseholder(
     pool: &sqlx::Pool<Sqlite>,
     lessee: &Leaseholder,
 ) -> Result<SqliteQueryResult, sqlx::Error> {
+    println!("Removing Leaseholder with id: {}", lessee.id);
     let x = sqlx::query("DELETE FROM leaseholders WHERE leaseholder_id == ?")
         .bind(lessee.id)
         .execute(pool)
