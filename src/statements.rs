@@ -1,5 +1,6 @@
 use crate::{
     app_settings::PathSettings,
+    database::add_statement,
     expenses::*,
     lease::FeeStructure,
     leaseholders::{Company, Leaseholder},
@@ -7,6 +8,7 @@ use crate::{
     properties::Property,
 };
 use chrono::NaiveDate;
+use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 
 #[derive(Debug, Clone)]
 pub struct Statement {
@@ -67,4 +69,61 @@ pub fn create_statement(
     settings: PathSettings,
 ) {
     write_with_printpdf(statement, property, company, settings);
+}
+
+pub enum StatementMessage {
+    StatementCreated(Statement),
+    StatementUpdate(Statement),
+    StatementDelete(Statement),
+    Quit,
+}
+
+pub struct StatementWorker {
+    pub channel: UnboundedSender<StatementMessage>,
+    pub worker_thread: std::thread::JoinHandle<()>,
+}
+
+impl StatementWorker {
+    pub fn new(pool: &sqlx::Pool<sqlx::Sqlite>) -> Self {
+        println!("Create new Statement Worker");
+        let (sender, r) = tokio::sync::mpsc::unbounded_channel();
+        let worker_thread = std::thread::spawn({
+            let new_pool = pool.clone();
+            move || {
+                tokio::runtime::Runtime::new()
+                    .unwrap()
+                    .block_on(statement_worker_loop(new_pool, r))
+            }
+        });
+        Self {
+            channel: sender,
+            worker_thread,
+        }
+    }
+    pub fn join(self) -> std::thread::Result<()> {
+        let _ = self.channel.send(StatementMessage::Quit);
+        self.worker_thread.join()
+    }
+}
+
+async fn statement_worker_loop(
+    pool: sqlx::Pool<sqlx::Sqlite>,
+    mut r: UnboundedReceiver<StatementMessage>,
+) {
+    loop {
+        let m = r.recv().await;
+
+        match m {
+            Some(s) => match s {
+                StatementMessage::StatementCreated(create) => {}
+                StatementMessage::StatementUpdate(update) => {}
+                StatementMessage::StatementDelete(remove) => {}
+                StatementMessage::Quit => {
+                    println!("Quitting");
+                    continue;
+                }
+            },
+            None => continue,
+        };
+    }
 }
