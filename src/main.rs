@@ -41,7 +41,6 @@ async fn main() {
         &weak_app.upgrade().unwrap(),
         &instances,
         &valid_ids,
-        1,
     )
     .await;
     slint_conversion::initialize_slint_leaseholders(
