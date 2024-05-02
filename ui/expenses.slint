@@ -1,0 +1,220 @@
+import { TabWidget, LineEdit, GridBox, ComboBox, SpinBox, StandardButton, ListView, Button } from "std-widgets.slint";
+import { Validation, IdType } from "validation.slint";
+
+export enum MessageType {create, update, delete}
+
+export struct ExpenseInput {
+    message: MessageType,
+    id: int,
+    description: string,
+    amount: float,
+    date: string,
+    expense-type: string,
+    expense-subtype: string
+}
+
+export component AddExpenseMenu inherits Rectangle {
+    public function clear-expense-menu() {
+        description-input.text = "";
+        amount-input.text = "";
+        date-input.text = "";
+    
+        expense-type.current-value = "Select Expense Type";
+
+        expense-action = MessageType.create;
+    }
+
+    public function open-expense(expense: ExpenseInput) {
+        description-input.text = expense.description;
+        amount-input.text = expense.amount;
+        date-input.text = expense.date;
+        expense-type.current-value = expense.expense-type;
+        subtype.current-value = expense.expense-subtype;
+
+        selected-expense-id = expense.id;
+        expense-action = MessageType.update;
+    }
+    
+    public function submit-expense() {
+        potential-expense-id = Validation.get-valid-id(IdType.Expense);
+        new-expense({
+            message: expense-action,
+            id: expense-action == MessageType.update ? selected-expense-id : expense-action == MessageType.delete ? selected-expense-id : potential-expense-id,
+            description: description-input.text,
+            amount: amount-input.text.to-float(),
+            date: date-input.text,
+            expense-type: expense-type.current-value,
+            expense-subtype: subtype.current-value
+        });
+        clear-expense-menu();
+    }
+    pure callback new-expense(ExpenseInput);
+    in-out property <int> potential-expense-id;
+    in-out property <int> selected-expense-id;
+    in-out property <string> expense-subtype-string;
+    in-out property <MessageType> expense-action;
+    
+    border-width: 2px;
+    border-radius: 5px;
+    border-color: black;
+    padding: 10px;
+
+    HorizontalLayout {
+        GridBox {
+            spacing: 20px;
+            padding: 10px;
+            y: 10px;
+            //preferred-width: parent.width / 2;
+            //max-width: parent.max-width;
+            height: 50px;
+            Text {
+                text: "Add expenses";
+                col: 0;
+                row: 0;
+            }
+            description-input := LineEdit {
+                col: 0;
+                row: 1;
+                placeholder-text: "Description";
+                input-type: InputType.text;
+            }
+            amount-input := LineEdit {
+                col: 1;
+                row: 1;
+                placeholder-text: "Amount";
+                input-type: InputType.decimal;
+            }
+            date-input := LineEdit {
+                col: 2;
+                row: 1;
+                placeholder-text: "Date";
+                input-type: InputType.number;
+            }
+            Rectangle {
+                col: 0;
+                row: 2;
+                min-width: 100px;
+                preferred-width: 150px;
+                padding: 5px;
+                HorizontalLayout {
+                    alignment: LayoutAlignment.start;
+                    //max-width: 200px;
+                    min-width: 100px;
+                    preferred-width: 150px;
+                    spacing: 100px;
+                    padding: 20px;
+                    Rectangle {
+                        expense-type := ComboBox {
+                            model: [
+                                "Select Expense Type", 
+                                "Utility", 
+                                "Maintenance", 
+                                "Other"
+                            ];
+                        }
+                    }
+                    Rectangle {
+                        subtype := ComboBox {
+                            model: [""];
+                            enabled: true;
+                            states [
+                                Utility when expense-type.current-value == "Utility": {
+                                    enabled: true;
+                                    subtype.model: [
+                                        "Water",
+                                        "Electricity",
+                                        "Garbage",
+                                        "Gas",
+                                        "Other"
+                                    ];
+                                }
+                                Maintenance when expense-type.current-value == "Maintenance": {
+                                    enabled: true;
+                                    subtype.model: [
+                                        "Repairs",
+                                        "Cleaning",
+                                        "Landscaping",
+                                        "Other"
+                                    ];
+                                }
+                                None when expense-type.current-value != "Utility" && expense-type.current-value != "Maintenance" : {
+                                    subtype.enabled : false;
+                                }
+                            ]
+                        }                        
+                    }
+                }
+            }
+            Rectangle {
+                col: 0;
+                row: 3;
+                HorizontalLayout {
+                    StandardButton {
+                        kind: ok;
+                        clicked => {
+                            submit-expense();
+                            clear-expense-menu();
+                        }
+                    }
+                    StandardButton {
+                        kind: cancel;
+                        clicked => {
+                            clear-expense-menu();
+                        }
+                    }
+                    Button {                        
+                        enabled: expense-action == MessageType.update ? true : false;
+                        text: "Delete";
+                        clicked => {
+                            expense-action = MessageType.delete;
+                            submit-expense();
+                        }
+                    }
+                }
+            }
+        } 
+    }
+}
+
+export component ExpenseMenu inherits Rectangle {
+    pure callback new-expense <=> add-expense-menu.new-expense;
+
+    in-out property <[ExpenseInput]> expenses;
+    in-out property <int> potential-expense-id <=> add-expense-menu.potential-expense-id;
+
+    HorizontalLayout {
+        Rectangle {
+            min-width: 100px;
+            max-width: 300px;
+            expense-history := Rectangle {
+                border-radius: 2px;
+                border-color: black;
+                VerticalLayout {
+                    ListView {
+                        padding: 20px;
+                        for x in expenses: expense-button := TouchArea {
+                            ta-bg := Rectangle {
+                                background: expense-button.has-hover? cornsilk : root.background;
+                                Text {
+                                    text: x.id + ". " + x.description;
+                                }
+                            }
+                            clicked => {
+                                add-expense-menu.selected-expense-id = x.id;
+                                add-expense-menu.open-expense(x);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        Rectangle {
+            min-width: 400px;
+            preferred-width: 600px;
+            max-width: 1000px;
+            add-expense-menu := AddExpenseMenu {
+                
+            }
+        }
+    }
+}

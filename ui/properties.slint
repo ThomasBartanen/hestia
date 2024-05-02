@@ -1,0 +1,196 @@
+import { Button, TabWidget, ListView, GridBox, LineEdit, StandardButton } from "std-widgets.slint";
+
+export enum MessageType {create, update, delete}
+
+export struct PropertyInput {
+    message: MessageType,
+    id: int,
+    name: string,
+    address-number: string,
+    city: string,
+    state: string,
+    zip-code: string,
+    property_tax: float,
+    business_insurance: float,
+    unit-count: string
+}
+
+component AddPropertyMenu inherits Rectangle {
+    public function clear-prop-menu() {
+        name-input.text = "";
+        unit-count-input.text = "";
+        street-input.text = "";
+        city-input.text = "";
+        state-input.text = "";
+        zip-input.text = "";
+        prop-tax-input.text = "";
+        bus-ins-input.text = "";
+
+        prop-action = MessageType.create;
+    }
+
+    public function open-prop(prop: PropertyInput) {
+        name-input.text = prop.name;
+        unit-count-input.text = prop.unit-count;
+        street-input.text = prop.address-number;
+        city-input.text = prop.city;
+        state-input.text = prop.state;
+        zip-input.text = prop.zip-code;
+        prop-tax-input.text = prop.property-tax;
+        bus-ins-input.text = prop.business-insurance;
+        
+        selected-prop-id = prop.id;
+        prop-action = MessageType.update;
+    }
+
+    public function submit-prop() {
+        new-property({
+            message: prop-action,
+            id: prop-action == MessageType.update ? selected-prop-id : prop-action == MessageType.delete ? selected-prop-id : potential-prop-id,
+            name: name-input.text,
+            address-number: street-input.text,
+            city: city-input.text,
+            state: state-input.text,
+            zip-code: zip-input.text,
+            property_tax: prop-tax-input.text.to-float(),
+            business_insurance: bus-ins-input.text.to-float(),
+            unit-count: unit-count-input.text
+        });
+
+        clear-prop-menu();
+    }
+    pure callback new-property(PropertyInput);
+    in-out property <int> potential-prop-id;
+    property <int> selected-prop-id;
+    in-out property <MessageType> prop-action;
+    
+    border-width: 2px;
+    border-radius: 5px;
+    border-color: black;
+    padding: 10px;
+
+    HorizontalLayout {
+        GridBox {
+            width: 300px;
+            spacing: 20px;
+            padding: 10px;
+            y: 10px;
+            height: 50px;
+            Text {
+                text: "Add Property";
+                col: 0;
+                row: 0;
+                font-weight: 3;
+            }
+            name-input := LineEdit {
+                col: 0;
+                row: 1;
+                placeholder-text: "Property Name";
+                input-type: InputType.text;
+            }
+            unit-count-input := LineEdit {
+                col: 1;
+                row: 1;
+                placeholder-text: "Unit Count";
+                input-type: InputType.number;
+            }
+            street-input := LineEdit {
+                col: 0;
+                row: 2;
+                placeholder-text: "Street Address";
+                input-type: InputType.text;
+            }
+            city-input := LineEdit {
+                col: 1;
+                row: 2;
+                placeholder-text: "City";
+                input-type: InputType.text;
+            }
+            state-input := LineEdit {
+                col: 0;
+                row: 3;
+                placeholder-text: "State";
+                input-type: InputType.text;
+            }
+            zip-input := LineEdit {
+                col: 1;
+                row: 3;
+                placeholder-text: "Zip-Code";
+                input-type: InputType.number;
+            }
+            prop-tax-input := LineEdit {
+                col: 0;
+                row: 4;
+                placeholder-text: "Property Tax Total";
+                input-type: InputType.decimal;
+            }
+            bus-ins-input := LineEdit {
+                col: 1;
+                row: 4;
+                placeholder-text: "Business Insurance Total";
+                input-type: InputType.decimal;
+            }
+            HorizontalLayout {
+                col: 0;
+                row: 5;
+                StandardButton {
+                    kind: ok;
+                    clicked => {
+                        submit-prop();
+                    }
+                }
+                StandardButton {
+                    kind: cancel;
+                    clicked => {
+                        clear-prop-menu();
+                    }
+                }
+                Button {
+                    enabled: prop-action == MessageType.update ? true : false;
+                    text: "Delete";
+                    clicked => {
+                        prop-action = MessageType.delete;
+                        submit-prop();
+                    }
+                }
+            }
+        }
+    }
+}
+
+export component PropertyMenu inherits Rectangle {
+    in-out property <[PropertyInput]> properties;
+    in-out property <int> potential-prop-id <=> add-prop-menu.potential-prop-id;
+
+    pure callback new-property <=> add-prop-menu.new-property;
+    HorizontalLayout {
+        Rectangle {
+            min-width: 100px;
+            max-width: 300px;
+            border-radius: 2px;
+            border-color: black;
+            VerticalLayout {
+                ListView {
+                    padding: 20px;
+                    for x in properties: prop-button := TouchArea {
+                        ta-bg := Rectangle {
+                            background: prop-button.pressed ? red : prop-button.has-hover? cornsilk : root.background;
+                            Text {
+                                text: x.id + ". " + x.name;
+                            }
+                        }
+                        clicked => {
+                            add-prop-menu.open-prop(x);                            
+                        }
+                    }
+                }
+            }
+        }
+        Rectangle {             
+            min-width: 400px;
+            preferred-width: 600px;
+            max-width: 1000px;
+            add-prop-menu := AddPropertyMenu {}
+        }
+    }
+}

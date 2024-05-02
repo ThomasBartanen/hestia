@@ -58,7 +58,11 @@ pub async fn create_schema(db_url: &str) -> Result<SqliteQueryResult, sqlx::Erro
         leaseholder_id      INTEGER PRIMARY KEY AUTOINCREMENT,
         lease_id            INTEGER,
         property_id         INTEGER,
-        remittence_address  TEXT,
+        name                TEXT,
+        address             TEXT,
+        city                TEXT,
+        state               TEXT,
+        zip_code            TEXT,
         email               TEXT,
         phone_number        TEXT,
         move_in_date        TEXT,
@@ -83,16 +87,18 @@ pub async fn create_schema(db_url: &str) -> Result<SqliteQueryResult, sqlx::Erro
         statement_path      TEXT,
         FOREIGN KEY (leaseholder_id) REFERENCES leaseholders(leaseholder_id)
     )";
-    //maintenance_id      integer FOREIGN KEY REFERENCES maintenance_requests(request_id) null,
     let result = sqlx::query(qry).execute(&pool).await;
     pool.close().await;
     result
 }
 
+// -------------------------------------- ADD ---------------------------------------------
+
 pub async fn add_maint_request(
     pool: &sqlx::Pool<Sqlite>,
     request: &MaintenanceRequest,
 ) -> Result<(), sqlx::Error> {
+    println!("Adding Maintenence Request");
     let maint_type_str = match request.request_type {
         MaintenanceType::Repairs => String::from("Maintenance: Repairs"),
         MaintenanceType::Cleaning => String::from("Maintenance: Cleaning"),
@@ -111,27 +117,12 @@ pub async fn add_maint_request(
 }
 
 pub async fn add_expense(pool: &sqlx::Pool<Sqlite>, expense: &Expense) -> Result<(), sqlx::Error> {
-    let expense_type_str = match &expense.expense_type {
-        ExpenseType::Maintenance(maintenance_type) => match maintenance_type {
-            MaintenanceType::Repairs => String::from("Maintenance: Repairs"),
-            MaintenanceType::Cleaning => String::from("Maintenance: Cleaning"),
-            MaintenanceType::Landscaping => String::from("Maintenance: Landscaping"),
-            MaintenanceType::Other => String::from("Maintenance: Other"),
-        },
-        ExpenseType::Utilities(utilities_type) => match utilities_type {
-            UtilitiesType::Water => String::from("Utilities: Water"),
-            UtilitiesType::Electricity => String::from("Utilities: Electricity"),
-            UtilitiesType::Garbage => String::from("Utilities: Garbage/Recycle"),
-            UtilitiesType::Gas => String::from("Utilities: Gas"),
-            UtilitiesType::Other => String::from("Utilities: Other"),
-        },
-        ExpenseType::Other => String::from("Other"),
-    };
-
+    println!("Adding Expense");
+    let expense_type_str = &expense.expense_type.to_string();
     sqlx::query(
         "INSERT INTO expenses (property_id, expense_type, amount, date_incurred, description) VALUES (?, ?, ?, ?, ?)")
         .bind(expense.property_id)
-        .bind(&expense_type_str)
+        .bind(expense_type_str)
         .bind(expense.amount)
         .bind(expense.date.to_string())
         .bind(&expense.description)
@@ -144,6 +135,7 @@ pub async fn add_property(
     pool: &sqlx::Pool<Sqlite>,
     property: &Property,
 ) -> Result<SqliteQueryResult, sqlx::Error> {
+    println!("Adding Property");
     let x = sqlx::query(
         "INSERT INTO properties (property_name, property_tax, business_insurance, address, city, state, zip_code, num_units) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
         .bind(&property.name)
@@ -162,8 +154,9 @@ pub async fn add_property(
 pub async fn add_leaseholders(
     pool: &sqlx::Pool<Sqlite>,
     leaseholder: &Leaseholder,
-    property_id: u16,
+    property_id: u32,
 ) -> Result<SqliteQueryResult, sqlx::Error> {
+    println!("Adding Leaseholder");
     let lease = &leaseholder.lease;
 
     let lease_id =
@@ -176,10 +169,14 @@ pub async fn add_leaseholders(
             .last_insert_rowid();
 
     let leaseholder_result = sqlx::query(
-        "INSERT INTO leaseholders (lease_id, property_id, remittence_address, email, phone_number, move_in_date) VALUES (?, ?, ?, ?, ?, ?)")
+        "INSERT INTO leaseholders (lease_id, property_id, name, address, city, state, zip_code, email, phone_number, move_in_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
         .bind(lease_id)
         .bind(property_id)
-        .bind(&leaseholder.contact_info.get_address_string())
+        .bind(&leaseholder.contact_info.name)
+        .bind(&leaseholder.contact_info.remittence_address.street_address)
+        .bind(&leaseholder.contact_info.remittence_address.city)
+        .bind(&leaseholder.contact_info.remittence_address.state)
+        .bind(&leaseholder.contact_info.remittence_address.zip_code)
         .bind(&leaseholder.contact_info.email)
         .bind(&leaseholder.contact_info.phone_number)
         .bind(&leaseholder.move_in_date.to_string())
@@ -188,9 +185,68 @@ pub async fn add_leaseholders(
     Ok(leaseholder_result)
 }
 
+pub async fn add_statement(
+    pool: &sqlx::Pool<Sqlite>,
+    statement: &Statement,
+) -> Result<SqliteQueryResult, sqlx::Error> {
+    println!("Adding Statement");
+    let x = sqlx::query(
+        "INSERT INTO statements (leaseholder_id, amount_due, amount_paid, statement_path) VALUES (?, ?, ?, ?)")
+        .bind(statement.leaseholder.id)
+        .bind(statement.total)
+        .bind(0)
+        .bind("test_statement")
+        .execute(pool)
+        .await?;
+
+    Ok(x)
+}
+
+// -------------------------------------- GET ---------------------------------------------
+pub async fn get_properties(pool: &sqlx::Pool<Sqlite>) -> Vec<Property> {
+    let mut properties: Vec<Property> = vec![];
+
+    let property_rows = sqlx::query("SELECT * FROM properties")
+        .fetch_all(pool)
+        .await;
+    for row in property_rows.unwrap() {
+        let property = Property::from_row(&row);
+        properties.push(property.unwrap());
+    }
+    properties
+}
+
+pub async fn get_leaseholders(pool: &sqlx::Pool<Sqlite>) -> Vec<Leaseholder> {
+    let mut leaseholders: Vec<Leaseholder> = vec![];
+
+    let leaseholder_rows = sqlx::query("SELECT * FROM leaseholders")
+        .fetch_all(pool)
+        .await;
+
+    for row in leaseholder_rows.unwrap() {
+        let leaseholder = Leaseholder::from_row(&row);
+        leaseholders.push(leaseholder.unwrap());
+    }
+    leaseholders
+}
+
+pub async fn get_expenses(pool: &sqlx::Pool<Sqlite>, property_id: u32) -> Vec<Expense> {
+    let mut expenses: Vec<Expense> = vec![];
+
+    let expense_rows = sqlx::query("SELECT * FROM expenses WHERE property_id = ?")
+        .bind(property_id)
+        .fetch_all(pool)
+        .await;
+    for row in expense_rows.unwrap() {
+        let expense = Expense::from_row(&row);
+        expenses.push(expense.unwrap());
+    }
+    expenses
+}
+
 pub async fn get_current_expenses(
     pool: &sqlx::Pool<Sqlite>,
-    property_id: u16,
+    property_id: u32,
     cutoff_date: NaiveDate,
 ) -> Vec<Expense> {
     let mut expenses: Vec<Expense> = vec![];
@@ -208,21 +264,7 @@ pub async fn get_current_expenses(
     expenses
 }
 
-pub async fn add_statement(
-    pool: &sqlx::Pool<Sqlite>,
-    statement: &Statement,
-) -> Result<SqliteQueryResult, sqlx::Error> {
-    let x = sqlx::query(
-        "INSERT INTO statements (leaseholder_id, amount_due, amount_paid, statement_path) VALUES (?, ?, ?, ?)")
-        .bind(statement.leaseholder.id)
-        .bind(statement.total)
-        .bind(0)
-        .bind("test_statement")
-        .execute(pool)
-        .await?;
-
-    Ok(x)
-}
+// -------------------------------------- UPDATE ---------------------------------------------
 
 pub async fn update_property(
     pool: &sqlx::Pool<Sqlite>,
@@ -243,16 +285,39 @@ pub async fn update_property(
     Ok(x)
 }
 
+pub async fn update_expense(
+    pool: &sqlx::Pool<Sqlite>,
+    expense: &Expense,
+) -> Result<SqliteQueryResult, sqlx::Error> {
+    let expense_type_str = &expense.expense_type.to_string();
+
+    let x = sqlx::query(
+        "UPDATE expenses SET (property_id, expense_type, amount, date_incurred, description) = (?, ?, ?, ?, ?) WHERE expense_id == ?")
+        .bind(expense.property_id)
+        .bind(expense_type_str)
+        .bind(expense.amount)
+        .bind(expense.date.to_string())
+        .bind(&expense.description)
+        .bind(expense.id)
+        .execute(pool)
+        .await?;
+    Ok(x)
+}
+
 pub async fn update_leaseholder(
     pool: &sqlx::Pool<Sqlite>,
     leaseholder: &Leaseholder,
 ) -> Result<SqliteQueryResult, sqlx::Error> {
     let x = sqlx::query(
-        "UPDATE leaseholders SET (lease_id, property_id, remittence_address, email, phone_number, move_in_date) = (?, ?, ?, ?, ?, ?) WHERE leaseholder_id == ?"
+        "UPDATE leaseholders SET (lease_id, property_id, name, remittence_address, email, phone_number, move_in_date) = (?, ?, ?, ?, ?, ?, ?) WHERE leaseholder_id == ?"
     )
         .bind(leaseholder.lease.id)
         .bind(leaseholder.property_id)
-        .bind(&leaseholder.contact_info.get_address_string())
+        .bind(&leaseholder.contact_info.name)
+        .bind(&leaseholder.contact_info.remittence_address.street_address)
+        .bind(&leaseholder.contact_info.remittence_address.city)
+        .bind(&leaseholder.contact_info.remittence_address.state)
+        .bind(&leaseholder.contact_info.remittence_address.zip_code)
         .bind(&leaseholder.contact_info.email)
         .bind(&leaseholder.contact_info.phone_number)
         .bind(&leaseholder.move_in_date.to_string())
@@ -275,4 +340,93 @@ pub async fn update_lease(
     .execute(pool)
     .await?;
     Ok(x)
+}
+
+// -------------------------------------- REMOVE ---------------------------------------------
+pub async fn remove_expense(
+    pool: &sqlx::Pool<Sqlite>,
+    expense: &Expense,
+) -> Result<SqliteQueryResult, sqlx::Error> {
+    let x = sqlx::query("DELETE FROM expenses WHERE expense_id == ?")
+        .bind(expense.id)
+        .execute(pool)
+        .await?;
+    Ok(x)
+}
+pub async fn remove_property(
+    pool: &sqlx::Pool<Sqlite>,
+    property: &Property,
+) -> Result<SqliteQueryResult, sqlx::Error> {
+    let x = sqlx::query("DELETE FROM properties WHERE property_id == ?")
+        .bind(property.id)
+        .execute(pool)
+        .await?;
+    Ok(x)
+}
+pub async fn remove_leaseholder(
+    pool: &sqlx::Pool<Sqlite>,
+    lessee: &Leaseholder,
+) -> Result<SqliteQueryResult, sqlx::Error> {
+    let x = sqlx::query("DELETE FROM leaseholders WHERE expense_id == ?")
+        .bind(lessee.id)
+        .execute(pool)
+        .await?;
+    Ok(x)
+}
+
+// -------------------------------------- Get Max ID ---------------------------------------------
+pub async fn get_max_expense_id(pool: &sqlx::Pool<Sqlite>) -> u32 {
+    let res = sqlx::query("SELECT * FROM expenses ORDER BY expense_id DESC LIMIT 1;")
+        .fetch_one(pool)
+        .await;
+    match res {
+        Ok(r) => match Expense::from_row(&r) {
+            Ok(o) => o.id + 1,
+            Err(e) => {
+                println!("Error parsing expense record for expense id: {}", e);
+                0
+            }
+        },
+        Err(e) => {
+            println!("Error getting max expense id: {}", e);
+            0
+        }
+    }
+}
+pub async fn get_max_property_id(pool: &sqlx::Pool<Sqlite>) -> u32 {
+    let res = sqlx::query("SELECT * FROM properties ORDER BY property_id DESC LIMIT 1;")
+        .fetch_one(pool)
+        .await;
+    match res {
+        Ok(r) => match Property::from_row(&r) {
+            Ok(o) => o.id + 1,
+            Err(e) => {
+                println!("Error parsing property record for property id: {}", e);
+                0
+            }
+        },
+        Err(e) => {
+            println!("Error getting max property id: {}", e);
+            0
+        }
+    }
+}
+
+pub async fn get_max_leaseholder_id(pool: &sqlx::Pool<Sqlite>) -> u32 {
+    let res = sqlx::query("SELECT * FROM leaseholders ORDER BY leaseholder_id DESC LIMIT 1;")
+        .fetch_one(pool)
+        .await;
+    match res {
+        Ok(r) => match Leaseholder::from_row(&r) {
+            Ok(o) => o.id + 1,
+            Err(e) => {
+                println!("Error parsing leaseholder record for leaseholder id: {}", e);
+                0
+            }
+        },
+        Err(e) => {
+            println!("Error getting max leaseholder id: {}", e);
+            0
+        }
+    }
 }

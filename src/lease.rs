@@ -1,6 +1,6 @@
 use chrono::NaiveDate;
 
-use crate::{statements::calculate_share, Expense, ExpenseType, MaintenanceType, UtilitiesType};
+use crate::{expenses::*, statements::calculate_share};
 
 #[derive(Debug, Clone)]
 pub enum FeeStructure {
@@ -183,7 +183,7 @@ impl Default for CAMRates {
 
 #[derive(Debug, Clone)]
 pub struct Lease {
-    pub id: u16,
+    pub id: u32,
     pub start_date: NaiveDate,
     pub end_date: NaiveDate,
     pub fee_structure: FeeStructure,

@@ -1,0 +1,105 @@
+
+import { Button, TabWidget, AboutSlint } from "std-widgets.slint";
+import { PropertyMenu, PropertyInput } from "properties.slint";
+import { StatementMenu, StatementInput } from "statements.slint";
+import { ExpenseMenu, ExpenseInput } from "expenses.slint";
+import { LesseeMenu, LeaseholderInput } from "leaseholders.slint";
+
+export enum MessageType {create, update, delete}
+
+export component NavigationPane inherits Rectangle {
+    pure callback new-expense <=> expense-menu.new-expense;
+    pure callback new-property <=> prop-menu.new-property;
+    pure callback new-lessee <=> lessee-menu.new-lessee;
+
+    in-out property <[ExpenseInput]> expenses <=> expense-menu.expenses;
+    in-out property <[PropertyInput]> properties <=> prop-menu.properties;
+    in-out property <[StatementInput]> statements <=> statement-menu.statements;
+    in-out property <[LeaseholderInput]> lessees <=> lessee-menu.lessees;
+    in-out property <int> potential-expense-id <=> expense-menu.potential-expense-id;
+    in-out property <int> potential-prop-id <=> prop-menu.potential-prop-id;
+    in-out property <int> potential-lessee-id <=> lessee-menu.potential-lessee-id;
+    
+    Rectangle {
+        TabWidget {
+            Tab {
+                title: "Home";
+            }
+            Tab {
+                title: "Leaseholders";
+                lessee-menu := LesseeMenu {                     
+                    background: tan.mix(gray, 20%);
+                }
+            }
+            Tab {
+                title: "Properties";
+                prop-menu := PropertyMenu { 
+                    background: green.mix(gray, 20%);
+                }
+            }
+            Tab {
+                title: "Expenses";
+                expense-menu := ExpenseMenu {
+                    background: red.mix(gray, 20%); 
+                }
+            }
+            Tab {
+                title: "Statements";
+                statement-menu := StatementMenu {
+                    background: blue.mix(gray, 20%);
+                }
+            }
+            Tab {
+                title: "About";
+                GridLayout {
+                    Rectangle {
+                        col: 0;
+                        row: 0;
+                        Text {
+                            text: "Hestia was developed by Thomas Bartanen\nThe orignal goal was to ease a laziness in property management with an interest in software engineering.\n\nDeveloped with:\nRust\nSlint\nsqlx\ntokio\nprintPdf\nMore...";
+                        }
+                    }
+                    AboutSlint {
+                        col: 1;
+                        row: 0;
+                    }
+                }
+            }
+        }
+    }
+}
+
+export component App inherits Window { 
+    // === Window ===
+    title: "Hestia";
+    always-on-top: true;
+    //no-frame: true;
+
+    // === Sizing ===
+    min-width: 400px;
+    preferred-width: 800px;
+    min-height: 300px;
+    preferred-height: 600px;
+
+    // === Elements ===
+    padding: 10px;
+
+    // === Colors ===
+    //background: white;
+
+    // === Callbacks ===
+    pure callback new-expense <=> nav-pane.new-expense;
+    pure callback new-property <=> nav-pane.new-property;
+    pure callback new-lessee <=> nav-pane.new-lessee;
+
+    // === Properties ===
+    in-out property <[ExpenseInput]> expenses <=> nav-pane.expenses;
+    in-out property <[PropertyInput]> properties <=> nav-pane.properties;
+    in-out property <[StatementInput]> statements <=> nav-pane.statements;
+    in-out property <[LeaseholderInput]> lessees <=> nav-pane.lessees;
+    in-out property <int> potential-expense-id <=> nav-pane.potential-expense-id;
+    in-out property <int> potential-prop-id <=> nav-pane.potential-prop-id;
+    in-out property <int> potential-lessee-id <=> nav-pane.potential-lessee-id;
+    
+    nav-pane := NavigationPane { }
+}
