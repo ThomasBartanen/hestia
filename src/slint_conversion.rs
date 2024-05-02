@@ -5,13 +5,8 @@ use crate::{ExpenseInput, PropertyInput, ValidIds};
 use slint::{ModelRc, VecModel};
 use sqlx::Sqlite;
 
-pub async fn initialize_slint_expenses(
-    ui: &App,
-    pool: &sqlx::Pool<Sqlite>,
-    max_ids: &ValidIds,
-    property_id: u32,
-) {
-    let expenses: Vec<ExpenseInput> = crate::database::get_expenses(pool, property_id)
+pub async fn initialize_slint_expenses(ui: &App, pool: &sqlx::Pool<Sqlite>, max_ids: &ValidIds) {
+    let expenses: Vec<ExpenseInput> = crate::database::get_all_expenses(pool)
         .await
         .iter()
         .map(Expense::convert_to_slint)
