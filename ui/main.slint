@@ -24,6 +24,33 @@ export component NavigationPane inherits Rectangle {
         TabWidget {
             Tab {
                 title: "Home";
+                VerticalLayout {
+                    y: 10px;
+                    x: 10px;
+                    spacing: 10px;
+                    Rectangle {
+                        HorizontalLayout {
+                            Text {
+                                text: "Leaseholders: " + lessees.length;
+                            }
+                            Text {
+                                text: "Properties: " + properties.length;
+                            }
+                            Text {
+                                text: "Expenses: " + expenses.length;
+                            }
+                            Text {
+                                text: "Statements: " + 0;
+                            }
+                        }
+                    }
+                    Rectangle {
+
+                    }
+                    Rectangle {
+
+                    }
+                }
             }
             Tab {
                 title: "Leaseholders";
