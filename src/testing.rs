@@ -1,7 +1,7 @@
 use crate::{
     app_settings::PathSettings,
     database::{
-        add_expense, add_leaseholders, add_property, add_statement, get_current_expenses,
+        add_expense, add_leaseholders, add_property, add_statement, get_current_property_expenses,
         update_property,
     },
     expenses::*,
@@ -165,7 +165,7 @@ pub async fn test_statements(
     let statement = Statement::new(
         NaiveDate::from_ymd_opt(2024, 3, 1).unwrap(),
         leaseholder,
-        get_current_expenses(
+        get_current_property_expenses(
             instances,
             property.id,
             NaiveDate::from_ymd_opt(2024, 2, 1).unwrap(),

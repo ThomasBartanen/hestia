@@ -230,7 +230,18 @@ pub async fn get_leaseholders(pool: &sqlx::Pool<Sqlite>) -> Vec<Leaseholder> {
     leaseholders
 }
 
-pub async fn get_expenses(pool: &sqlx::Pool<Sqlite>, property_id: u32) -> Vec<Expense> {
+pub async fn get_all_expenses(pool: &sqlx::Pool<Sqlite>) -> Vec<Expense> {
+    let mut expenses: Vec<Expense> = vec![];
+
+    let expense_rows = sqlx::query("SELECT * FROM expenses").fetch_all(pool).await;
+    for row in expense_rows.unwrap() {
+        let expense = Expense::from_row(&row);
+        expenses.push(expense.unwrap());
+    }
+    expenses
+}
+
+pub async fn get_property_expenses(pool: &sqlx::Pool<Sqlite>, property_id: u32) -> Vec<Expense> {
     let mut expenses: Vec<Expense> = vec![];
 
     let expense_rows = sqlx::query("SELECT * FROM expenses WHERE property_id = ?")
@@ -244,7 +255,7 @@ pub async fn get_expenses(pool: &sqlx::Pool<Sqlite>, property_id: u32) -> Vec<Ex
     expenses
 }
 
-pub async fn get_current_expenses(
+pub async fn get_current_property_expenses(
     pool: &sqlx::Pool<Sqlite>,
     property_id: u32,
     cutoff_date: NaiveDate,
