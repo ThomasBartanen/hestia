@@ -1,0 +1,13 @@
+export component BufferLine {
+    in-out property <physical-length> buffer;
+    in-out property <physical-length> line-thickness;
+    max-height: buffer;
+    VerticalLayout {
+        Rectangle {}        
+        Rectangle {
+            height: line-thickness;
+            background: black;
+        }
+        Rectangle {}
+    }
+}

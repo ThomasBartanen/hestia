@@ -1,5 +1,6 @@
 import { TabWidget, LineEdit, GridBox, ComboBox, SpinBox, StandardButton, ListView, Button } from "std-widgets.slint";
 import { Validation, IdType } from "validation.slint";
+import { BufferLine } from "custom_widgets.slint";
 
 export enum MessageType {create, update, delete}
 
@@ -187,9 +188,20 @@ export component ExpenseMenu inherits Rectangle {
             min-width: 100px;
             max-width: 300px;
             expense-history := Rectangle {
+                y: 10px;
                 border-radius: 2px;
                 border-color: black;
                 VerticalLayout {
+                    Rectangle {
+                        Text {
+                            font-size: 14px;
+                            text: "Expense History";
+                        }
+                    }
+                    BufferLine {
+                        buffer: 10px;
+                        line-thickness: 2px;
+                    }
                     ListView {
                         padding: 20px;
                         for x in expenses: expense-button := TouchArea {

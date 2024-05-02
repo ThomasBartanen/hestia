@@ -1,4 +1,5 @@
 import { Button, TabWidget, ListView, GridBox, LineEdit, StandardButton, ComboBox } from "std-widgets.slint";
+import { BufferLine } from "custom_widgets.slint";
 
 export enum MessageType { create, update, delete }
 
@@ -170,11 +171,22 @@ export component LesseeMenu inherits Rectangle {
 
     HorizontalLayout {
         Rectangle {
+            y: 10px;
             min-width: 100px;
             max-width: 300px;
             border-radius: 2px;
             border-color: black;
             VerticalLayout {
+                Rectangle {
+                    Text {
+                        font-size: 14px;
+                        text: "Leaseholders";
+                    }
+                }
+                BufferLine {
+                    buffer: 10px;
+                    line-thickness: 2px;
+                }
                 ListView {
                     padding: 20px;
                     for x in lessees: lessee-button := TouchArea {
