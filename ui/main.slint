@@ -24,38 +24,42 @@ export component NavigationPane inherits Rectangle {
         TabWidget {
             Tab {
                 title: "Home";
-                VerticalLayout {
-                    y: 10px;
-                    x: 10px;
-                    spacing: 10px;
-                    Rectangle {
-                        HorizontalLayout {
-                            Text {
-                                text: "Leaseholders: " + lessees.length;
-                            }
-                            Text {
-                                text: "Properties: " + properties.length;
-                            }
-                            Text {
-                                text: "Expenses: " + expenses.length;
-                            }
-                            Text {
-                                text: "Statements: " + 0;
+                Rectangle {
+                    background: green.mix(gray, 20%);
+                    VerticalLayout {
+                        y: 10px;
+                        x: 10px;
+                        spacing: 10px;
+                        Rectangle {
+                            HorizontalLayout {
+                                Text {
+                                    text: "Leaseholders: " + lessees.length;
+                                }
+                                Text {
+                                    text: "Properties: " + properties.length;
+                                }
+                                Text {
+                                    text: "Expenses: " + expenses.length;
+                                }
+                                Text {
+                                    text: "Statements: " + 0;
+                                }
                             }
                         }
+                        Rectangle {
+    
+                        }
+                        Rectangle {
+    
+                        }
                     }
-                    Rectangle {
 
-                    }
-                    Rectangle {
-
-                    }
                 }
             }
             Tab {
                 title: "Leaseholders";
-                lessee-menu := LesseeMenu {                     
-                    background: tan.mix(gray, 20%);
+                lessee-menu := LesseeMenu {
+                    background: sienna.mix(gray, 10%);
                 }
             }
             Tab {
@@ -67,19 +71,20 @@ export component NavigationPane inherits Rectangle {
             Tab {
                 title: "Expenses";
                 expense-menu := ExpenseMenu {
-                    background: red.mix(gray, 20%); 
+                    background: sienna.mix(gray, 20%); 
                 }
             }
             Tab {
                 title: "Statements";
                 statement-menu := StatementMenu {
-                    background: blue.mix(gray, 20%);
+                    background: green.mix(gray, 20%);
                 }
             }
             Tab {
                 title: "About";
                 GridLayout {
                     Rectangle {
+                        background: sienna.mix(gray, 20%); 
                         col: 0;
                         row: 0;
                         Text {
