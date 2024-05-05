@@ -54,8 +54,15 @@ async fn main() {
     let expense_worker = expenses::ExpenseWorker::new(&worker_instances);
     let property_worker = properties::PropertyWorker::new(&worker_instances);
     let lessee_worker = leaseholders::LeaseholderWorker::new(&worker_instances);
+    let statement_worker = statements::StatementWorker::new(&worker_instances);
 
-    intialize_slint_callbacks(&app, &expense_worker, &property_worker, &lessee_worker);
+    intialize_slint_callbacks(
+        &app,
+        &expense_worker,
+        &property_worker,
+        &lessee_worker,
+        &statement_worker,
+    );
 
     app.run().unwrap();
 
@@ -63,6 +70,7 @@ async fn main() {
     let _expense_result = expense_worker.join();
     let _property_result = property_worker.join();
     let _lessee_result = lessee_worker.join();
+    let _statement_result = statement_worker.join();
 }
 
 #[derive(Debug)]
@@ -89,6 +97,7 @@ fn intialize_slint_callbacks(
     expense_worker: &expenses::ExpenseWorker,
     property_worker: &properties::PropertyWorker,
     lessee_worker: &leaseholders::LeaseholderWorker,
+    statement_worker: &statements::StatementWorker,
 ) {
     let weak_app = app.as_weak();
 
