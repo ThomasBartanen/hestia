@@ -2,8 +2,8 @@ use std::path::Path;
 
 use async_std::fs;
 
-pub const TESTING_STATEMENT_PATH: &str = "E:/!Coding/Rust/hestia/statements/";
-pub const TESTING_DATABASE_PATH: &str = "E:/!Coding/Rust/hestia/";
+pub const TESTING_STATEMENT_PATH: &str = "./statements/";
+pub const TESTING_DATABASE_PATH: &str = "./";
 
 pub struct PathSettings {
     pub statements_path: String,
