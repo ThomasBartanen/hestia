@@ -22,11 +22,9 @@ impl Default for PathSettings {
 pub async fn initialize_data_paths() {
     match Path::new(TESTING_STATEMENT_PATH).try_exists() {
         Ok(o) => {
-            if o {
-                println!("Statement path already created")
-            } else {
+            if !o {
                 match fs::create_dir(TESTING_STATEMENT_PATH).await {
-                    Ok(_) => println!("Successfully Created Statement Directory"),
+                    Ok(_) => (), //println!("Successfully Created Statement Directory"),
                     Err(e) => println!("Failed to create statement directory: {}", e),
                 }
             }

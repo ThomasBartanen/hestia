@@ -227,7 +227,7 @@ pub struct ExpenseWorker {
 
 impl ExpenseWorker {
     pub fn new(pool: &sqlx::Pool<sqlx::Sqlite>) -> Self {
-        println!("Create new Expense Worker");
+        //println!("Create new Expense Worker");
         let (sender, r) = tokio::sync::mpsc::unbounded_channel();
         let worker_thread = std::thread::spawn({
             let new_pool = pool.clone();
@@ -260,21 +260,21 @@ async fn expense_worker_loop(
                 ExpenseMessage::ExpenseCreated(create) => {
                     let converted_expense = Expense::convert_from_slint(create);
                     match add_expense(&pool, &converted_expense).await {
-                        Ok(_) => println!("Successfully added expense via slint"),
+                        Ok(_) => (), //println!("Successfully added expense via slint"),
                         Err(e) => println!("Failed to add expense via slint: {e}"),
                     }
                 }
                 ExpenseMessage::ExpenseUpdate(update) => {
                     let converted_expense = Expense::convert_from_slint(update);
                     match update_expense(&pool, &converted_expense).await {
-                        Ok(_) => println!("Successfully updated expense via slint"),
+                        Ok(_) => (), //println!("Successfully updated expense via slint"),
                         Err(e) => println!("Failed to update expense via slint: {e}"),
                     }
                 }
                 ExpenseMessage::ExpenseDelete(remove) => {
                     let converted_expense = Expense::convert_from_slint(remove);
                     match remove_expense(&pool, &converted_expense).await {
-                        Ok(_) => println!("Successfully removed expense via slint"),
+                        Ok(_) => (), //println!("Successfully removed expense via slint"),
                         Err(e) => println!("Failed to remove expense via slint: {e}"),
                     }
                 }

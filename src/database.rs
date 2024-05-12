@@ -12,7 +12,7 @@ pub async fn initialize_database() -> sqlx::Pool<Sqlite> {
     if !Sqlite::database_exists(&db_url).await.unwrap_or(false) {
         Sqlite::create_database(&db_url).await.unwrap();
         match create_schema(&db_url).await {
-            Ok(_) => println!("Database created successfully"),
+            Ok(_) => (), //println!("Database created successfully"),
             Err(e) => panic!("{}", e),
         }
     } else {
@@ -98,7 +98,7 @@ pub async fn add_maint_request(
     pool: &sqlx::Pool<Sqlite>,
     request: &MaintenanceRequest,
 ) -> Result<(), sqlx::Error> {
-    println!("Adding Maintenence Request");
+    //println!("Adding Maintenence Request");
     let maint_type_str = match request.request_type {
         MaintenanceType::Repairs => String::from("Maintenance: Repairs"),
         MaintenanceType::Cleaning => String::from("Maintenance: Cleaning"),
@@ -117,7 +117,7 @@ pub async fn add_maint_request(
 }
 
 pub async fn add_expense(pool: &sqlx::Pool<Sqlite>, expense: &Expense) -> Result<(), sqlx::Error> {
-    println!("Adding Expense");
+    //println!("Adding Expense");
     let expense_type_str = &expense.expense_type.to_string();
     sqlx::query(
         "INSERT INTO expenses (property_id, expense_type, amount, date_incurred, description) VALUES (?, ?, ?, ?, ?)")
@@ -135,7 +135,7 @@ pub async fn add_property(
     pool: &sqlx::Pool<Sqlite>,
     property: &Property,
 ) -> Result<SqliteQueryResult, sqlx::Error> {
-    println!("Adding Property");
+    //println!("Adding Property");
     let x = sqlx::query(
         "INSERT INTO properties (property_name, property_tax, business_insurance, address, city, state, zip_code, num_units) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
         .bind(&property.name)
@@ -156,7 +156,7 @@ pub async fn add_leaseholders(
     leaseholder: &Leaseholder,
     property_id: u32,
 ) -> Result<SqliteQueryResult, sqlx::Error> {
-    println!("Adding Leaseholder");
+    //println!("Adding Leaseholder");
     let lease = &leaseholder.lease;
 
     let lease_id =
@@ -189,7 +189,7 @@ pub async fn add_statement(
     pool: &sqlx::Pool<Sqlite>,
     statement: &Statement,
 ) -> Result<SqliteQueryResult, sqlx::Error> {
-    println!("Adding Statement");
+    //println!("Adding Statement");
     let x = sqlx::query(
         "INSERT INTO statements (leaseholder_id, amount_due, amount_paid, statement_path) VALUES (?, ?, ?, ?)")
         .bind(statement.leaseholder.id)
@@ -358,7 +358,7 @@ pub async fn remove_expense(
     pool: &sqlx::Pool<Sqlite>,
     expense: &Expense,
 ) -> Result<SqliteQueryResult, sqlx::Error> {
-    println!("Removing Expense with id: {}", expense.id);
+    //println!("Removing Expense with id: {}", expense.id);
     let x = sqlx::query("DELETE FROM expenses WHERE expense_id == ?")
         .bind(expense.id)
         .execute(pool)
@@ -369,7 +369,7 @@ pub async fn remove_property(
     pool: &sqlx::Pool<Sqlite>,
     property: &Property,
 ) -> Result<SqliteQueryResult, sqlx::Error> {
-    println!("Removing Property with id: {}", property.id);
+    //println!("Removing Property with id: {}", property.id);
     let x = sqlx::query("DELETE FROM properties WHERE property_id == ?")
         .bind(property.id)
         .execute(pool)
@@ -380,7 +380,7 @@ pub async fn remove_leaseholder(
     pool: &sqlx::Pool<Sqlite>,
     lessee: &Leaseholder,
 ) -> Result<SqliteQueryResult, sqlx::Error> {
-    println!("Removing Leaseholder with id: {}", lessee.id);
+    //println!("Removing Leaseholder with id: {}", lessee.id);
     let x = sqlx::query("DELETE FROM leaseholders WHERE leaseholder_id == ?")
         .bind(lessee.id)
         .execute(pool)

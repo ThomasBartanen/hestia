@@ -27,7 +27,7 @@ async fn test_settings() -> PathSettings {
 }
 
 async fn test_database(instances: &sqlx::Pool<Sqlite>) -> (Company, Leaseholder, Property) {
-    println!("- - - Testing Database - - -");
+    //println!("- - - Testing Database - - -");
     let company = Company::new("Company".to_owned(), 3241523);
 
     let mut property = Property::new(
@@ -47,7 +47,7 @@ async fn test_database(instances: &sqlx::Pool<Sqlite>) -> (Company, Leaseholder,
         Ok(r) => {
             //converting i64 to u16. This may cause issues. Keep an eye on this
             property.id = r.last_insert_rowid() as u32;
-            println!("Successfully added PROPERTY");
+            //println!("Successfully added PROPERTY");
         }
         Err(e) => println!("Error when adding PROPERTY: {}", e),
     };
@@ -95,7 +95,7 @@ async fn test_database(instances: &sqlx::Pool<Sqlite>) -> (Company, Leaseholder,
     match add_leaseholders(instances, &leaseholder, property.id).await {
         Ok(t) => {
             leaseholder.id = t.last_insert_rowid() as u32;
-            println!("Successfully added LEASEHOLDER")
+            //println!("Successfully added LEASEHOLDER")
         }
         Err(e) => println!("Error when adding LEASEHOLDER: {}", e),
     };
@@ -103,7 +103,7 @@ async fn test_database(instances: &sqlx::Pool<Sqlite>) -> (Company, Leaseholder,
 }
 
 pub async fn test_expenses(instances: &sqlx::Pool<Sqlite>, property: &Property) {
-    println!("- - - Testing Expenses - - -");
+    //println!("- - - Testing Expenses - - -");
     let dt = NaiveDate::from_ymd_opt(2024, 3, 10);
     let expense = Expense::new(
         0,
@@ -114,7 +114,7 @@ pub async fn test_expenses(instances: &sqlx::Pool<Sqlite>, property: &Property) 
         "Normal Maintenance".to_string(),
     );
     match add_expense(instances, &expense).await {
-        Ok(_) => println!("Successfully added EXPENSE"),
+        Ok(_) => (), //println!("Successfully added EXPENSE"),
         Err(e) => println!("Error when adding EXPENSE: {}", e),
     }
 
@@ -127,7 +127,7 @@ pub async fn test_expenses(instances: &sqlx::Pool<Sqlite>, property: &Property) 
         "Electricity Bill".to_string(),
     );
     match add_expense(instances, &expense).await {
-        Ok(_) => println!("Successfully added EXPENSE"),
+        Ok(_) => (), //println!("Successfully added EXPENSE"),
         Err(e) => println!("Error when adding EXPENSE: {}", e),
     }
 
@@ -140,7 +140,7 @@ pub async fn test_expenses(instances: &sqlx::Pool<Sqlite>, property: &Property) 
         "Water Bill".to_string(),
     );
     match add_expense(instances, &expense).await {
-        Ok(_) => println!("Successfully added EXPENSE"),
+        Ok(_) => (), //println!("Successfully added EXPENSE"),
         Err(e) => println!("Error when adding EXPENSE: {}", e),
     }
 
@@ -153,7 +153,7 @@ pub async fn test_expenses(instances: &sqlx::Pool<Sqlite>, property: &Property) 
         "Rat Abatement".to_string(),
     );
     match add_expense(instances, &expense).await {
-        Ok(_) => println!("Successfully added EXPENSE"),
+        Ok(_) => (), //println!("Successfully added EXPENSE"),
         Err(e) => println!("Error when adding EXPENSE: {}", e),
     }
 }
@@ -165,7 +165,7 @@ pub async fn test_statements(
     company: Company,
     settings: PathSettings,
 ) {
-    println!("- - - Testing Statements - - -");
+    //println!("- - - Testing Statements - - -");
     let statement = Statement::new(
         NaiveDate::from_ymd_opt(2024, 3, 1).unwrap(),
         leaseholder,
@@ -177,7 +177,7 @@ pub async fn test_statements(
         .await,
     );
     match add_statement(instances, &statement).await {
-        Ok(_) => println!("Successfully added STATEMENT"),
+        Ok(_) => (), //println!("Successfully added STATEMENT"),
         Err(e) => println!("Error when adding STATEMENT: {}", e),
     }
     //println!("New Statement: {:#?}", statement);
@@ -186,7 +186,7 @@ pub async fn test_statements(
 
     property.business_insurance += 100.0;
     match update_property(instances, property).await {
-        Ok(_) => println!("Successfully updated PROPERTY. ID: {}", property.id),
+        Ok(_) => (), //println!("Successfully updated PROPERTY. ID: {}", property.id),
         Err(e) => println!("Error when adding STATEMENT: {}", e),
     }
 }

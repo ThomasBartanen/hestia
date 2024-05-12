@@ -145,7 +145,7 @@ pub struct PropertyWorker {
 
 impl PropertyWorker {
     pub fn new(pool: &sqlx::Pool<sqlx::Sqlite>) -> Self {
-        println!("Create new Property Worker");
+        //println!("Create new Property Worker");
         let (sender, r) = tokio::sync::mpsc::unbounded_channel();
         let worker_thread = std::thread::spawn({
             let new_pool = pool.clone();
@@ -179,7 +179,7 @@ async fn property_worker_loop(
                     let converted_property = Property::convert_from_slint(create);
 
                     match add_property(&pool, &converted_property).await {
-                        Ok(_) => println!("Successfully added property via slint"),
+                        Ok(_) => (), //println!("Successfully added property via slint"),
                         Err(e) => println!("Failed to add property via slint: {e}"),
                     }
                 }
@@ -187,14 +187,14 @@ async fn property_worker_loop(
                     let converted_property = Property::convert_from_slint(update);
 
                     match update_property(&pool, &converted_property).await {
-                        Ok(_) => println!("Successfully added property via slint"),
+                        Ok(_) => (), //println!("Successfully added property via slint"),
                         Err(e) => println!("Failed to add property via slint: {e}"),
                     }
                 }
                 PropertyMessage::PropertyRemove(remove) => {
                     let converted_property = Property::convert_from_slint(remove);
                     match remove_property(&pool, &converted_property).await {
-                        Ok(_) => println!("Successfully removed property via slint"),
+                        Ok(_) => (), //println!("Successfully removed property via slint"),
                         Err(e) => println!("Failed to remove property via slint: {e}"),
                     }
                 }

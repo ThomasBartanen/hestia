@@ -214,7 +214,7 @@ pub struct LeaseholderWorker {
 
 impl LeaseholderWorker {
     pub fn new(pool: &sqlx::Pool<sqlx::Sqlite>) -> Self {
-        println!("Create new Leaseholder Worker");
+        //println!("Create new Leaseholder Worker");
         let (sender, r) = tokio::sync::mpsc::unbounded_channel();
         let worker_thread = std::thread::spawn({
             let new_pool = pool.clone();
@@ -253,21 +253,21 @@ pub async fn leaseholder_worker_loop(
                     )
                     .await
                     {
-                        Ok(_) => println!("Successfully added leaseholder via slint"),
+                        Ok(_) => (), //println!("Successfully added leaseholder via slint"),
                         Err(e) => println!("Failed to add leaseholder via slint: {e}"),
                     }
                 }
                 LeaseholderMessage::LeaseholderUpdate(update) => {
                     let converted_leaseholder = Leaseholder::convert_from_slint(update);
                     match update_leaseholder(&pool, &converted_leaseholder).await {
-                        Ok(_) => println!("Successfully updated leaseholder via slint"),
+                        Ok(_) => (), //println!("Successfully updated leaseholder via slint"),
                         Err(e) => println!("Failed to update leaseholder via slint: {e}"),
                     }
                 }
                 LeaseholderMessage::LeaseholderDelete(remove) => {
                     let converted_leaseholder = Leaseholder::convert_from_slint(remove);
                     match remove_leaseholder(&pool, &converted_leaseholder).await {
-                        Ok(_) => println!("Successfully removed leaseholder via slint"),
+                        Ok(_) => (), //println!("Successfully removed leaseholder via slint"),
                         Err(e) => println!("Failed to remove leaseholder via slint: {e}"),
                     }
                 }

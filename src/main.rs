@@ -88,7 +88,7 @@ async fn get_ids(pool: &sqlx::Pool<Sqlite>) -> ValidIds {
         leaseholder_id: database::get_max_leaseholder_id(pool).await,
         statement_id: 0,
     };
-    println!("Created ID Struct: {:#?}", ids);
+    //println!("Created ID Struct: {:#?}", ids);
     ids
 }
 
@@ -124,7 +124,7 @@ fn intialize_slint_callbacks(
                             let index = new_expenses
                                 .iter()
                                 .position(|r| {
-                                    println!("r.id: {}. input_clone.id: {}", r.id, input_clone.id);
+                                    //println!("r.id: {}. input_clone.id: {}", r.id, input_clone.id);
                                     r.id == input_clone.id
                                 })
                                 .unwrap();
@@ -136,7 +136,7 @@ fn intialize_slint_callbacks(
                             let index = new_expenses
                                 .iter()
                                 .position(|r| {
-                                    println!("r.id: {}. input_clone.id: {}", r.id, input_clone.id);
+                                    //println!("r.id: {}. input_clone.id: {}", r.id, input_clone.id);
                                     r.id == input_clone.id
                                 })
                                 .unwrap();
@@ -146,7 +146,7 @@ fn intialize_slint_callbacks(
                     };
                     let res = internal_channel.send(message);
                     match res {
-                        Ok(_) => println!("expense successfully sent"),
+                        Ok(_) => (), //println!("expense successfully sent"),
                         Err(_e) => println!("expense send failed"),
                     }
                 }
@@ -180,7 +180,7 @@ fn intialize_slint_callbacks(
                             let index = new_properties
                                 .iter()
                                 .position(|r| {
-                                    println!("r.id: {}. input_clone.id: {}", r.id, input_clone.id);
+                                    //println!("r.id: {}. input_clone.id: {}", r.id, input_clone.id);
                                     r.id == input_clone.id
                                 })
                                 .unwrap();
@@ -192,7 +192,7 @@ fn intialize_slint_callbacks(
                             let index = new_properties
                                 .iter()
                                 .position(|r| {
-                                    println!("r.id: {}. input_clone.id: {}", r.id, input_clone.id);
+                                    //println!("r.id: {}. input_clone.id: {}", r.id, input_clone.id);
                                     r.id == input_clone.id
                                 })
                                 .unwrap();
@@ -202,7 +202,7 @@ fn intialize_slint_callbacks(
                     };
                     let res = internal_channel.send(message);
                     match res {
-                        Ok(_) => println!("property successfully sent"),
+                        Ok(_) => (), //println!("property successfully sent"),
                         Err(_e) => println!("property send failed"),
                     };
                 }
@@ -236,7 +236,7 @@ fn intialize_slint_callbacks(
                             let index = new_lessees
                                 .iter()
                                 .position(|r| {
-                                    println!("r.id: {}. input_clone.id: {}", r.id, input_clone.id);
+                                    //println!("r.id: {}. input_clone.id: {}", r.id, input_clone.id);
                                     r.id == input_clone.id
                                 })
                                 .unwrap();
@@ -248,7 +248,7 @@ fn intialize_slint_callbacks(
                             let index = new_lessees
                                 .iter()
                                 .position(|r| {
-                                    println!("r.id: {}. input_clone.id: {}", r.id, input_clone.id);
+                                    //println!("r.id: {}. input_clone.id: {}", r.id, input_clone.id);
                                     r.id == input_clone.id
                                 })
                                 .unwrap();
@@ -258,7 +258,7 @@ fn intialize_slint_callbacks(
                     };
                     let res = internal_channel.send(message);
                     match res {
-                        Ok(_) => println!("Leaseholder successfully sent"),
+                        Ok(_) => (), //println!("Leaseholder successfully sent"),
                         Err(_e) => println!("Leaseholder send failed"),
                     };
                 }

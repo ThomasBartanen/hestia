@@ -85,7 +85,7 @@ pub struct StatementWorker {
 
 impl StatementWorker {
     pub fn new(pool: &sqlx::Pool<sqlx::Sqlite>) -> Self {
-        println!("Create new Statement Worker");
+        //println!("Create new Statement Worker");
         let (sender, r) = tokio::sync::mpsc::unbounded_channel();
         let worker_thread = std::thread::spawn({
             let new_pool = pool.clone();
