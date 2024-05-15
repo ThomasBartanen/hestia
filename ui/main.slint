@@ -14,36 +14,69 @@ export component NavigationPane inherits Rectangle {
         TabWidget {
             Tab {
                 title: "Home";
-                Rectangle {
-                    background: green.mix(gray, 20%);
-                    VerticalLayout {
-                        y: 10px;
-                        x: 10px;
-                        spacing: 10px;
-                        Rectangle {
-                            HorizontalLayout {
-                                Text {
-                                }
-                                Text {
-                                }
-                                Text {
-                                }
-                                Text {
-                                    text: "Statements: " + 0;
+                VerticalLayout {
+                    Rectangle {
+                        background: green.mix(gray, 20%);
+                        VerticalLayout {
+                            y: 10px;
+                            x: 10px;
+                            spacing: 10px;
+                            Rectangle {
+                                HorizontalLayout {
+                                    Text {
                                         text: "Leaseholders: " + LesseeData.lessees.length;
+                                    }
+                                    Text {
                                         text: "Properties: " + PropertyData.properties.length;
+                                    }
+                                    Text {
                                         text: "Expenses: " + ExpenseData.expenses.length;
+                                    }
+                                    Text {
+                                        text: "Statements: " + 0;
+                                    }
                                 }
+                            }
+                            Rectangle {
+        
+                            }
+                            Rectangle {
+        
+                            }
+                        }
+    
+                    }
+                    
+                    GridLayout {
+                        height: parent.height / 3;
+                        width: parent.width;
+                        Rectangle {
+                            background: green.mix(gray, 20%);
+                            col: 0;
+                            row: 0;
+                            Text {
+                                x: 20px;
+                                y: 20px;
+                                font-size: 10px;
+                                width: parent.width / 1.1;
+                                height: parent.height;
+                                wrap: TextWrap.word-wrap;
+                                overflow: TextOverflow.elide;
+                                horizontal-alignment: TextHorizontalAlignment.left;
+                                vertical-alignment: TextVerticalAlignment.top;
+                                text: "Hestia was developed by Thomas Bartanen\nThe orignal goal was to ease a laziness in property management with an interest in software engineering.\n\nDeveloped with:\nRust\nSlint\nsqlx\ntokio\nprintPdf\nMore...";
                             }
                         }
                         Rectangle {
-    
-                        }
-                        Rectangle {
-    
+                            col: 1;
+                            row: 0;                            
+                            background: green.mix(gray, 20%);
+                            AboutSlint {
+                                preferred-height: 50px;
+                                preferred-width: 50px;
+                            }
                         }
                     }
-
                 }
             }
             Tab {
@@ -70,23 +103,6 @@ export component NavigationPane inherits Rectangle {
                     background: green.mix(gray, 20%);
                 }
             }
-            Tab {
-                title: "About";
-                GridLayout {
-                    Rectangle {
-                        background: sienna.mix(gray, 20%); 
-                        col: 0;
-                        row: 0;
-                        Text {
-                            text: "Hestia was developed by Thomas Bartanen\nThe orignal goal was to ease a laziness in property management with an interest in software engineering.\n\nDeveloped with:\nRust\nSlint\nsqlx\ntokio\nprintPdf\nMore...";
-                        }
-                    }
-                    AboutSlint {
-                        col: 1;
-                        row: 0;
-                    }
-                }
-            }
         }
     }
 }
@@ -94,7 +110,7 @@ export component NavigationPane inherits Rectangle {
 export component App inherits Window { 
     // === Window ===
     title: "Hestia";
-    always-on-top: true;
+    //always-on-top: true;
     //no-frame: true;
 
     // === Sizing ===
