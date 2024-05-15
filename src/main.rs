@@ -5,7 +5,7 @@ mod generated_code {
 }
 
 pub use generated_code::*;
-use slint::Model;
+use slint::{Model, Weak};
 use sqlx::Sqlite;
 
 mod app_settings;
@@ -31,24 +31,7 @@ async fn main() {
 
     let valid_ids = get_ids(&instances).await;
 
-    slint_conversion::initialize_slint_properties(
-        &weak_app.upgrade().unwrap(),
-        &instances,
-        &valid_ids,
-    )
-    .await;
-    slint_conversion::initialize_slint_expenses(
-        &weak_app.upgrade().unwrap(),
-        &instances,
-        &valid_ids,
-    )
-    .await;
-    slint_conversion::initialize_slint_leaseholders(
-        &weak_app.upgrade().unwrap(),
-        &instances,
-        &valid_ids,
-    )
-    .await;
+    initialize_slint_properties(&weak_app, &instances, &valid_ids).await;
 
     let worker_instances = instances.clone();
     let expense_worker = expenses::ExpenseWorker::new(&worker_instances);
@@ -90,6 +73,27 @@ async fn get_ids(pool: &sqlx::Pool<Sqlite>) -> ValidIds {
     };
     //println!("Created ID Struct: {:#?}", ids);
     ids
+}
+
+async fn initialize_slint_properties(
+    weak_app: &Weak<App>,
+    instances: &sqlx::Pool<Sqlite>,
+    valid_ids: &ValidIds,
+) {
+    slint_conversion::initialize_slint_properties(
+        &weak_app.upgrade().unwrap(),
+        instances,
+        valid_ids,
+    )
+    .await;
+    slint_conversion::initialize_slint_expenses(&weak_app.upgrade().unwrap(), instances, valid_ids)
+        .await;
+    slint_conversion::initialize_slint_leaseholders(
+        &weak_app.upgrade().unwrap(),
+        instances,
+        valid_ids,
+    )
+    .await;
 }
 
 fn intialize_slint_callbacks(
