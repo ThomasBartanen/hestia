@@ -172,7 +172,7 @@ fn intialize_slint_callbacks(
             let upgrade_res = local_app.upgrade_in_event_loop({
                 let internal_channel = property_channel.clone();
                 move |handle| {
-                    let prev_property = handle.get_properties();
+                    let prev_property = handle.global::<PropertyData>().get_properties();
                     let new_properties = prev_property
                         .as_any()
                         .downcast_ref::<slint::VecModel<PropertyInput>>()
@@ -228,7 +228,7 @@ fn intialize_slint_callbacks(
             let upgrade_res = local_app.upgrade_in_event_loop({
                 let internal_channel = lessee_channel.clone();
                 move |handle| {
-                    let prev_lessees = handle.get_lessees();
+                    let prev_lessees = handle.global::<LesseeData>().get_lessees();
                     let new_lessees = prev_lessees
                         .as_any()
                         .downcast_ref::<slint::VecModel<LeaseholderInput>>()

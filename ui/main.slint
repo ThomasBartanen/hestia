@@ -7,9 +7,7 @@ import { LesseeMenu } from "leaseholders.slint";
 
 export { ExpenseData, LesseeData, PropertyData }
 
-export component NavigationPane inherits Rectangle {
-    in-out property <[StatementInput]> statements <=> statement-menu.statements;
-    
+export component NavigationPane inherits Rectangle {    
     Rectangle {
         TabWidget {
             Tab {
@@ -121,12 +119,6 @@ export component App inherits Window {
 
     // === Elements ===
     padding: 10px;
-
-    // === Colors ===
-    //background: white;
-
-    // === Properties ===
-    in-out property <[StatementInput]> statements <=> nav-pane.statements;
     
     nav-pane := NavigationPane { }
 }
