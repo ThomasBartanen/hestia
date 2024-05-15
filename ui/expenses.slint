@@ -5,6 +5,77 @@ import { ExpenseData, ExpenseInput, MessageType } from "globals.slint";
 
 enum ExpenseMenuState {modify, totals, view}
 
+export component MainExpenseView inherits Rectangle {
+    Text {
+        text: "Main";
+    }
+}
+
+export component ViewExpenseTotalsMenu inherits Rectangle {
+    in-out property <ExpenseInput> selected-expense;
+    y: 10px;
+    Rectangle {
+        titles := HorizontalLayout {
+            TableText { 
+                width: 50px;
+                text: "ID";
+            }
+            TableText { 
+                width: 50px;
+                text: "Property ID";
+            }
+            TableText { 
+                width: 70px;
+                text: "Date";
+            }
+            TableText { 
+                width: 100px;
+                text: "Description";
+            }
+            TableText { 
+                width: 100px;
+                text: "Expense Type";
+            }
+            TableText { 
+                width: 100px;
+                text: "Expense Subtype";
+            }
+            TableText { 
+                width: 100px;
+                text: "Amount";
+            }
+        }
+        HorizontalLayout {
+            TableText {
+                width: 50px;
+                text: selected-expense.id;
+            }
+            TableText {
+                width: 50px;
+                text: 0;
+            }
+            TableText { 
+                width: 70px;
+                text: selected-expense.date;
+            }
+            TableText { 
+                width: 100px;
+                text: selected-expense.description;
+            }
+            TableText { 
+                width: 100px;
+                text: selected-expense.expense-type;
+            }
+            TableText { 
+                width: 100px;
+                text: selected-expense.expense-subtype;
+            }
+            TableText { 
+                width: 100px;
+                text: selected-expense.amount;
+            }
+        }
+    }
 }
 
 export component AddExpenseMenu inherits Rectangle {
@@ -214,8 +285,56 @@ export component ExpenseMenu inherits Rectangle {
             min-width: 400px;
             preferred-width: 600px;
             max-width: 1000px;
-            add-expense-menu := AddExpenseMenu {
-                
+            property <ExpenseMenuState> current-state: ExpenseMenuState.view;
+            VerticalLayout {
+                states [
+                    View when current-state == ExpenseMenuState.view : {                    
+                        add-expense-menu.visible : false;
+                        view-totals-menu.visible : false;
+                        main-view-menu.visible : true;
+                    }
+                    Totals when current-state == ExpenseMenuState.totals : {                    
+                        add-expense-menu.visible : false;
+                        view-totals-menu.visible : true;
+                        main-view-menu.visible : false;
+                    }
+                    Modify when current-state == ExpenseMenuState.modify : {
+                        add-expense-menu.visible : true;
+                        view-totals-menu.visible : false;
+                        main-view-menu.visible : false;
+                    }
+                ]
+                HorizontalLayout {
+                    Button {
+                        text: "Main View";
+                        clicked => {
+                            current-state = ExpenseMenuState.view;
+                        }
+                    }
+                    Button {
+                        text: "Show Totals";
+                        clicked => {
+                            current-state = ExpenseMenuState.totals;
+                        }
+                    }
+                    Button {
+                        text: "Add/Modify Expenses";
+                        clicked => {
+                            current-state = ExpenseMenuState.modify;
+                        }
+                    }
+                }
+                Rectangle {
+                    main-view-menu := MainExpenseView {
+                        visible: false;
+                    }
+                    view-totals-menu := ViewExpenseTotalsMenu {
+                        visible: false;
+                    }
+                    add-expense-menu := AddExpenseMenu {
+                        visible: false;
+                    }
+                }                
             }
         }
     }

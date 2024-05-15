@@ -11,3 +11,14 @@ export component BufferLine {
         Rectangle {}
     }
 }
+
+export component TableText inherits Rectangle{
+    in-out property <string> text;
+    Text { 
+        text: text;
+        horizontal-alignment: TextHorizontalAlignment.left;
+        vertical-alignment: TextVerticalAlignment.center;
+        overflow: TextOverflow.elide;
+        wrap: TextWrap.no-wrap;
+    }
+}
