@@ -175,6 +175,7 @@ export component LesseeMenu inherits Rectangle {
                         ta-bg := Rectangle {
                             background: lessee-button.pressed ? red : lessee-button.has-hover? cornsilk : root.background;
                             Text {
+                                horizontal-alignment: TextHorizontalAlignment.left;
                                 text: x.id + ". " + x.name;
                             }
                         }

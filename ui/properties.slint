@@ -171,6 +171,7 @@ export component PropertyMenu inherits Rectangle {
                         ta-bg := Rectangle {
                             background: prop-button.pressed ? red : prop-button.has-hover? cornsilk : root.background;
                             Text {
+                                horizontal-alignment: TextHorizontalAlignment.left;
                                 text: x.id + ". " + x.name;
                             }
                         }
