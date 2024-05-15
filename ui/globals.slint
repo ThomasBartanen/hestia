@@ -1,0 +1,86 @@
+export enum MessageType {create, update, delete}
+
+// ==========================================
+// ============== EXPENSES ==================
+// ==========================================
+export struct ExpenseInput {
+    message: MessageType,
+    id: int,
+    description: string,
+    amount: float,
+    date: string,
+    expense-type: string,
+    expense-subtype: string
+}
+export global ExpenseData {
+    pure callback new-expense(ExpenseInput);
+
+    in-out property <int> potential-expense-id;
+    in-out property <int> selected-expense-id;
+    in-out property <[ExpenseInput]> expenses;
+    in-out property <ExpenseInput> current-selected-expense;
+}
+// ==========================================
+// ============== Leaseholders ==============
+// ==========================================
+export struct LeaseholderInput {
+    message: MessageType,
+    id: int,
+    name: string,
+    lease: int,
+    property-id: int,
+    street-address: string,
+    city: string,
+    state: string,
+    zip_code: string,
+    email: string,
+    phone-number: string,
+    move-in-date: string,
+}
+export global LesseeData {
+    pure callback new-lessee(LeaseholderInput);
+    
+    in-out property <int> potential-lessee-id;
+    in-out property <int> selected-lessee-id;
+    in-out property <[LeaseholderInput]> lessees;
+    in-out property <LeaseholderInput> selected-lessee;
+}
+
+// ==========================================
+// ============= Properties =================
+// ==========================================
+export struct PropertyInput {
+    message: MessageType,
+    id: int,
+    name: string,
+    address-number: string,
+    city: string,
+    state: string,
+    zip-code: string,
+    property_tax: float,
+    business_insurance: float,
+    unit-count: string
+}
+export global PropertyData {
+    pure callback new-property(PropertyInput);
+    
+    in-out property <int> potential-prop-id;    
+    in-out property <int> selected-prop-id;
+    in-out property <[PropertyInput]> properties;
+    in-out property <PropertyInput> current-selected-property;
+}
+
+// ==========================================
+// ============= Statements =================
+// ==========================================
+export struct StatementInput {
+    date-mm-yy: string,
+    leaseholder: string,
+}
+export global StatementData {
+    pure callback new-statement(StatementInput);
+
+    in-out property <int> potential-statement-id;
+    in-out property <[StatementInput]> statements;
+    in-out property <StatementInput> current-selected-statement;
+}

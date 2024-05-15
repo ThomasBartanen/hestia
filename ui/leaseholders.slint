@@ -1,22 +1,7 @@
 import { Button, TabWidget, ListView, GridBox, LineEdit, StandardButton, ComboBox } from "std-widgets.slint";
 import { BufferLine } from "custom_widgets.slint";
+import { LesseeData, LeaseholderInput, MessageType } from "globals.slint";
 
-export enum MessageType { create, update, delete }
-
-export struct LeaseholderInput {
-    message: MessageType,
-    id: int,
-    name: string,
-    lease: int,
-    property-id: int,
-    street-address: string,
-    city: string,
-    state: string,
-    zip_code: string,
-    email: string,
-    phone-number: string,
-    move-in-date: string,
-}
 component AddLeaseholderMenu inherits Rectangle {
     public function clear-lessee-menu() {
         name-input.text = "";
@@ -40,17 +25,23 @@ component AddLeaseholderMenu inherits Rectangle {
         phone-input.text = lessee.phone-number;
         move-in-input.text = lessee.move-in-date;
 
-        selected-lessee-id = lessee.id;
-        selected-lessee = lessee;
+        LesseeData.selected-lessee-id = lessee.id;
+        LesseeData.selected-lessee = lessee;
         lessee-action = MessageType.update;
     }
 
     public function submit-lessee() {
-        new-lessee({
+        LesseeData.new-lessee({
             message: lessee-action,
-            id: lessee-action == MessageType.update ? selected-lessee-id : lessee-action == MessageType.delete ? selected-lessee-id : potential-lessee-id,
-            lease: lessee-action == MessageType.update ? selected-lessee.lease : 0,
-            property-id: lessee-action == MessageType.update ? selected-lessee.property-id : 0,
+            id: lessee-action == MessageType.update ? 
+                            LesseeData.selected-lessee-id : 
+                            lessee-action == MessageType.delete ? 
+                            LesseeData.selected-lessee-id : 
+                            LesseeData.potential-lessee-id,
+            lease: lessee-action == MessageType.update ? 
+                            LesseeData.selected-lessee.lease : 0,
+            property-id: lessee-action == MessageType.update ? 
+                            LesseeData.selected-lessee.property-id : 0,
             name: name-input.text,
             street_address: street-input.text,
             city: city-input.text,
@@ -63,10 +54,6 @@ component AddLeaseholderMenu inherits Rectangle {
 
         clear-lessee-menu();
     }
-    pure callback new-lessee(LeaseholderInput);
-    in-out property <int> potential-lessee-id;
-    in-out property <int> selected-lessee-id;
-    in-out property <LeaseholderInput> selected-lessee;
     in-out property <MessageType> lessee-action;
     
     border-width: 2px;
@@ -164,11 +151,6 @@ component AddLeaseholderMenu inherits Rectangle {
 }
 
 export component LesseeMenu inherits Rectangle {
-    in-out property <[LeaseholderInput]> lessees;
-    in-out property <int> potential-lessee-id <=> add-lessee-menu.potential-lessee-id;
-
-    pure callback new-lessee <=> add-lessee-menu.new-lessee;
-
     HorizontalLayout {
         Rectangle {
             y: 10px;
@@ -189,7 +171,7 @@ export component LesseeMenu inherits Rectangle {
                 }
                 ListView {
                     padding: 20px;
-                    for x in lessees: lessee-button := TouchArea {
+                    for x in LesseeData.lessees: lessee-button := TouchArea {
                         ta-bg := Rectangle {
                             background: lessee-button.pressed ? red : lessee-button.has-hover? cornsilk : root.background;
                             Text {

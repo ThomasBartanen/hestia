@@ -47,6 +47,8 @@ async fn main() {
         &statement_worker,
     );
 
+    let new = app.global::<ExpenseData>().get_current_selected_expense();
+
     app.run().unwrap();
 
     instances.close().await;
@@ -106,7 +108,7 @@ fn intialize_slint_callbacks(
     let weak_app = app.as_weak();
 
     //app.global::<Validation>().on_get_valid_id(move |input| {});
-    app.on_new_expense({
+    app.global::<ExpenseData>().on_new_expense({
         let expense_channel = expense_worker.channel.clone();
         let local_app = weak_app.clone();
         move |input| {
@@ -114,7 +116,7 @@ fn intialize_slint_callbacks(
             let upgrade_res = local_app.upgrade_in_event_loop({
                 let internal_channel = expense_channel.clone();
                 move |handle| {
-                    let prev_expense = handle.get_expenses();
+                    let prev_expense = handle.global::<ExpenseData>().get_expenses();
                     let new_expenses = prev_expense
                         .as_any()
                         .downcast_ref::<slint::VecModel<ExpenseInput>>()
@@ -162,7 +164,7 @@ fn intialize_slint_callbacks(
         }
     });
 
-    app.on_new_property({
+    app.global::<PropertyData>().on_new_property({
         let property_channel = property_worker.channel.clone();
         let local_app = weak_app.clone();
         move |input| {
@@ -218,7 +220,7 @@ fn intialize_slint_callbacks(
         }
     });
 
-    app.on_new_lessee({
+    app.global::<LesseeData>().on_new_lessee({
         let lessee_channel = lessee_worker.channel.clone();
         let local_app = weak_app.clone();
         move |input| {

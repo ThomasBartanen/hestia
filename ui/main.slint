@@ -1,24 +1,14 @@
-
+import { ExpenseData, LesseeData, PropertyData, PropertyInput, StatementInput, ExpenseInput, LeaseholderInput } from "globals.slint";
 import { Button, TabWidget, AboutSlint } from "std-widgets.slint";
-import { PropertyMenu, PropertyInput } from "properties.slint";
-import { StatementMenu, StatementInput } from "statements.slint";
-import { ExpenseMenu, ExpenseInput } from "expenses.slint";
-import { LesseeMenu, LeaseholderInput } from "leaseholders.slint";
+import { PropertyMenu } from "properties.slint";
+import { StatementMenu } from "statements.slint";
+import { ExpenseMenu } from "expenses.slint";
+import { LesseeMenu } from "leaseholders.slint";
 
-export enum MessageType {create, update, delete}
+export { ExpenseData, LesseeData, PropertyData }
 
 export component NavigationPane inherits Rectangle {
-    pure callback new-expense <=> expense-menu.new-expense;
-    pure callback new-property <=> prop-menu.new-property;
-    pure callback new-lessee <=> lessee-menu.new-lessee;
-
-    in-out property <[ExpenseInput]> expenses <=> expense-menu.expenses;
-    in-out property <[PropertyInput]> properties <=> prop-menu.properties;
     in-out property <[StatementInput]> statements <=> statement-menu.statements;
-    in-out property <[LeaseholderInput]> lessees <=> lessee-menu.lessees;
-    in-out property <int> potential-expense-id <=> expense-menu.potential-expense-id;
-    in-out property <int> potential-prop-id <=> prop-menu.potential-prop-id;
-    in-out property <int> potential-lessee-id <=> lessee-menu.potential-lessee-id;
     
     Rectangle {
         TabWidget {
@@ -33,16 +23,16 @@ export component NavigationPane inherits Rectangle {
                         Rectangle {
                             HorizontalLayout {
                                 Text {
-                                    text: "Leaseholders: " + lessees.length;
                                 }
                                 Text {
-                                    text: "Properties: " + properties.length;
                                 }
                                 Text {
-                                    text: "Expenses: " + expenses.length;
                                 }
                                 Text {
                                     text: "Statements: " + 0;
+                                        text: "Leaseholders: " + LesseeData.lessees.length;
+                                        text: "Properties: " + PropertyData.properties.length;
+                                        text: "Expenses: " + ExpenseData.expenses.length;
                                 }
                             }
                         }
@@ -119,19 +109,8 @@ export component App inherits Window {
     // === Colors ===
     //background: white;
 
-    // === Callbacks ===
-    pure callback new-expense <=> nav-pane.new-expense;
-    pure callback new-property <=> nav-pane.new-property;
-    pure callback new-lessee <=> nav-pane.new-lessee;
-
     // === Properties ===
-    in-out property <[ExpenseInput]> expenses <=> nav-pane.expenses;
-    in-out property <[PropertyInput]> properties <=> nav-pane.properties;
     in-out property <[StatementInput]> statements <=> nav-pane.statements;
-    in-out property <[LeaseholderInput]> lessees <=> nav-pane.lessees;
-    in-out property <int> potential-expense-id <=> nav-pane.potential-expense-id;
-    in-out property <int> potential-prop-id <=> nav-pane.potential-prop-id;
-    in-out property <int> potential-lessee-id <=> nav-pane.potential-lessee-id;
     
     nav-pane := NavigationPane { }
 }

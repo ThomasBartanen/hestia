@@ -1,12 +1,7 @@
 import { Button, TabWidget } from "std-widgets.slint";
+import { StatementInput, StatementData } from "globals.slint";
 
-export struct StatementInput {
-    date-mm-yy: string,
-    leaseholder: string,
-}
 export component StatementMenu inherits Rectangle {
-    
-    in-out property <[StatementInput]> statements;
     Rectangle {
         TabWidget {
             Tab {

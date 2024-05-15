@@ -1,20 +1,6 @@
 import { Button, TabWidget, ListView, GridBox, LineEdit, StandardButton } from "std-widgets.slint";
 import { BufferLine } from "custom_widgets.slint";
-
-export enum MessageType {create, update, delete}
-
-export struct PropertyInput {
-    message: MessageType,
-    id: int,
-    name: string,
-    address-number: string,
-    city: string,
-    state: string,
-    zip-code: string,
-    property_tax: float,
-    business_insurance: float,
-    unit-count: string
-}
+import { PropertyData, PropertyInput, MessageType } from "globals.slint";
 
 component AddPropertyMenu inherits Rectangle {
     public function clear-prop-menu() {
@@ -40,14 +26,18 @@ component AddPropertyMenu inherits Rectangle {
         prop-tax-input.text = prop.property-tax;
         bus-ins-input.text = prop.business-insurance;
         
-        selected-prop-id = prop.id;
+        PropertyData.selected-prop-id = prop.id;
         prop-action = MessageType.update;
     }
 
     public function submit-prop() {
-        new-property({
+        PropertyData.new-property({
             message: prop-action,
-            id: prop-action == MessageType.update ? selected-prop-id : prop-action == MessageType.delete ? selected-prop-id : potential-prop-id,
+            id: prop-action == MessageType.update ? 
+                            PropertyData.selected-prop-id : 
+                            prop-action == MessageType.delete ? 
+                            PropertyData.selected-prop-id : 
+                            PropertyData.potential-prop-id,
             name: name-input.text,
             address-number: street-input.text,
             city: city-input.text,
@@ -60,9 +50,6 @@ component AddPropertyMenu inherits Rectangle {
 
         clear-prop-menu();
     }
-    pure callback new-property(PropertyInput);
-    in-out property <int> potential-prop-id;
-    property <int> selected-prop-id;
     in-out property <MessageType> prop-action;
     
     border-width: 2px;
@@ -160,10 +147,6 @@ component AddPropertyMenu inherits Rectangle {
 }
 
 export component PropertyMenu inherits Rectangle {
-    in-out property <[PropertyInput]> properties;
-    in-out property <int> potential-prop-id <=> add-prop-menu.potential-prop-id;
-
-    pure callback new-property <=> add-prop-menu.new-property;
     HorizontalLayout {
         Rectangle {
             y: 10px;
@@ -184,7 +167,7 @@ export component PropertyMenu inherits Rectangle {
                 }
                 ListView {
                     padding: 20px;
-                    for x in properties: prop-button := TouchArea {
+                    for x in PropertyData.properties: prop-button := TouchArea {
                         ta-bg := Rectangle {
                             background: prop-button.pressed ? red : prop-button.has-hover? cornsilk : root.background;
                             Text {

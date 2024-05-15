@@ -1,17 +1,10 @@
-import { TabWidget, LineEdit, GridBox, ComboBox, SpinBox, StandardButton, ListView, Button } from "std-widgets.slint";
+import { TabWidget, LineEdit, GridBox, ComboBox, SpinBox, StandardButton, ListView, Button, StandardTableView, ScrollView } from "std-widgets.slint";
 import { Validation, IdType } from "validation.slint";
-import { BufferLine } from "custom_widgets.slint";
+import { BufferLine, TableText } from "custom_widgets.slint";
+import { ExpenseData, ExpenseInput, MessageType } from "globals.slint";
 
-export enum MessageType {create, update, delete}
+enum ExpenseMenuState {modify, totals, view}
 
-export struct ExpenseInput {
-    message: MessageType,
-    id: int,
-    description: string,
-    amount: float,
-    date: string,
-    expense-type: string,
-    expense-subtype: string
 }
 
 export component AddExpenseMenu inherits Rectangle {
@@ -32,15 +25,19 @@ export component AddExpenseMenu inherits Rectangle {
         expense-type.current-value = expense.expense-type;
         subtype.current-value = expense.expense-subtype;
 
-        selected-expense-id = expense.id;
+        ExpenseData.selected-expense-id = expense.id;
         expense-action = MessageType.update;
     }
     
     public function submit-expense() {
-        potential-expense-id = Validation.get-valid-id(IdType.Expense);
-        new-expense({
+        ExpenseData.potential-expense-id = Validation.get-valid-id(IdType.Expense);
+        ExpenseData.new-expense({
             message: expense-action,
-            id: expense-action == MessageType.update ? selected-expense-id : expense-action == MessageType.delete ? selected-expense-id : potential-expense-id,
+            id: expense-action == MessageType.update ? 
+                        ExpenseData.selected-expense-id : 
+                        expense-action == MessageType.delete ? 
+                        ExpenseData.selected-expense-id : 
+                        ExpenseData.potential-expense-id,
             description: description-input.text,
             amount: amount-input.text.to-float(),
             date: date-input.text,
@@ -49,9 +46,6 @@ export component AddExpenseMenu inherits Rectangle {
         });
         clear-expense-menu();
     }
-    pure callback new-expense(ExpenseInput);
-    in-out property <int> potential-expense-id;
-    in-out property <int> selected-expense-id;
     in-out property <string> expense-subtype-string;
     in-out property <MessageType> expense-action;
     
@@ -178,11 +172,6 @@ export component AddExpenseMenu inherits Rectangle {
 }
 
 export component ExpenseMenu inherits Rectangle {
-    pure callback new-expense <=> add-expense-menu.new-expense;
-
-    in-out property <[ExpenseInput]> expenses;
-    in-out property <int> potential-expense-id <=> add-expense-menu.potential-expense-id;
-
     HorizontalLayout {
         Rectangle {
             min-width: 100px;
@@ -204,15 +193,16 @@ export component ExpenseMenu inherits Rectangle {
                     }
                     ListView {
                         padding: 20px;
-                        for x in expenses: expense-button := TouchArea {
+                        for x in ExpenseData.expenses: expense-button := TouchArea {
                             ta-bg := Rectangle {
                                 background: expense-button.has-hover? cornsilk : root.background;
                                 Text {
+                                    horizontal-alignment: TextHorizontalAlignment.left;
                                     text: x.id + ". " + x.description;
                                 }
                             }
                             clicked => {
-                                add-expense-menu.selected-expense-id = x.id;
+                                ExpenseData.selected-expense-id = x.id;
                                 add-expense-menu.open-expense(x);
                             }
                         }
