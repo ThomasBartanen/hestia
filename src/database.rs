@@ -83,8 +83,10 @@ pub async fn create_schema(db_url: &str) -> Result<SqliteQueryResult, sqlx::Erro
         statement_id        INTEGER PRIMARY KEY AUTOINCREMENT,
         leaseholder_id      INTEGER,
         amount_due          INTEGER,
-        amount_paid         INTEGER,
-        statement_path      TEXT,
+        amount_paid         INTEGER,        
+        fee_structure       TEXT,
+        expense_list        TEXT,
+        filename            TEXT,
         FOREIGN KEY (leaseholder_id) REFERENCES leaseholders(leaseholder_id) ON DELETE CASCADE
     )";
     let result = sqlx::query(qry).execute(&pool).await;
@@ -191,11 +193,13 @@ pub async fn add_statement(
 ) -> Result<SqliteQueryResult, sqlx::Error> {
     //println!("Adding Statement");
     let x = sqlx::query(
-        "INSERT INTO statements (leaseholder_id, amount_due, amount_paid, statement_path) VALUES (?, ?, ?, ?)")
-        .bind(statement.leaseholder.id)
+        "INSERT INTO statements (leaseholder_id, amount_due, amount_paid, fee_structure, expense_list, filename) VALUES (?, ?, ?, ?, ?, ?)")
+        .bind(statement.leaseholder_id)
         .bind(statement.total)
-        .bind(0)
-        .bind("test_statement")
+        .bind(statement.amount_paid)
+        .bind(FeeStructure::encode_to_database_string(&statement.rates))
+        .bind(serde_json::to_string(&statement.fees).unwrap())
+        .bind(&statement.statement_name)
         .execute(pool)
         .await?;
 
@@ -353,6 +357,26 @@ pub async fn update_lease(
     Ok(x)
 }
 
+pub async fn update_statement(
+    pool: &sqlx::Pool<Sqlite>,
+    new_statement: &Statement,
+) -> Result<SqliteQueryResult, sqlx::Error> {
+    //println!("Adding Statement");
+    let x = sqlx::query(
+        "UPDATE statements SET (leaseholder_id, amount_due, amount_paid, fee_structure, expense_list, filename) = (?, ?, ?, ?, ?, ?) WHERE statement_id == ?")
+        .bind(new_statement.leaseholder_id)
+        .bind(new_statement.total)
+        .bind(new_statement.amount_paid)
+        .bind(FeeStructure::encode_to_database_string(&new_statement.rates))
+        .bind(serde_json::to_string(&new_statement.fees).unwrap())
+        .bind(&new_statement.statement_name)
+        .bind(new_statement.id)
+        .execute(pool)
+        .await?;
+
+    Ok(x)
+}
+
 // -------------------------------------- REMOVE ---------------------------------------------
 pub async fn remove_expense(
     pool: &sqlx::Pool<Sqlite>,
@@ -387,7 +411,17 @@ pub async fn remove_leaseholder(
         .await?;
     Ok(x)
 }
-
+pub async fn remove_statement(
+    pool: &sqlx::Pool<Sqlite>,
+    statement: &Statement,
+) -> Result<SqliteQueryResult, sqlx::Error> {
+    //println!("Removing Property with id: {}", property.id);
+    let x = sqlx::query("DELETE FROM statements WHERE statement_id == ?")
+        .bind(statement.id)
+        .execute(pool)
+        .await?;
+    Ok(x)
+}
 // -------------------------------------- Get Max ID ---------------------------------------------
 pub async fn get_max_expense_id(pool: &sqlx::Pool<Sqlite>) -> u32 {
     let res = sqlx::query("SELECT * FROM expenses ORDER BY expense_id DESC LIMIT 1;")
@@ -440,6 +474,25 @@ pub async fn get_max_leaseholder_id(pool: &sqlx::Pool<Sqlite>) -> u32 {
         },
         Err(e) => {
             println!("Error getting max leaseholder id: {}", e);
+            0
+        }
+    }
+}
+
+pub async fn get_max_statement_id(pool: &sqlx::Pool<Sqlite>) -> u32 {
+    let res = sqlx::query("SELECT * FROM statements ORDER BY statement_id DESC LIMIT 1;")
+        .fetch_one(pool)
+        .await;
+    match res {
+        Ok(r) => match Statement::from_row(&r) {
+            Ok(o) => o.id + 1,
+            Err(e) => {
+                println!("Error parsing statement record for statement id: {}", e);
+                0
+            }
+        },
+        Err(e) => {
+            println!("Error getting max statement id: {}", e);
             0
         }
     }

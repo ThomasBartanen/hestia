@@ -4,18 +4,19 @@ use crate::{
     database::{add_expense, remove_expense, update_expense},
     ExpenseInput,
 };
+use serde::{Deserialize, Serialize};
 use chrono::NaiveDate;
 use sqlx::{sqlite::SqliteRow, FromRow, Row};
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ExpenseType {
     Maintenance(MaintenanceType),
     Utilities(UtilitiesType),
     Other,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum MaintenanceType {
     Repairs,
     Cleaning,
@@ -23,7 +24,7 @@ pub enum MaintenanceType {
     Other,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum UtilitiesType {
     Water,
     Electricity,
@@ -131,7 +132,7 @@ pub struct MaintenanceRequest {
     pub completion_date: Option<NaiveDate>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Expense {
     pub id: u32,
     pub property_id: u32,
@@ -185,7 +186,7 @@ impl Expense {
     }
 }
 impl<'r> FromRow<'r, SqliteRow> for Expense {
-    fn from_row(row: &'r SqliteRow) -> Result<Self, sqlx::Error> {
+    fn from_row(row: &'r SqliteRow) -> sqlx::Result<Self, sqlx::Error> {
         let id = row.try_get("expense_id")?;
         let property_id = row.try_get("property_id")?;
         let expense_type: String = row.try_get("expense_type")?;

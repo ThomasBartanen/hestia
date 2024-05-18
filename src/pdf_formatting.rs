@@ -4,7 +4,7 @@ use chrono::{Datelike, NaiveDate};
 use printpdf::{BuiltinFont, Line, Mm, PdfDocument, Point, TextRenderingMode};
 
 use crate::{
-    app_settings::PathSettings, leaseholders::Company, properties::Property, statements::Statement,
+    app_settings::PathSettings, leaseholders::{Company, Leaseholder}, properties::Property, statements::Statement,
 };
 
 const LEFT_COLUMN: Mm = Mm(20.0);
@@ -18,6 +18,7 @@ const DETAILS_SIZE: f32 = 12.0;
 
 pub fn write_with_printpdf(
     statement: Statement,
+    leaseholder: Leaseholder,
     property: Property,
     company: Company,
     settings: PathSettings,
@@ -27,7 +28,6 @@ pub fn write_with_printpdf(
         PdfDocument::new("Monthly Statement", RIGHT_EDGE, TOP_EDGE, "Layer 1");
     let current_layer = doc.get_page(page1).get_layer(layer1);
     let font = doc.add_builtin_font(BuiltinFont::Helvetica).unwrap();
-    let leaseholder = statement.leaseholder;
     let contact_info = leaseholder.contact_info;
 
     let mut y_level = Mm(270.0);

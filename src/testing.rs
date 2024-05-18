@@ -182,7 +182,7 @@ pub async fn test_statements(
     }
     //println!("New Statement: {:#?}", statement);
 
-    create_statement(statement, property.clone(), company, settings);
+    create_statement(instances, statement, property.clone(), company, settings).await;
 
     property.business_insurance += 100.0;
     match update_property(instances, property).await {

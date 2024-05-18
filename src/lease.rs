@@ -1,8 +1,9 @@
 use chrono::NaiveDate;
+use serde::{Deserialize, Serialize};
 
 use crate::{expenses::*, statements::calculate_share};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum FeeStructure {
     Gross(Rent),
     SingleNet(Rent, PropertyTaxRate),
@@ -141,29 +142,30 @@ impl FeeStructure {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct Rent {
     pub base_rent: f32,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct PropertyTaxRate {
     pub property_tax: f32,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct InsuranceRate {
     pub building_insurance: f32,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct CAMRates {
     pub electicity: f32,
     pub recycling: f32,
     pub garbage: f32,
     pub water: f32,
+    pub gas: f32,
     pub landscaping: f32,
-    pub amenities: f32,
+    pub repairs: f32,
     pub misc: f32,
 }
 
@@ -174,14 +176,15 @@ impl Default for CAMRates {
             recycling: 0.3,
             garbage: 0.3,
             water: 0.3,
+            gas: 0.3,
             landscaping: 0.3,
-            amenities: 0.2,
+            repairs: 0.3,
             misc: 0.2,
         }
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Lease {
     pub id: u32,
     pub start_date: NaiveDate,
