@@ -1,7 +1,7 @@
 use crate::{
     app_settings::PathSettings,
     database::{
-        add_expense, add_leaseholders, add_property, add_statement, get_current_property_expenses,
+        add_expense, add_leaseholders, add_property, add_statement,
         update_property,
     },
     expenses::*,
@@ -78,8 +78,9 @@ async fn test_database(instances: &sqlx::Pool<Sqlite>) -> (Company, Leaseholder,
                 recycling: 0.3,
                 garbage: 0.3,
                 water: 0.3,
+                gas: 0.3,
                 landscaping: 0.3,
-                amenities: 0.3,
+                repairs: 0.3,
                 misc: 0.1,
             },
         ),
@@ -167,15 +168,10 @@ pub async fn test_statements(
 ) {
     //println!("- - - Testing Statements - - -");
     let statement = Statement::new(
+        &instances,
         NaiveDate::from_ymd_opt(2024, 3, 1).unwrap(),
         leaseholder,
-        get_current_property_expenses(
-            instances,
-            property.id,
-            NaiveDate::from_ymd_opt(2024, 2, 1).unwrap(),
-        )
-        .await,
-    );
+    ).await;
     match add_statement(instances, &statement).await {
         Ok(_) => (), //println!("Successfully added STATEMENT"),
         Err(e) => println!("Error when adding STATEMENT: {}", e),
