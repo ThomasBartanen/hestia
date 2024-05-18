@@ -47,8 +47,6 @@ async fn main() {
         &statement_worker,
     );
 
-    let new = app.global::<ExpenseData>().get_current_selected_expense();
-
     app.run().unwrap();
 
     instances.close().await;
