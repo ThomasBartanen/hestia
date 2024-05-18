@@ -3,7 +3,7 @@ use sqlx::{migrate::MigrateDatabase, sqlite::SqliteQueryResult, FromRow, Sqlite,
 use std::result::Result;
 
 use crate::{
-    expenses::*, lease::Lease, leaseholders::Leaseholder, properties::Property,
+    expenses::*, lease::{FeeStructure, Lease}, leaseholders::Leaseholder, properties::Property,
     statements::Statement,
 };
 
@@ -32,7 +32,7 @@ pub async fn create_schema(db_url: &str) -> Result<SqliteQueryResult, sqlx::Erro
         end_date            TEXT,
         fee_structure       TEXT,
         payment_method      TEXT
-    );  
+    );
     CREATE TABLE IF NOT EXISTS properties (
         property_id         INTEGER PRIMARY KEY AUTOINCREMENT,
         property_name       TEXT,
@@ -205,8 +205,24 @@ pub async fn add_statement(
 
     Ok(x)
 }
+// ----------------------------------- GET SPECIFIC -----------------------------------------
+pub async fn get_property(pool: &sqlx::Pool<Sqlite>, id: u32) -> Property {
+    let property_row = sqlx::query("SELECT * FROM properties WHERE property_id == ?")
+        .bind(id)
+        .fetch_one(pool)
+        .await;
+    Property::from_row(&property_row.unwrap()).unwrap()
+}
 
-// -------------------------------------- GET ---------------------------------------------
+pub async fn get_leaseholder(pool: &sqlx::Pool<Sqlite>, id: u32) -> Leaseholder {
+    let lessee_row = sqlx::query("SELECT * FROM leaseholders WHERE leaseholder_id == ?")
+        .bind(id)
+        .fetch_one(pool)
+        .await;
+    Leaseholder::from_row(&lessee_row.unwrap()).unwrap()
+}
+
+// -------------------------------------- GET ALL ---------------------------------------------
 pub async fn get_properties(pool: &sqlx::Pool<Sqlite>) -> Vec<Property> {
     let mut properties: Vec<Property> = vec![];
 
