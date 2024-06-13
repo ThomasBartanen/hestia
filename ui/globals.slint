@@ -6,12 +6,14 @@ export enum MessageType {create, update, delete}
 export struct ExpenseInput {
     message: MessageType,
     id: int,
-    description: string,
+    prop-id: int,
+    expense-type: string,
+    expense-subtype: string,
     amount: float,
     date: string,
-    expense-type: string,
-    expense-subtype: string
+    description: string,
 }
+
 export global ExpenseData {
     pure callback new-expense(ExpenseInput);
 
@@ -37,6 +39,7 @@ export struct LeaseholderInput {
     phone-number: string,
     move-in-date: string,
 }
+
 export global LesseeData {
     pure callback new-lessee(LeaseholderInput);
     
@@ -61,6 +64,7 @@ export struct PropertyInput {
     business_insurance: float,
     unit-count: string
 }
+
 export global PropertyData {
     pure callback new-property(PropertyInput);
     
@@ -77,6 +81,7 @@ export struct StatementInput {
     date-mm-yy: string,
     leaseholder: string,
 }
+
 export global StatementData {
     pure callback new-statement(StatementInput);
 
