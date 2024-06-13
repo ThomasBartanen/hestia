@@ -12,32 +12,6 @@ pub enum FeeStructure {
 }
 
 impl FeeStructure {
-    pub fn encode_to_database_string(&self) -> String {
-        match self {
-            FeeStructure::Gross(rent) => {
-                format!("Gross: Base Rent {}", rent.base_rent)
-            }
-            FeeStructure::SingleNet(rent, tax_rate) => {
-                format!(
-                    "Single Net: Base Rent {}, Property Tax Rate {}",
-                    rent.base_rent, tax_rate.property_tax
-                )
-            }
-            FeeStructure::DoubleNet(rent, tax_rate, insurance_rate) => {
-                format!(
-                    "Double Net: Base Rent {}, Property Tax Rate {}, Insurance Rate {}",
-                    rent.base_rent, tax_rate.property_tax, insurance_rate.building_insurance
-                )
-            }
-            FeeStructure::TripleNet(rent, tax_rate, insurance_rate, cam_rates) => {
-                format!(
-                    "Triple Net: Base Rent {}, Property Tax Rate {}, Insurance Rate {}, CAM Rates {:?}",
-                    rent.base_rent, tax_rate.property_tax, insurance_rate.building_insurance, cam_rates
-                )
-            }
-        }
-    }
-
     pub fn display_amounts_due(
         &self,
         totals: Vec<Expense>,

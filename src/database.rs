@@ -1,4 +1,5 @@
 use chrono::NaiveDate;
+use serde::Serialize;
 use sqlx::{migrate::MigrateDatabase, sqlite::SqliteQueryResult, FromRow, Sqlite, SqlitePool};
 use std::result::Result;
 
@@ -82,8 +83,9 @@ pub async fn create_schema(db_url: &str) -> Result<SqliteQueryResult, sqlx::Erro
     CREATE TABLE IF NOT EXISTS statements (
         statement_id        INTEGER PRIMARY KEY AUTOINCREMENT,
         leaseholder_id      INTEGER,
-        amount_due          INTEGER,
-        amount_paid         INTEGER,        
+        amount_due          REAL,
+        amount_paid         REAL,
+        month               INTEGER,
         fee_structure       TEXT,
         expense_list        TEXT,
         filename            TEXT,
@@ -165,7 +167,7 @@ pub async fn add_leaseholders(
         sqlx::query("INSERT INTO leases (start_date, end_date, fee_structure) VALUES (?, ?, ?)")
             .bind(lease.start_date.to_string())
             .bind(lease.end_date.to_string())
-            .bind(leaseholder.lease.fee_structure.encode_to_database_string())
+            .bind(serde_json::to_string(&leaseholder.lease.fee_structure).unwrap())
             .execute(pool)
             .await?
             .last_insert_rowid();
@@ -197,7 +199,7 @@ pub async fn add_statement(
         .bind(statement.leaseholder_id)
         .bind(statement.total)
         .bind(statement.amount_paid)
-        .bind(FeeStructure::encode_to_database_string(&statement.rates))
+        .bind(serde_json::to_string(&statement.rates).unwrap())
         .bind(serde_json::to_string(&statement.fees).unwrap())
         .bind(&statement.statement_name)
         .execute(pool)
@@ -367,7 +369,7 @@ pub async fn update_lease(
     )
     .bind(new_lease.start_date.to_string())
     .bind(new_lease.end_date.to_string())
-    .bind(new_lease.fee_structure.encode_to_database_string())
+    .bind(serde_json::to_string(&new_lease.fee_structure).unwrap())
     .execute(pool)
     .await?;
     Ok(x)
@@ -383,7 +385,7 @@ pub async fn update_statement(
         .bind(new_statement.leaseholder_id)
         .bind(new_statement.total)
         .bind(new_statement.amount_paid)
-        .bind(FeeStructure::encode_to_database_string(&new_statement.rates))
+        .bind(serde_json::to_string(&new_statement.rates).unwrap())
         .bind(serde_json::to_string(&new_statement.fees).unwrap())
         .bind(&new_statement.statement_name)
         .bind(new_statement.id)
