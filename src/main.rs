@@ -273,4 +273,21 @@ fn intialize_slint_callbacks(
             };
         }
     });
+
+    app.global::<StatementData>().on_new_statement({
+        let statement_channel = statement_worker.channel.clone();
+        let local_app = weak_app.clone();
+        move |input| {
+            let upgrade_res = local_app.upgrade_in_event_loop({
+                let internal_channel = statement_channel.clone();
+                move |handle| {
+
+                }
+            });
+            match upgrade_res {
+                Ok(_) => (),
+                Err(e) => println!("Failed to upgrade ui: {e}"),
+            }
+        }
+    });
 }
