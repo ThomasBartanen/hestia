@@ -177,6 +177,7 @@ impl Expense {
         ExpenseInput {
             message: crate::MessageType::Update,
             id: cur_expense.id as i32,
+            prop_id: cur_expense.property_id as i32,
             amount: cur_expense.amount,
             date: cur_expense.date.to_string().into(),
             description: cur_expense.description.into(),
