@@ -1,79 +1,210 @@
-import { TabWidget, LineEdit, GridBox, ComboBox, SpinBox, StandardButton, ListView, Button, StandardTableView, ScrollView } from "std-widgets.slint";
+import { TabWidget, LineEdit, GridBox, ComboBox, SpinBox, StandardButton, ListView, Button, StandardTableView, ScrollView, VerticalBox } from "std-widgets.slint";
 import { Validation, IdType } from "validation.slint";
-import { BufferLine, TableText } from "custom_widgets.slint";
+import { BufferLine, TableText, TableHeader, SpreadsheetFill, TableActionIcons } from "custom_widgets.slint";
 import { ExpenseData, ExpenseInput, MessageType } from "globals.slint";
 
-enum ExpenseMenuState {modify, totals, view}
+enum ExpenseMenuState {totals, view}
 
 export component MainExpenseView inherits Rectangle {
-    Text {
-        text: "Main";
+    Rectangle {
+        Text {
+            text: "Number of Expenses: " + ExpenseData.expenses.length;
+        }
     }
 }
 
 export component ViewExpenseTotalsMenu inherits Rectangle {
     in-out property <ExpenseInput> selected-expense;
     y: 10px;
-    Rectangle {
+    x: 20px;
+    padding: 10px;
+    VerticalLayout {
+        x: 30px;
         titles := HorizontalLayout {
-            TableText { 
-                width: 50px;
+            TableHeader { 
+                width: 40px;
                 text: "ID";
             }
-            TableText { 
-                width: 50px;
-                text: "Property ID";
+            TableHeader { 
+                width: 40px;
+                text: "Prop. ID";
             }
-            TableText { 
-                width: 70px;
+            TableHeader { 
+                width: 100px;
                 text: "Date";
             }
-            TableText { 
-                width: 100px;
+            TableHeader { 
+                width: 150px;
                 text: "Description";
             }
-            TableText { 
-                width: 100px;
+            TableHeader { 
+                width: 120px;
                 text: "Expense Type";
             }
-            TableText { 
-                width: 100px;
+            TableHeader { 
+                width: 120px;
                 text: "Expense Subtype";
             }
-            TableText { 
-                width: 100px;
+            TableHeader { 
+                width: 70px;
                 text: "Amount";
             }
         }
-        HorizontalLayout {
-            TableText {
-                width: 50px;
-                text: selected-expense.id;
+        ScrollView {
+            VerticalLayout {
+                alignment: LayoutAlignment.start;
+                for x in ExpenseData.expenses: expense-line := HorizontalLayout {
+                    TableText {                        
+                        width: 40px;
+                        text: x.id;
+                    }
+                    TableText {
+                        width: 40px;
+                        text: x.prop-id;
+                    }
+                    TableText { 
+                        width: 100px;
+                        text: x.date;
+                    }
+                    TableText { 
+                        width: 150px;
+                        text: x.description;
+                    }
+                    Rectangle {
+                        width: 120px;
+                        expense-type := ComboBox {
+                            width: parent.width;
+                            model: [
+                                "Select Expense Type", 
+                                "Utilities", 
+                                "Maintenance", 
+                                "Other"
+                            ];
+                            current-value: x.expense-type;
+                        }
+                    }
+                    Rectangle {
+                        width: 120px;
+                        subtype := ComboBox {
+                            width: parent.width;
+                            model: [""];
+                            current-value: x.expense-subtype;
+                            enabled: true;
+                            states [
+                                Utility when expense-type.current-value == "Utilities": {
+                                    enabled: true;
+                                    subtype.model: [
+                                        "Water",
+                                        "Electricity",
+                                        "Garbage",
+                                        "Gas",
+                                        "Other"
+                                    ];
+                                }
+                                Maintenance when expense-type.current-value == "Maintenance": {
+                                    enabled: true;
+                                    subtype.model: [
+                                        "Repairs",
+                                        "Cleaning",
+                                        "Landscaping",
+                                        "Other"
+                                    ];
+                                }
+                                None when expense-type.current-value != "Utilities" && expense-type.current-value != "Maintenance" : {
+                                    subtype.enabled : false;
+                                }
+                            ]
+                        }                        
+                    }
+                    TableText { 
+                        width: 70px;
+                        text: x.amount;
+                    }
+                    TableActionIcons {
+                        width: 70px;
+                    }
+                }
             }
-            TableText {
-                width: 50px;
-                text: 0;
+        }
+        BufferLine { 
+            buffer: 10px;
+            line-thickness: 3px;
+        }
+        Rectangle {
+            new-expense := HorizontalLayout {
+                new-expense-id := TableText {                        
+                    width: 40px;
+                    text: "";
+                }
+                new-expense-prop-id := TableText {
+                    width: 40px;
+                    text: "";
+                }
+                new-expense-date := TableText { 
+                    width: 100px;
+                    text: "";
+                }
+                new-expense-description := TableText { 
+                    width: 150px;
+                    text: "";
+                }
+                Rectangle {
+                    width: 120px;
+                    new-expense-type := ComboBox {
+                        width: parent.width;
+                        model: [
+                            "Select Expense Type", 
+                            "Utilities", 
+                            "Maintenance", 
+                            "Other"
+                        ];
+                        current-index: 0;
+                    }
+                }
+                Rectangle {
+                    width: 120px;
+                    new-expense-subtype := ComboBox {
+                        width: parent.width;
+                        model: [""];
+                        current-index: 0;
+                        enabled: true;
+                        states [
+                            Utility when new-expense-type.current-value == "Utilities": {
+                                enabled: true;
+                                new-expense-subtype.model: [
+                                    "Water",
+                                    "Electricity",
+                                    "Garbage",
+                                    "Gas",
+                                    "Other"
+                                ];
+                            }
+                            Maintenance when new-expense-type.current-value == "Maintenance": {
+                                enabled: true;
+                                new-expense-subtype.model: [
+                                    "Repairs",
+                                    "Cleaning",
+                                    "Landscaping",
+                                    "Other"
+                                ];
+                            }
+                            None when new-expense-type.current-value != "Utilities" && new-expense-type.current-value != "Maintenance" : {
+                                new-expense-subtype.enabled : false;
+                            }
+                        ]
+                    }                        
+                }
+                new-expense-amount := TableText { 
+                    width: 70px;
+                    text: "";
+                }
+                TableActionIcons {
+                    width: 70px;
+                }
             }
-            TableText { 
-                width: 70px;
-                text: selected-expense.date;
-            }
-            TableText { 
-                width: 100px;
-                text: selected-expense.description;
-            }
-            TableText { 
-                width: 100px;
-                text: selected-expense.expense-type;
-            }
-            TableText { 
-                width: 100px;
-                text: selected-expense.expense-subtype;
-            }
-            TableText { 
-                width: 100px;
-                text: selected-expense.amount;
-            }
+        }
+        Rectangle {
+            height: 10px;
         }
     }
 }
@@ -244,6 +375,7 @@ export component AddExpenseMenu inherits Rectangle {
 
 export component ExpenseMenu inherits Rectangle {
     HorizontalLayout {
+        /*
         Rectangle {
             min-width: 100px;
             max-width: 300px;
@@ -281,6 +413,7 @@ export component ExpenseMenu inherits Rectangle {
                 }
             }
         }
+        */
         Rectangle {
             min-width: 400px;
             preferred-width: 600px;
@@ -288,19 +421,12 @@ export component ExpenseMenu inherits Rectangle {
             property <ExpenseMenuState> current-state: ExpenseMenuState.view;
             VerticalLayout {
                 states [
-                    View when current-state == ExpenseMenuState.view : {                    
-                        add-expense-menu.visible : false;
+                    View when current-state == ExpenseMenuState.view : {
                         view-totals-menu.visible : false;
                         main-view-menu.visible : true;
                     }
-                    Totals when current-state == ExpenseMenuState.totals : {                    
-                        add-expense-menu.visible : false;
+                    Totals when current-state == ExpenseMenuState.totals : {
                         view-totals-menu.visible : true;
-                        main-view-menu.visible : false;
-                    }
-                    Modify when current-state == ExpenseMenuState.modify : {
-                        add-expense-menu.visible : true;
-                        view-totals-menu.visible : false;
                         main-view-menu.visible : false;
                     }
                 ]
@@ -317,21 +443,12 @@ export component ExpenseMenu inherits Rectangle {
                             current-state = ExpenseMenuState.totals;
                         }
                     }
-                    Button {
-                        text: "Add/Modify Expenses";
-                        clicked => {
-                            current-state = ExpenseMenuState.modify;
-                        }
-                    }
                 }
                 Rectangle {
                     main-view-menu := MainExpenseView {
                         visible: false;
                     }
                     view-totals-menu := ViewExpenseTotalsMenu {
-                        visible: false;
-                    }
-                    add-expense-menu := AddExpenseMenu {
                         visible: false;
                     }
                 }                
