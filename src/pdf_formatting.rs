@@ -39,15 +39,22 @@ pub fn write_with_printpdf(
 
     current_layer.begin_text_section();
     current_layer.use_text(company.name, HEADER_SIZE, left_column, y_level, &font);
-    y_level -= Mm(10.0);
+    y_level -= Mm(8.0);
     current_layer.use_text(contact_info.email, HEADER_SIZE, left_column, y_level, &font);
-    y_level -= Mm(30.0);
+    y_level -= Mm(25.0);
     current_layer.use_text(&contact_info.name, HEADER_SIZE, left_column, y_level, &font);
-    y_level -= Mm(10.0);
-    current_layer.use_text("ADDRESS TODO", HEADER_SIZE, left_column, y_level, &font);
-    y_level -= Mm(10.0);
+    y_level -= Mm(8.0);
+    current_layer.use_text(&contact_info.remittence_address.street_address, HEADER_SIZE, left_column, y_level, &font);
+    y_level -= Mm(8.0);    
     current_layer.use_text(
-        statement.date.to_string(),
+        format!("{}, {} {}", &contact_info.remittence_address.city, &contact_info.remittence_address.state, &contact_info.remittence_address.zip_code),
+        HEADER_SIZE, 
+        left_column, 
+        y_level, 
+        &font);
+    y_level -= Mm(8.0);
+    current_layer.use_text(
+        get_word_date(NaiveDate::from_ymd_opt(2024, statement.month, 1).unwrap()),
         HEADER_SIZE,
         left_column,
         y_level,
@@ -57,8 +64,8 @@ pub fn write_with_printpdf(
     current_layer.end_text_section();
 
     let line = Line::from_iter(vec![
-        (Point::new(Mm(0.0), y_level), false),
-        (Point::new(Mm(350.0), y_level), false),
+        (Point::new(Mm(10.0), y_level), false),
+        (Point::new(Mm(200.0), y_level), false),
     ]);
     current_layer.add_line(line);
 
@@ -176,10 +183,9 @@ pub fn write_with_printpdf(
     // Save the PDF to a file
     doc.save(&mut BufWriter::new(
         File::create(format!(
-            "{}{}_Statement_{}.pdf",
+            "{}{}",
             settings.statements_path,
-            get_word_date(statement.date),
-            &contact_info.name
+            statement.statement_name
         ))
         .unwrap(),
     ))
