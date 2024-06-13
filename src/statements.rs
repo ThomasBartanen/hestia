@@ -1,23 +1,20 @@
-use std::str::FromStr;
-
 use crate::{
     app_settings::PathSettings,
     database,
     expenses::*,
-    lease::FeeStructure,
+    lease::{self, FeeStructure},
     leaseholders::{Company, Leaseholder},
     pdf_formatting::write_with_printpdf,
     properties::Property,
 };
-use chrono::NaiveDate;
-use serde::Serialize;
+use chrono::{Datelike, NaiveDate};
 use sqlx::{sqlite::SqliteRow, Row, FromRow, Sqlite};
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 
 #[derive(Debug, Clone)]
 pub struct Statement {
     pub id: u32,
-    pub date: NaiveDate,
+    pub month: u32,
     pub leaseholder_id: u32,
     pub statement_name: String,
     pub rates: FeeStructure,
@@ -37,8 +34,8 @@ impl Statement {
         ).await;
         Statement {
             id: 0,
-            date,
-            statement_name: tenant_clone.contact_info.name.to_owned(),
+            month: date.month(),
+            statement_name: format!("{}_Statement_{}.pdf", date.month(), tenant_clone.contact_info.name.to_owned()),
             leaseholder_id: tenant.id,
             rates: tenant_clone.clone().lease.fee_structure,
             fees: fees.clone(),
@@ -52,22 +49,34 @@ impl<'r> FromRow<'r, SqliteRow> for Statement {
     fn from_row(row: &'r SqliteRow) -> Result<Self, sqlx::Error> {
         let id: u32 = row.try_get("statement_id")?;
         let leaseholder_id: u32 = row.try_get("leaseholder_id")?;
-        let date_string: String = row.try_get("statement_id")?;
+        let month: u32 = row.try_get("month")?;
         let total: f32 = row.try_get("amount_due")?;
         let amount_paid: f32 = row.try_get("amount_paid")?;
         let statement_name: String = row.try_get("filename")?;
         let rates_string: String = row.try_get("fee_structure")?;
         let fee_list: String = row.try_get("expense_list")?;
 
-        let date = NaiveDate::from_str(&date_string).unwrap();
+        //let date = NaiveDate::from_str(&date_string).unwrap();
 
         Ok(Statement {
             id,
-            date,
+            month,
             statement_name,
             leaseholder_id,
-            rates: serde_json::from_str(&rates_string).unwrap(),
-            fees: serde_json::from_str(&fee_list).unwrap(),
+            rates: match serde_json::from_str(&rates_string) {
+                Ok(o) => o,
+                Err(e) => {
+                    println!("Failed to deserialize statement rates: {}", e);
+                    FeeStructure::Gross(lease::Rent{base_rent: 0.0})
+                },
+            },
+            fees: match serde_json::from_str(&fee_list) {
+                Ok(o) => o,
+                Err(e) => {
+                    println!("Failed to deserialize statement fees: {}", e);
+                    Vec::new()
+                }
+            },
             total,
             amount_paid,
         })
