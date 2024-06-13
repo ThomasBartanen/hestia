@@ -1,3 +1,4 @@
+import { ScrollView, LineEdit } from "std-widgets.slint";
 export component BufferLine {
     in-out property <physical-length> buffer;
     in-out property <physical-length> line-thickness;
@@ -12,13 +13,84 @@ export component BufferLine {
     }
 }
 
-export component TableText inherits Rectangle{
+
+export component TableHeader inherits Rectangle {
     in-out property <string> text;
-    Text { 
-        text: text;
-        horizontal-alignment: TextHorizontalAlignment.left;
-        vertical-alignment: TextVerticalAlignment.center;
-        overflow: TextOverflow.elide;
-        wrap: TextWrap.no-wrap;
+    pure callback on-sort-clicked(int);
+    HorizontalLayout {
+        width: parent.width;
+        header-title := Text { 
+            text: text;
+            horizontal-alignment: TextHorizontalAlignment.left;
+            vertical-alignment: TextVerticalAlignment.center;
+            wrap: TextWrap.word-wrap;
+        }
+        sorting-icon := TouchArea {
+            Image {
+                
+            }
+        }
+    }
+}
+export component TableText inherits TouchArea{
+    in-out property <string> text;
+    in-out property <string> edit-text;
+    Rectangle {
+        width: parent.width;
+        border-radius: 2px;
+        border-color: black;
+        header-title := LineEdit {
+            width: parent.width;
+            placeholder-text: text;
+            text: edit-text;
+            horizontal-alignment: TextHorizontalAlignment.left;
+        }
+    }
+}
+
+export component TableActionIcons inherits Rectangle {
+    GridLayout {
+        update-row := TouchArea {
+            col: 0;
+            row: 0;
+            Rectangle {
+                background: grey;
+                Text {
+                    text: "Update";
+                }
+            }
+        }
+        delete-row := TouchArea {
+            col: 1;
+            row: 0;
+            Rectangle {
+                background: grey;
+                Text {
+                    text: "Delete";
+                }
+            }
+        }
+        duplicate-row := TouchArea {
+            col: 0;
+            row: 1;
+            Rectangle {
+                background: grey;
+                Text {
+                    text: "Dup.";
+                }
+            }
+        }
+        clear-row := TouchArea {
+            col: 1;
+            row: 1;
+            Rectangle {
+                background: grey;
+                Text {
+                    text: "Clear";
+                }
+            }
+        }
+    }
+}
     }
 }
