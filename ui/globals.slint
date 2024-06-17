@@ -15,7 +15,7 @@ export struct ExpenseInput {
 }
 
 export global ExpenseData {
-    pure callback new-expense(ExpenseInput);
+    callback new-expense(ExpenseInput);
 
     in-out property <int> potential-expense-id;
     in-out property <int> selected-expense-id;
@@ -41,7 +41,7 @@ export struct LeaseholderInput {
 }
 
 export global LesseeData {
-    pure callback new-lessee(LeaseholderInput);
+    callback new-lessee(LeaseholderInput);
     
     in-out property <int> potential-lessee-id;
     in-out property <int> selected-lessee-id;
@@ -66,7 +66,7 @@ export struct PropertyInput {
 }
 
 export global PropertyData {
-    pure callback new-property(PropertyInput);
+    callback new-property(PropertyInput);
     
     in-out property <int> potential-prop-id;    
     in-out property <int> selected-prop-id;
@@ -83,7 +83,7 @@ export struct StatementInput {
 }
 
 export global StatementData {
-    pure callback new-statement(StatementInput);
+    callback new-statement(StatementInput);
 
     in-out property <int> potential-statement-id;
     in-out property <[StatementInput]> statements;
