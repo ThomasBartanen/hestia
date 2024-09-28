@@ -25,11 +25,11 @@ async fn main() {
     app_settings::initialize_data_paths().await;
     let instances = database::initialize_database().await;
 
-    testing::activate_test_mode(true, &instances).await;
+    let mut valid_ids = get_ids(&instances).await;
+
+    testing::activate_test_mode(true, &instances, &mut valid_ids).await;
     let app = App::new().unwrap();
     let weak_app = app.as_weak();
-
-    let valid_ids = get_ids(&instances).await;
 
     initialize_slint_properties(&weak_app, &instances, &valid_ids).await;
 
@@ -41,6 +41,7 @@ async fn main() {
 
     intialize_slint_callbacks(
         &app,
+        valid_ids.clone(),
         &expense_worker,
         &property_worker,
         &lessee_worker,
@@ -56,11 +57,12 @@ async fn main() {
     let _statement_result = statement_worker.join();
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct ValidIds {
     expense_id: u32,
     property_id: u32,
     leaseholder_id: u32,
+    lease_id: u32,
     statement_id: u32,
 }
 
@@ -129,8 +131,12 @@ async fn initialize_slint_properties(
         valid_ids,
     )
     .await;
-    slint_conversion::initialize_slint_expenses(&weak_app.upgrade().unwrap(), instances, valid_ids)
-        .await;
+    slint_conversion::initialize_slint_expenses(
+        &weak_app.upgrade().unwrap(), 
+        instances, 
+        valid_ids
+    )
+    .await;
     slint_conversion::initialize_slint_leaseholders(
         &weak_app.upgrade().unwrap(),
         instances,
@@ -141,12 +147,19 @@ async fn initialize_slint_properties(
 
 fn intialize_slint_callbacks(
     app: &App,
+    valid_ids: ValidIds,
     expense_worker: &expenses::ExpenseWorker,
     property_worker: &properties::PropertyWorker,
     lessee_worker: &leaseholders::LeaseholderWorker,
     statement_worker: &statements::StatementWorker,
 ) {
     let weak_app = app.as_weak();
+    app.global::<Validation>().on_get_valid_id({
+        let mut id_clone = valid_ids;
+        move |input| {
+            id_clone.get_id(input) as i32
+        }}
+    );
 
     //app.global::<Validation>().on_get_valid_id(move |input| {});
     app.global::<ExpenseData>().on_new_expense({
@@ -168,13 +181,15 @@ fn intialize_slint_callbacks(
                             expenses::ExpenseMessage::ExpenseCreated(input)
                         }
                         MessageType::Update => {
-                            let index = new_expenses
+                            let index = match new_expenses
                                 .iter()
                                 .position(|r| {
                                     //println!("r.id: {}. input_clone.id: {}", r.id, input_clone.id);
                                     r.id == input_clone.id
-                                })
-                                .unwrap();
+                                }) {
+                                    Some(i) => i,
+                                    None => panic!("Failed to find correct index for Expense in collection"),
+                                };
                             new_expenses.remove(index);
                             new_expenses.insert(index, input_clone);
                             expenses::ExpenseMessage::ExpenseUpdate(input)

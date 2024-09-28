@@ -8,16 +8,16 @@ use crate::{
     lease::{self, *},
     leaseholders::*,
     properties::*,
-    statements::{create_statement, Statement},
+    statements::{create_statement, Statement}, ValidIds,
 };
 use chrono::NaiveDate;
 use sqlx::Sqlite;
 
-pub async fn activate_test_mode(activate: bool, instances: &sqlx::Pool<Sqlite>) {
+pub async fn activate_test_mode(activate: bool, instances: &sqlx::Pool<Sqlite>, valid_ids: &mut ValidIds) {
     if activate {
         let settings = test_settings().await;
-        let (company, leaseholder, mut property) = test_database(instances).await;
-        test_expenses(instances, &property).await;
+        let (company, leaseholder, mut property) = test_database(instances, valid_ids).await;
+        test_expenses(instances, &property, valid_ids).await;
         test_statements(instances, &mut property, leaseholder, company, settings).await;
     }
 }
@@ -26,13 +26,13 @@ async fn test_settings() -> PathSettings {
     PathSettings::default()
 }
 
-async fn test_database(instances: &sqlx::Pool<Sqlite>) -> (Company, Leaseholder, Property) {
+async fn test_database(instances: &sqlx::Pool<Sqlite>, valid_ids: &mut ValidIds) -> (Company, Leaseholder, Property) {
     //println!("- - - Testing Database - - -");
     let company = Company::new("Company".to_owned(), 3241523);
 
-    let mut property = Property::new(
-        0,
-        "name".to_string(),
+    let property = Property::new(
+        ValidIds::get_id(valid_ids, crate::IdType::Property),
+        "TestProperty".to_string(),
         Address::new(
             "address".to_string(),
             "city".to_string(),
@@ -46,7 +46,7 @@ async fn test_database(instances: &sqlx::Pool<Sqlite>) -> (Company, Leaseholder,
     match add_property(instances, &property).await {
         Ok(r) => {
             //converting i64 to u16. This may cause issues. Keep an eye on this
-            property.id = r.last_insert_rowid() as u32;
+            //property.id = r.last_insert_rowid() as u32;
             //println!("Successfully added PROPERTY");
         }
         Err(e) => println!("Error when adding PROPERTY: {}", e),
@@ -87,7 +87,7 @@ async fn test_database(instances: &sqlx::Pool<Sqlite>) -> (Company, Leaseholder,
         "Check".to_string(),
     );
     let mut leaseholder = Leaseholder::new(
-        0,
+        ValidIds::get_id(valid_ids, crate::IdType::Leaseholder),
         lease.clone(),
         property.id,
         contact,
@@ -103,11 +103,12 @@ async fn test_database(instances: &sqlx::Pool<Sqlite>) -> (Company, Leaseholder,
     (company, leaseholder, property)
 }
 
-pub async fn test_expenses(instances: &sqlx::Pool<Sqlite>, property: &Property) {
+pub async fn test_expenses(instances: &sqlx::Pool<Sqlite>, property: &Property, valid_ids: &mut ValidIds) {
     //println!("- - - Testing Expenses - - -");
     let dt = NaiveDate::from_ymd_opt(2024, 3, 10);
     let expense = Expense::new(
-        0,
+        ValidIds::get_id(valid_ids, crate::IdType::Expense),
+        true,
         property.id,
         ExpenseType::Maintenance(MaintenanceType::Landscaping),
         100.0,
@@ -120,7 +121,8 @@ pub async fn test_expenses(instances: &sqlx::Pool<Sqlite>, property: &Property) 
     }
 
     let expense = Expense::new(
-        0,
+        ValidIds::get_id(valid_ids, crate::IdType::Expense),
+        true,
         property.id,
         ExpenseType::Utilities(UtilitiesType::Electricity),
         1920.0,
@@ -133,7 +135,8 @@ pub async fn test_expenses(instances: &sqlx::Pool<Sqlite>, property: &Property) 
     }
 
     let expense = Expense::new(
-        0,
+        ValidIds::get_id(valid_ids, crate::IdType::Expense),
+        true,
         property.id,
         ExpenseType::Utilities(UtilitiesType::Water),
         450.0,
@@ -146,7 +149,8 @@ pub async fn test_expenses(instances: &sqlx::Pool<Sqlite>, property: &Property) 
     }
 
     let expense = Expense::new(
-        0,
+        ValidIds::get_id(valid_ids, crate::IdType::Expense),
+        true,
         property.id,
         ExpenseType::Other,
         100.0,
