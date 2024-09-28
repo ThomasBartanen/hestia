@@ -64,15 +64,58 @@ struct ValidIds {
     statement_id: u32,
 }
 
-async fn get_ids(pool: &sqlx::Pool<Sqlite>) -> ValidIds {
-    let ids = ValidIds {
-        expense_id: database::get_max_expense_id(pool).await,
-        property_id: database::get_max_property_id(pool).await,
-        leaseholder_id: database::get_max_leaseholder_id(pool).await,
-        statement_id: database::get_max_statement_id(pool).await,
-    };
-    //println!("Created ID Struct: {:#?}", ids);
-    ids
+impl ValidIds {
+    pub fn get_id(&mut self, id_type: IdType) -> u32 {
+        let id: u32;
+        match id_type {
+            IdType::Expense => {
+                id = self.expense_id;
+                self.expense_id += 1;
+            }
+            IdType::Property => {
+                id = self.property_id;
+                self.property_id += 1;
+            }
+            IdType::Leaseholder => {
+                id = self.leaseholder_id;
+                self.leaseholder_id += 1;
+            }
+            IdType::Lease => {
+                id = self.lease_id;
+                self.lease_id += 1;
+            }
+            IdType::Statement => {
+                id = self.statement_id;
+                self.statement_id += 1;
+            }
+        };
+        id
+    }
+}
+
+async fn get_ids(pool: &sqlx::Pool<Sqlite>) -> ValidIds {    
+    let db_url = String::from("sqlite://sqlite.db");
+    if !<Sqlite as sqlx::migrate::MigrateDatabase>::database_exists(&db_url).await.unwrap_or(false) {
+        let ids = ValidIds {
+            expense_id: 0,
+            property_id: 0,
+            leaseholder_id: 0,
+            lease_id: 0,
+            statement_id: 0,
+        };
+        ids
+    }
+    else {
+        let ids = ValidIds {
+            expense_id: database::get_max_expense_id(pool).await,
+            property_id: database::get_max_property_id(pool).await,
+            leaseholder_id: database::get_max_leaseholder_id(pool).await,
+            lease_id: 0,
+            statement_id: database::get_max_statement_id(pool).await,
+        };
+        //println!("Created ID Struct: {:#?}", ids);
+        ids
+    }
 }
 
 async fn initialize_slint_properties(

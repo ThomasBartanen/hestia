@@ -35,7 +35,7 @@ pub async fn create_schema(db_url: &str) -> Result<SqliteQueryResult, sqlx::Erro
         payment_method      TEXT
     );
     CREATE TABLE IF NOT EXISTS properties (
-        property_id         INTEGER PRIMARY KEY AUTOINCREMENT,
+        property_id         INTEGER PRIMARY KEY,
         property_name       TEXT,
         property_tax        TEXT,
         business_insurance  TEXT,
@@ -56,7 +56,7 @@ pub async fn create_schema(db_url: &str) -> Result<SqliteQueryResult, sqlx::Erro
         FOREIGN KEY (leaseholder_id) REFERENCES leaseholders(leaseholder_id) ON DELETE SET NULL
     );
     CREATE TABLE IF NOT EXISTS leaseholders (
-        leaseholder_id      INTEGER PRIMARY KEY AUTOINCREMENT,
+        leaseholder_id      INTEGER PRIMARY KEY,
         lease_id            INTEGER,
         property_id         INTEGER,
         name                TEXT,
@@ -68,7 +68,6 @@ pub async fn create_schema(db_url: &str) -> Result<SqliteQueryResult, sqlx::Erro
         phone_number        TEXT,
         move_in_date        TEXT,
         FOREIGN KEY (lease_id) REFERENCES leases(lease_id) ON DELETE SET NULL
-        FOREIGN KEY (property_id) REFERENCES properties(property_id) ON DELETE CASCADE
     );    
     CREATE TABLE IF NOT EXISTS expenses (
         expense_id          INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -77,8 +76,7 @@ pub async fn create_schema(db_url: &str) -> Result<SqliteQueryResult, sqlx::Erro
         amount              REAL,
         date_incurred       TEXT,
         description         TEXT,
-        receipt_url         TEXT null,
-        FOREIGN KEY (property_id) REFERENCES properties(property_id) ON DELETE SET NULL
+        receipt_url         TEXT null
     );
     CREATE TABLE IF NOT EXISTS statements (
         statement_id        INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -323,17 +321,20 @@ pub async fn update_expense(
     expense: &Expense,
 ) -> Result<SqliteQueryResult, sqlx::Error> {
     let expense_type_str = &expense.expense_type.to_string();
-
+    let prop_id: String;
+    if expense.property_expense == true { prop_id = expense.property_id.to_string() } else {prop_id = 0.to_string()};
     let x = sqlx::query(
-        "UPDATE expenses SET (property_id, expense_type, amount, date_incurred, description) = (?, ?, ?, ?, ?) WHERE expense_id == ?")
-        .bind(expense.property_id)
+        "UPDATE expenses SET (property_id, expense_type, amount, date_incurred, description, receipt_url) = (?, ?, ?, ?, ?, ?) WHERE expense_id == ?")
+        .bind(prop_id)
         .bind(expense_type_str)
         .bind(expense.amount)
         .bind(expense.date.to_string())
         .bind(&expense.description)
+        .bind("none")
         .bind(expense.id)
         .execute(pool)
         .await?;
+    
     Ok(x)
 }
 
@@ -412,6 +413,17 @@ pub async fn remove_property(
     property: &Property,
 ) -> Result<SqliteQueryResult, sqlx::Error> {
     //println!("Removing Property with id: {}", property.id);
+    let expenses = sqlx::query("SELECT * FROM expenses WHERE property_id == ?")
+        .bind(property.id)
+        .fetch_all(pool)
+        .await;
+
+    for row in expenses.unwrap() {
+        let mut updated_expense = Expense::from_row(&row).unwrap();
+        updated_expense.property_id = 0;
+        update_expense(pool, &updated_expense).await?;
+    }
+
     let x = sqlx::query("DELETE FROM properties WHERE property_id == ?")
         .bind(property.id)
         .execute(pool)
@@ -450,12 +462,12 @@ pub async fn get_max_expense_id(pool: &sqlx::Pool<Sqlite>) -> u32 {
             Ok(o) => o.id + 1,
             Err(e) => {
                 println!("Error parsing expense record for expense id: {}", e);
-                0
+                1
             }
         },
         Err(e) => {
-            println!("Error getting max expense id: {}", e);
-            0
+            println!("Failed to get max expense id. Defaulting to 1. ' {} '", e);
+            1
         }
     }
 }
@@ -468,12 +480,12 @@ pub async fn get_max_property_id(pool: &sqlx::Pool<Sqlite>) -> u32 {
             Ok(o) => o.id + 1,
             Err(e) => {
                 println!("Error parsing property record for property id: {}", e);
-                0
+                1
             }
         },
         Err(e) => {
-            println!("Error getting max property id: {}", e);
-            0
+            println!("Failed to get max property id. Defaulting to 1. ' {} '", e);
+            1
         }
     }
 }
@@ -487,12 +499,12 @@ pub async fn get_max_leaseholder_id(pool: &sqlx::Pool<Sqlite>) -> u32 {
             Ok(o) => o.id + 1,
             Err(e) => {
                 println!("Error parsing leaseholder record for leaseholder id: {}", e);
-                0
+                1
             }
         },
         Err(e) => {
-            println!("Error getting max leaseholder id: {}", e);
-            0
+            println!("Failed to get max leaseholder id. Defaulting to 1. ' {} '", e);
+            1
         }
     }
 }
@@ -506,12 +518,12 @@ pub async fn get_max_statement_id(pool: &sqlx::Pool<Sqlite>) -> u32 {
             Ok(o) => o.id + 1,
             Err(e) => {
                 println!("Error parsing statement record for statement id: {}", e);
-                0
+                1
             }
         },
         Err(e) => {
-            println!("Error getting max statement id: {}", e);
-            0
+            println!("Failed to get max statement id. Defaulting to 1. ' {} '", e);
+            1
         }
     }
 }
