@@ -135,6 +135,7 @@ pub struct MaintenanceRequest {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Expense {
     pub id: u32,
+    pub property_expense: bool,
     pub property_id: u32,
     pub expense_type: ExpenseType,
     pub amount: f32,
@@ -145,6 +146,7 @@ pub struct Expense {
 impl Expense {
     pub fn new(
         id: u32,
+        property_expense: bool,
         property_id: u32,
         expense_type: ExpenseType,
         amount: f32,
@@ -153,6 +155,7 @@ impl Expense {
     ) -> Expense {
         Expense {
             id,
+            property_expense,
             property_id,
             expense_type,
             amount,
@@ -164,6 +167,8 @@ impl Expense {
         Expense::new(
             input.id as u32,
             1,
+            input.prop_id != 0,
+            input.prop_id as u32,
             ExpenseType::parse_string(input.expense_type.as_str(), input.expense_subtype.as_str()),
             input.amount,
             NaiveDate::from_ymd_opt(2022, 3, 3).unwrap(),
@@ -189,7 +194,13 @@ impl Expense {
 impl<'r> FromRow<'r, SqliteRow> for Expense {
     fn from_row(row: &'r SqliteRow) -> sqlx::Result<Self, sqlx::Error> {
         let id = row.try_get("expense_id")?;
-        let property_id = row.try_get("property_id")?;
+        let property_id_result = row.try_get("property_id");
+        let mut property_id: u32 = 0;
+        let property_expense;
+        match property_id_result {
+            Ok(o) => {property_id = o; property_expense = true;},
+            Err(_) => {property_expense = false;},
+        }
         let expense_type: String = row.try_get("expense_type")?;
         let amount = row.try_get("amount")?;
         let date: String = row.try_get("date_incurred")?;
@@ -207,6 +218,7 @@ impl<'r> FromRow<'r, SqliteRow> for Expense {
         Ok(Expense {
             id,
             property_id,
+            property_expense,
             expense_type,
             amount,
             date: naive_date,
