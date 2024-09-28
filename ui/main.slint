@@ -1,11 +1,12 @@
 import { ExpenseData, LesseeData, PropertyData, StatementData, PropertyInput, StatementInput, ExpenseInput, LeaseholderInput } from "globals.slint";
+import { Validation, IdType } from "validation.slint";
 import { Button, TabWidget, AboutSlint } from "std-widgets.slint";
 import { PropertyMenu } from "properties.slint";
 import { StatementMenu } from "statements.slint";
 import { ExpenseMenu } from "expenses.slint";
 import { LesseeMenu } from "leaseholders.slint";
 
-export { ExpenseData, LesseeData, PropertyData, StatementData }
+export { ExpenseData, LesseeData, PropertyData, StatementData, PropertyInput, StatementInput, ExpenseInput, LeaseholderInput, Validation, IdType }
 
 export component NavigationPane inherits Rectangle {    
     Rectangle {
@@ -113,9 +114,9 @@ export component App inherits Window {
 
     // === Sizing ===
     min-width: 400px;
-    preferred-width: 800px;
+    preferred-width: 900px;
     min-height: 300px;
-    preferred-height: 600px;
+    preferred-height: 700px;
 
     // === Elements ===
     padding: 10px;
