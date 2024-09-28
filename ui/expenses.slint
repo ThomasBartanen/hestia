@@ -1,6 +1,6 @@
 import { TabWidget, LineEdit, GridBox, ComboBox, SpinBox, StandardButton, ListView, Button, StandardTableView, ScrollView, VerticalBox } from "std-widgets.slint";
 import { Validation, IdType } from "validation.slint";
-import { BufferLine, TableText, TableHeader, TableActionIcons } from "custom_widgets.slint";
+import { BufferLine, TableText, TableHeader, TableItemActionIcons, CreationActionIcons } from "custom_widgets.slint";
 import { ExpenseData, ExpenseInput, MessageType } from "globals.slint";
 
 enum ExpenseMenuState {totals, view}
@@ -15,6 +15,8 @@ export component MainExpenseView inherits Rectangle {
 
 export component ViewExpenseTotalsMenu inherits Rectangle {
     in-out property <ExpenseInput> selected-expense;
+    in-out property <string> expense-subtype-string;
+    in-out property <MessageType> expense-action;
     y: 10px;
     x: 20px;
     padding: 10px;
@@ -38,11 +40,11 @@ export component ViewExpenseTotalsMenu inherits Rectangle {
                 text: "Description";
             }
             TableHeader { 
-                width: 120px;
+                width: 150px;
                 text: "Expense Type";
             }
             TableHeader { 
-                width: 120px;
+                width: 150px;
                 text: "Expense Subtype";
             }
             TableHeader { 
@@ -54,24 +56,24 @@ export component ViewExpenseTotalsMenu inherits Rectangle {
             VerticalLayout {
                 alignment: LayoutAlignment.start;
                 for x in ExpenseData.expenses: expense-line := HorizontalLayout {
-                    TableText {                        
+                    expense-id := TableText {
                         width: 40px;
-                        text: x.id;
+                        edit-text: x.id;
                     }
-                    TableText {
+                    expense-prop-id := TableText {
                         width: 40px;
-                        text: x.prop-id;
+                        edit-text: x.prop-id;
                     }
-                    TableText { 
+                    expense-date := TableText { 
                         width: 100px;
-                        text: x.date;
+                        edit-text: x.date;
                     }
-                    TableText { 
+                    expense-description := TableText { 
                         width: 150px;
-                        text: x.description;
+                        edit-text: x.description;
                     }
                     Rectangle {
-                        width: 120px;
+                        width: 150px;
                         expense-type := ComboBox {
                             width: parent.width;
                             model: [
@@ -84,7 +86,7 @@ export component ViewExpenseTotalsMenu inherits Rectangle {
                         }
                     }
                     Rectangle {
-                        width: 120px;
+                        width: 150px;
                         subtype := ComboBox {
                             width: parent.width;
                             model: [""];
@@ -116,12 +118,60 @@ export component ViewExpenseTotalsMenu inherits Rectangle {
                             ]
                         }                        
                     }
-                    TableText { 
+                    expense-amount := TableText { 
                         width: 70px;
-                        text: x.amount;
+                        edit-text: x.amount;
                     }
-                    TableActionIcons {
+                    expense-action-icons := TableItemActionIcons {
                         width: 70px;
+                        update => {
+                            ExpenseData.selected-expense-id = x.id;
+                            selected-expense = x;
+
+                            x.description = expense-description.edit-text;
+
+                            x.amount = expense-amount.edit-text.to-float();
+
+                            x.date = expense-date.edit-text;
+
+                            ExpenseData.new-expense({
+                                message: MessageType.update,
+                                id: ExpenseData.selected-expense-id,
+                                prop-id: x.prop-id,
+                                description: expense-description.edit-text,
+                                amount: expense-amount.edit-text.to-float(),
+                                date: expense-date.edit-text,
+                                expense-type: expense-type.current-value,
+                                expense-subtype: subtype.current-value
+                            });
+                        }
+                        delete => {
+                            ExpenseData.selected-expense-id = x.id;
+                            expense-action = MessageType.delete;
+                            selected-expense = x;
+
+                            ExpenseData.new-expense({
+                                message: expense-action,
+                                id: ExpenseData.selected-expense-id,
+                                description: x.description,
+                                amount: x.amount,
+                                date: x.date,
+                                expense-type: x.expense-type,
+                                expense-subtype: x.expense-subtype
+                            });
+                        }
+                        duplicate => {
+                            
+                        }
+                        clear => {
+                            expense-id.edit-text = "";
+                            expense-prop-id.edit-text = "";
+                            expense-date.edit-text = "";
+                            expense-description.edit-text = "";
+                            expense-type.current-index = 0;
+                            subtype.current-value = "";
+                            expense-amount.edit-text = "";
+                        }
                     }
                 }
             }
@@ -134,22 +184,22 @@ export component ViewExpenseTotalsMenu inherits Rectangle {
             new-expense := HorizontalLayout {
                 new-expense-id := TableText {                        
                     width: 40px;
-                    text: "";
+                    default-text: "";
                 }
                 new-expense-prop-id := TableText {
                     width: 40px;
-                    text: "";
+                    default-text: "Property";
                 }
                 new-expense-date := TableText { 
                     width: 100px;
-                    text: "";
+                    default-text: "Date";
                 }
                 new-expense-description := TableText { 
                     width: 150px;
-                    text: "";
+                    default-text: "Description";
                 }
                 Rectangle {
-                    width: 120px;
+                    width: 150px;
                     new-expense-type := ComboBox {
                         width: parent.width;
                         model: [
@@ -162,7 +212,7 @@ export component ViewExpenseTotalsMenu inherits Rectangle {
                     }
                 }
                 Rectangle {
-                    width: 120px;
+                    width: 150px;
                     new-expense-subtype := ComboBox {
                         width: parent.width;
                         model: [""];
@@ -196,10 +246,28 @@ export component ViewExpenseTotalsMenu inherits Rectangle {
                 }
                 new-expense-amount := TableText { 
                     width: 70px;
-                    text: "";
+                    default-text: "Amount";
                 }
-                TableActionIcons {
+                new-expense-action-icons := CreationActionIcons {
                     width: 70px;
+                    create => {
+
+                        expense-action = MessageType.create;
+
+                        ExpenseData.new-expense({
+                            message: expense-action,
+                            id: Validation.get-valid-id(IdType.Expense),
+                            prop-id: new-expense-prop-id.edit-text.to-float(),
+                            description: new-expense-description.edit-text,
+                            amount: new-expense-amount.edit-text.to-float(),
+                            date: new-expense-date.edit-text,
+                            expense-type: new-expense-type.current-value,
+                            expense-subtype: new-expense-subtype.current-value
+                        });
+                    }
+                    clear => {
+
+                    }
                 }
             }
         }
