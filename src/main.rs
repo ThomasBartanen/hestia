@@ -5,7 +5,7 @@ mod generated_code {
 }
 
 pub use generated_code::*;
-use slint::{Model, Weak};
+use slint::{Model, ModelRc, Weak};
 use sqlx::Sqlite;
 
 mod app_settings;
@@ -161,7 +161,6 @@ fn intialize_slint_callbacks(
         }}
     );
 
-    //app.global::<Validation>().on_get_valid_id(move |input| {});
     app.global::<ExpenseData>().on_new_expense({
         let expense_channel = expense_worker.channel.clone();
         let local_app = weak_app.clone();
