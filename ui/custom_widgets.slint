@@ -1,4 +1,6 @@
 import { ScrollView, LineEdit } from "std-widgets.slint";
+import { ColorPalette } from "palette.slint";
+
 export component BufferLine {
     in-out property <physical-length> buffer;
     in-out property <physical-length> line-thickness;
@@ -33,61 +35,93 @@ export component TableHeader inherits Rectangle {
     }
 }
 export component TableText inherits TouchArea{
-    in-out property <string> text;
-    in-out property <string> edit-text;
+    in-out property <string> default-text <=> text-line.placeholder-text;
+    in-out property <string> edit-text <=> text-line.text;
     Rectangle {
         width: parent.width;
         border-radius: 2px;
         border-color: black;
-        header-title := LineEdit {
+        text-line := LineEdit {
             width: parent.width;
-            placeholder-text: text;
-            text: edit-text;
             horizontal-alignment: TextHorizontalAlignment.left;
         }
     }
 }
 
-export component TableActionIcons inherits Rectangle {
+export component ActionIcon inherits TouchArea {
+    in-out property <string> name;
+    Rectangle {
+        background: parent.pressed ? ColorPalette.button-pressed : 
+                    parent.has-hover ? ColorPalette.button-hovered : 
+                    ColorPalette.button-default;
+        border-radius: 10px;
+        Text {
+            text: name;
+        }
+    }
+}
+
+export component TableItemActionIcons inherits Rectangle {
+    callback update();
+    callback delete();
+    callback duplicate();
+    callback clear();
     GridLayout {
-        update-row := TouchArea {
+        padding: 5px;
+        update-row := ActionIcon {
+            name: "Update";
             col: 0;
             row: 0;
-            Rectangle {
-                background: grey;
-                Text {
-                    text: "Update";
-                }
+            clicked => {
+                update();
             }
         }
-        delete-row := TouchArea {
+        delete-row := ActionIcon {
+            name: "Delete";
             col: 1;
             row: 0;
-            Rectangle {
-                background: grey;
-                Text {
-                    text: "Delete";
-                }
+            clicked => {
+                delete();
             }
         }
-        duplicate-row := TouchArea {
+        duplicate-row := ActionIcon {
+            name: "Dup.";
             col: 0;
             row: 1;
-            Rectangle {
-                background: grey;
-                Text {
-                    text: "Dup.";
-                }
+            clicked => {
+                duplicate();
             }
         }
-        clear-row := TouchArea {
+        clear-row := ActionIcon {
+            name: "Clear";
             col: 1;
             row: 1;
-            Rectangle {
-                background: grey;
-                Text {
-                    text: "Clear";
-                }
+            clicked => {
+                clear();
+            }
+        }
+    }
+}
+
+export component CreationActionIcons inherits Rectangle {
+    callback create();
+    callback clear();
+    GridLayout {
+        padding: 5px;
+        create-item := ActionIcon {
+            name: "Create";
+            col: 0;
+            row: 0;
+            clicked => {
+                create();
+            }
+        }
+        clear-row := ActionIcon {
+            name: "Clear";
+            col: 1;
+            row: 0;
+            clicked => {
+                clear();
             }
         }
     }
