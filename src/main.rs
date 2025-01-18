@@ -44,6 +44,7 @@ async fn main() {
 
     intialize_slint_callbacks(
         &app,
+        &instances,
         valid_ids.clone(),
         &expense_worker,
         &property_worker,
@@ -150,6 +151,7 @@ async fn initialize_slint_properties(
 
 fn intialize_slint_callbacks(
     app: &App,
+    instances: &sqlx::Pool<Sqlite>,
     valid_ids: ValidIds,
     expense_worker: &expenses::ExpenseWorker,
     property_worker: &properties::PropertyWorker,
