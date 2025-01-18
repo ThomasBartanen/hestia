@@ -17,6 +17,7 @@ export struct ExpenseInput {
 
 export global ExpenseData {
     callback new-expense(ExpenseInput);
+    pure callback get-totals(PeriodType) -> float;
 
     in-out property <int> potential-expense-id;
     in-out property <int> selected-expense-id;

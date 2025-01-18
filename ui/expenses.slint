@@ -11,6 +11,59 @@ export component MainExpenseView inherits Rectangle {
             text: "Number of Expenses: " + ExpenseData.expenses.length;
         }
     }
+
+    visualizations := Rectangle {
+        VerticalLayout {
+            HorizontalLayout {
+                period-selection := ComboBox {
+                    max-height: 10px;
+                    property <PeriodType> period-selected;
+                    model: [
+                        "Current Day",
+                        "Current Week",
+                        "Current Month",
+                        "YTD",
+                        "Custom"
+                    ];
+                }
+            }
+            Rectangle {
+                GridLayout {
+                    Rectangle {
+                        col: 0;
+                        row: 0;
+                        Text {
+                            text: "";
+                        }
+                    }
+                    Rectangle {
+                        col: 1;
+                        row: 0;
+                        Text {
+                            text: "";
+                        }
+                    }
+                    Rectangle {
+                        col: 0;
+                        row: 1;
+                        Text {
+                            text: "";
+                        }
+                    }
+                    Rectangle {
+                        col: 1;
+                        row: 1;
+                        Text {
+                            text: "Total: " + ExpenseData.get-totals(period-selection.period-selected);
+                        }
+                    }
+                }
+            }
+        }
+        Rectangle {}
+
+        Rectangle {}
+    }
 }
 
 export component ViewExpenseTotalsMenu inherits Rectangle {
@@ -25,6 +78,7 @@ export component ViewExpenseTotalsMenu inherits Rectangle {
         titles := HorizontalLayout {
             TableHeader { 
                 width: 40px;
+                
                 text: "ID";
             }
             TableHeader { 
@@ -52,9 +106,16 @@ export component ViewExpenseTotalsMenu inherits Rectangle {
                 text: "Amount";
             }
         }
+        BufferLine { 
+            buffer: 10px;
+            line-thickness: 3px;
+        }
         ScrollView {
             VerticalLayout {
                 alignment: LayoutAlignment.start;
+                preferred-width: 0in;
+                x: 0cm;
+                padding: 0;
                 for x in ExpenseData.expenses: expense-line := HorizontalLayout {
                     expense-id := TableText {
                         width: 40px;
@@ -77,9 +138,9 @@ export component ViewExpenseTotalsMenu inherits Rectangle {
                         expense-type := ComboBox {
                             width: parent.width;
                             model: [
-                                "Select Expense Type", 
-                                "Utilities", 
-                                "Maintenance", 
+                                "Select Expense Type",
+                                "Utilities",
+                                "Maintenance",
                                 "Other"
                             ];
                             current-value: x.expense-type;
@@ -128,10 +189,16 @@ export component ViewExpenseTotalsMenu inherits Rectangle {
                             ExpenseData.selected-expense-id = x.id;
                             selected-expense = x;
 
+                            //expense-description.default-text = expense-date.edit-text != "" ? expense-description.edit-text : expense-description.default-text;
+                            //expense-description.edit-text = expense-description.default-text;
                             x.description = expense-description.edit-text;
 
+                            //expense-amount.default-text = expense-amount.edit-text != "" ? expense-amount.edit-text : expense-amount.default-text;
+                            //expense-amount.edit-text = expense-amount.default-text;
                             x.amount = expense-amount.edit-text.to-float();
 
+                            //expense-date.default-text = expense-date.edit-text != "" ? expense-date.edit-text : expense-date.default-text;
+                            //expense-date.edit-text = expense-date.default-text;
                             x.date = expense-date.edit-text;
 
                             ExpenseData.new-expense({
@@ -169,7 +236,7 @@ export component ViewExpenseTotalsMenu inherits Rectangle {
                             expense-date.edit-text = "";
                             expense-description.edit-text = "";
                             expense-type.current-index = 0;
-                            subtype.current-value = "";
+                            subtype.current-index = 0;
                             expense-amount.edit-text = "";
                         }
                     }
@@ -500,15 +567,15 @@ export component ExpenseMenu inherits Rectangle {
                 ]
                 HorizontalLayout {
                     Button {
-                        text: "Main View";
+                        text: "Expenses";
                         clicked => {
-                            current-state = ExpenseMenuState.view;
+                            current-state = ExpenseMenuState.totals;
                         }
                     }
                     Button {
-                        text: "Show Totals";
+                        text: "Visualizations";
                         clicked => {
-                            current-state = ExpenseMenuState.totals;
+                            current-state = ExpenseMenuState.view;
                         }
                     }
                 }

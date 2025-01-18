@@ -4,6 +4,8 @@ mod generated_code {
     slint::include_modules!();
 }
 
+use chrono::NaiveDate;
+use expenses::calculate_expense_totals;
 pub use generated_code::*;
 use slint::{Model, ModelRc, Weak};
 use sqlx::Sqlite;

@@ -126,7 +126,7 @@ pub async fn add_expense(pool: &sqlx::Pool<Sqlite>, expense: &Expense) -> Result
         .bind(expense.property_id)
         .bind(expense_type_str)
         .bind(expense.amount)
-        .bind(expense.date.to_string())
+        .bind(NaiveDate::to_string(&expense.date))
         .bind(&expense.description)
         .execute(pool)
         .await?;
@@ -220,6 +220,21 @@ pub async fn get_leaseholder(pool: &sqlx::Pool<Sqlite>, id: u32) -> Leaseholder 
         .fetch_one(pool)
         .await;
     Leaseholder::from_row(&lessee_row.unwrap()).unwrap()
+}
+
+pub async fn get_period_expenses(pool: &sqlx::Pool<Sqlite>, start_date: NaiveDate, end_date: NaiveDate) -> Vec<Expense> {
+    let mut expenses: Vec<Expense> = vec![];
+
+    let expense_rows = sqlx::query("SELECT * FROM expenses WHERE date >= ? AND date <= ?")
+        .bind(NaiveDate::to_string(&start_date))
+        .bind(NaiveDate::to_string(&end_date))
+        .fetch_all(pool)
+        .await;
+    for row in expense_rows.unwrap() {
+        let expense = Expense::from_row(&row);
+        expenses.push(expense.unwrap());
+    }
+    expenses
 }
 
 // -------------------------------------- GET ALL ---------------------------------------------
