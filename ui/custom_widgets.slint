@@ -18,12 +18,14 @@ export component BufferLine {
 
 export component TableHeader inherits Rectangle {
     in-out property <string> text;
+    in-out property <length> text-size: 9px;
     pure callback on-sort-clicked(int);
     HorizontalLayout {
         width: parent.width;
-        header-title := Text { 
+        header-title := Text {
+            font-size: text-size;
             text: text;
-            horizontal-alignment: TextHorizontalAlignment.left;
+            horizontal-alignment: TextHorizontalAlignment.center;
             vertical-alignment: TextVerticalAlignment.center;
             wrap: TextWrap.word-wrap;
         }
@@ -34,13 +36,13 @@ export component TableHeader inherits Rectangle {
         }
     }
 }
-export component TableText inherits TouchArea{
+export component TableText inherits TouchArea {
     in-out property <string> default-text <=> text-line.placeholder-text;
     in-out property <string> edit-text <=> text-line.text;
     Rectangle {
         width: parent.width;
-        border-radius: 2px;
         border-color: black;
+        border-top-right-radius: 3px;
         text-line := LineEdit {
             width: parent.width;
             horizontal-alignment: TextHorizontalAlignment.left;
@@ -54,8 +56,10 @@ export component ActionIcon inherits TouchArea {
         background: parent.pressed ? ColorPalette.button-pressed : 
                     parent.has-hover ? ColorPalette.button-hovered : 
                     ColorPalette.button-default;
-        border-radius: 10px;
+        border-radius: 3px;
         Text {
+            color: black;
+            font-size: 8px;
             text: name;
         }
     }
