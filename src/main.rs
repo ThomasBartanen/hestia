@@ -18,6 +18,7 @@ mod properties;
 mod slint_conversion;
 mod statements;
 mod testing;
+mod time;
 
 #[async_std::main]
 async fn main() {

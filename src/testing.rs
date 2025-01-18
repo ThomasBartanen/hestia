@@ -4,6 +4,7 @@ use crate::{
         add_expense, add_leaseholders, add_property, add_statement,
         update_property,
     },
+    time::*,
     expenses::*,
     lease::{self, *},
     leaseholders::*,
@@ -91,7 +92,7 @@ async fn test_database(instances: &sqlx::Pool<Sqlite>, valid_ids: &mut ValidIds)
         lease.clone(),
         property.id,
         contact,
-        NaiveDate::from_ymd_opt(2024, 3, 1).unwrap(),
+        get_naivedate_x_days_ago(7),
     );
     match add_leaseholders(instances, &leaseholder, property.id).await {
         Ok(t) => {
@@ -105,14 +106,14 @@ async fn test_database(instances: &sqlx::Pool<Sqlite>, valid_ids: &mut ValidIds)
 
 pub async fn test_expenses(instances: &sqlx::Pool<Sqlite>, property: &Property, valid_ids: &mut ValidIds) {
     //println!("- - - Testing Expenses - - -");
-    let dt = NaiveDate::from_ymd_opt(2024, 3, 10);
+    let dt = get_naivedate_x_days_ago(5);
     let expense = Expense::new(
         ValidIds::get_id(valid_ids, crate::IdType::Expense),
         true,
         property.id,
         ExpenseType::Maintenance(MaintenanceType::Landscaping),
         100.0,
-        dt.unwrap(),
+        dt,
         "Normal Maintenance".to_string(),
     );
     match add_expense(instances, &expense).await {
@@ -126,7 +127,7 @@ pub async fn test_expenses(instances: &sqlx::Pool<Sqlite>, property: &Property, 
         property.id,
         ExpenseType::Utilities(UtilitiesType::Electricity),
         1920.0,
-        dt.unwrap(),
+        dt,
         "Electricity Bill".to_string(),
     );
     match add_expense(instances, &expense).await {
@@ -140,7 +141,7 @@ pub async fn test_expenses(instances: &sqlx::Pool<Sqlite>, property: &Property, 
         property.id,
         ExpenseType::Utilities(UtilitiesType::Water),
         450.0,
-        dt.unwrap(),
+        dt,
         "Water Bill".to_string(),
     );
     match add_expense(instances, &expense).await {
@@ -154,7 +155,7 @@ pub async fn test_expenses(instances: &sqlx::Pool<Sqlite>, property: &Property, 
         property.id,
         ExpenseType::Other,
         100.0,
-        dt.unwrap(),
+        dt,
         "Rat Abatement".to_string(),
     );
     match add_expense(instances, &expense).await {

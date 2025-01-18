@@ -223,6 +223,14 @@ impl<'r> FromRow<'r, SqliteRow> for Expense {
     }
 }
 
+pub fn calculate_expense_totals(expenses: Vec<Expense>) -> f32 {
+    let mut result: f32 = 0.0;
+    for expense in expenses {
+        result += expense.amount;
+    }
+    result
+}
+
 pub enum ExpenseMessage {
     ExpenseCreated(ExpenseInput),
     ExpenseUpdate(ExpenseInput),
