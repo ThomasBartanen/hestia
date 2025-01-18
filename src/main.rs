@@ -338,10 +338,50 @@ fn intialize_slint_callbacks(
         let statement_channel = statement_worker.channel.clone();
         let local_app = weak_app.clone();
         move |input| {
+            let input_clone = input.clone();
             let upgrade_res = local_app.upgrade_in_event_loop({
                 let internal_channel = statement_channel.clone();
                 move |handle| {
-
+                    let prev_statements = handle.global::<StatementData>().get_statements();
+                    let new_statements = prev_statements
+                        .as_any()
+                        .downcast_ref::<slint::VecModel<StatementInput>>()
+                        .expect("Statements failed to downcast");
+                    
+                    let message = match input.message {
+                        crate::MessageType::Create => {
+                            new_statements.push(input_clone);
+                            statements::StatementMessage::StatementCreated(input)
+                        }
+                        crate::MessageType::Delete => {
+                            let index = new_statements
+                                .iter()
+                                .position(|r| {
+                                    //println!("r.id: {}. input_clone.id: {}", r.id, input_clone.id);
+                                    r.id == input_clone.id
+                                })
+                                .unwrap();
+                            new_statements.remove(index);
+                            statements::StatementMessage::StatementDelete(input)
+                        }
+                        crate::MessageType::Update => {
+                            let index = new_statements
+                                .iter()
+                                .position(|r| {
+                                    //println!("r.id: {}. input_clone.id: {}", r.id, input_clone.id);
+                                    r.id == input_clone.id
+                                })
+                                .unwrap();
+                            new_statements.remove(index);
+                            new_statements.insert(index, input_clone);
+                            statements::StatementMessage::StatementUpdate(input)
+                        }
+                    };
+                    let res = internal_channel.send(message);
+                    match res {
+                        Ok(_) => (), //println!("Statement successfully sent"),
+                        Err(_e) => println!("Statement send failed"),
+                    };
                 }
             });
             match upgrade_res {

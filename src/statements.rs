@@ -2,10 +2,11 @@ use crate::{
     app_settings::PathSettings,
     database,
     expenses::*,
-    lease::{self, FeeStructure},
+    lease::{self, FeeStructure, Rent},
     leaseholders::{Company, Leaseholder},
     pdf_formatting::write_with_printpdf,
     properties::Property,
+    StatementInput,
 };
 use chrono::{Datelike, NaiveDate};
 use sqlx::{sqlite::SqliteRow, Row, FromRow, Sqlite};
@@ -41,6 +42,18 @@ impl Statement {
             fees: fees.clone(),
             total: calculate_total(tenant_clone, property, fees),
             amount_paid: 0.0,
+        }
+    }
+    pub fn convert_from_slint(input: StatementInput) -> Statement {
+        Statement {
+            id: input.id as u32,
+            month: 12,
+            leaseholder_id: 0,
+            statement_name: "Statement".to_owned(),
+            rates: FeeStructure::Gross(Rent{ base_rent: 20.0}),
+            fees: Vec::new(),
+            total: 10.0,
+            amount_paid: 10.0
         }
     }
 }
@@ -152,9 +165,9 @@ pub async fn create_statement(
 }
 
 pub enum StatementMessage {
-    StatementCreated(Statement),
-    StatementUpdate(Statement),
-    StatementDelete(Statement),
+    StatementCreated(StatementInput),
+    StatementUpdate(StatementInput),
+    StatementDelete(StatementInput),
     Quit,
 }
 
@@ -196,19 +209,22 @@ async fn statement_worker_loop(
         match m {
             Some(s) => match s {
                 StatementMessage::StatementCreated(create) => {
-                    match database::add_statement(&pool, &create).await {
+                    let statement = Statement::convert_from_slint(create);
+                    match database::add_statement(&pool, &statement).await {
                         Ok(_) => (),
                         Err(e) => println!("Failed to add statement: {}", e),
                     }
                 }
                 StatementMessage::StatementUpdate(update) => {
-                    match database::update_statement(&pool, &update).await {
+                    let statement = Statement::convert_from_slint(update);
+                    match database::update_statement(&pool, &statement).await {
                         Ok(_) => (),
                         Err(e) => println!("Failed to update statement: {}", e),
                     }
                 }
                 StatementMessage::StatementDelete(remove) => {
-                    match database::remove_statement(&pool, &remove).await {
+                    let statement = Statement::convert_from_slint(remove);
+                    match database::remove_statement(&pool, &statement).await {
                         Ok(_) => (),
                         Err(e) => println!("Failed to remove statement: {}", e),
                     }
