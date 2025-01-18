@@ -109,7 +109,7 @@ pub async fn add_maint_request(
     };
     sqlx::query("INSERT INTO maintenance_requests (leaseholder_id, request_date, maintenance_type, description, status, completion_date) VALUES (?, ?, ?, ?, ?, ?)")
         .bind(request.leaseholder_id)
-        .bind(request.request_date.to_string())
+        .bind(NaiveDate::to_string(&request.request_date))
         .bind(maint_type_str)
         .bind(&request.description)
         .bind(RequestStatus::Received.to_string())
@@ -163,8 +163,8 @@ pub async fn add_leaseholders(
 
     let lease_id =
         sqlx::query("INSERT INTO leases (start_date, end_date, fee_structure) VALUES (?, ?, ?)")
-            .bind(lease.start_date.to_string())
-            .bind(lease.end_date.to_string())
+            .bind(NaiveDate::to_string(&lease.start_date))
+            .bind(NaiveDate::to_string(&lease.end_date))
             .bind(serde_json::to_string(&leaseholder.lease.fee_structure).unwrap())
             .execute(pool)
             .await?
@@ -181,7 +181,7 @@ pub async fn add_leaseholders(
         .bind(&leaseholder.contact_info.remittence_address.zip_code)
         .bind(&leaseholder.contact_info.email)
         .bind(&leaseholder.contact_info.phone_number)
-        .bind(&leaseholder.move_in_date.to_string())
+        .bind(NaiveDate::to_string(&leaseholder.move_in_date))
         .execute(pool)
         .await?;
     Ok(leaseholder_result)
