@@ -1,4 +1,5 @@
 export enum MessageType {create, update, delete}
+export enum PeriodType {Day, Month, YTD, Complete}
 
 // ==========================================
 // ============== EXPENSES ==================
@@ -6,14 +7,17 @@ export enum MessageType {create, update, delete}
 export struct ExpenseInput {
     message: MessageType,
     id: int,
-    description: string,
+    prop-id: int,
+    expense-type: string,
+    expense-subtype: string,
     amount: float,
     date: string,
-    expense-type: string,
-    expense-subtype: string
+    description: string,
 }
+
 export global ExpenseData {
-    pure callback new-expense(ExpenseInput);
+    callback new-expense(ExpenseInput);
+    pure callback get-totals(PeriodType) -> float;
 
     in-out property <int> potential-expense-id;
     in-out property <int> selected-expense-id;
@@ -37,8 +41,9 @@ export struct LeaseholderInput {
     phone-number: string,
     move-in-date: string,
 }
+
 export global LesseeData {
-    pure callback new-lessee(LeaseholderInput);
+    callback new-lessee(LeaseholderInput);
     
     in-out property <int> potential-lessee-id;
     in-out property <int> selected-lessee-id;
@@ -61,8 +66,9 @@ export struct PropertyInput {
     business_insurance: float,
     unit-count: string
 }
+
 export global PropertyData {
-    pure callback new-property(PropertyInput);
+    callback new-property(PropertyInput);
     
     in-out property <int> potential-prop-id;    
     in-out property <int> selected-prop-id;
@@ -74,11 +80,14 @@ export global PropertyData {
 // ============= Statements =================
 // ==========================================
 export struct StatementInput {
+    message: MessageType,
+    id: int,
     date-mm-yy: string,
     leaseholder: string,
 }
+
 export global StatementData {
-    pure callback new-statement(StatementInput);
+    callback new-statement(StatementInput);
 
     in-out property <int> potential-statement-id;
     in-out property <[StatementInput]> statements;

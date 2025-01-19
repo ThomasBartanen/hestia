@@ -2,7 +2,7 @@ use std::fmt;
 
 use crate::{
     database::{add_property, remove_property, update_property},
-    App, PropertyInput,
+    PropertyInput,
 };
 use sqlx::{sqlite::SqliteRow, Row};
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};

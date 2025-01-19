@@ -1,21 +1,19 @@
 use std::fmt;
 
-use crate::{
-    database::{add_expense, remove_expense, update_expense},
-    ExpenseInput,
-};
+use crate::ExpenseInput;
+use serde::{Deserialize, Serialize};
 use chrono::NaiveDate;
 use sqlx::{sqlite::SqliteRow, FromRow, Row};
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ExpenseType {
     Maintenance(MaintenanceType),
     Utilities(UtilitiesType),
     Other,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum MaintenanceType {
     Repairs,
     Cleaning,
@@ -23,7 +21,7 @@ pub enum MaintenanceType {
     Other,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum UtilitiesType {
     Water,
     Electricity,
@@ -111,11 +109,11 @@ pub enum RequestStatus {
 impl fmt::Display for RequestStatus {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            RequestStatus::Received => write!(f, "RequestStatus: Received"),
-            RequestStatus::InProgress => write!(f, "RequestStatus: In Progress"),
-            RequestStatus::Completed => write!(f, "RequestStatus: Completed"),
-            RequestStatus::Cancelled => write!(f, "RequestStatus: Cancelled"),
-            RequestStatus::OnHold => write!(f, "RequestStatus: On Hold"),
+            RequestStatus::Received => write!(f, "Request Status: Received"),
+            RequestStatus::InProgress => write!(f, "Request Status: In Progress"),
+            RequestStatus::Completed => write!(f, "Request Status: Completed"),
+            RequestStatus::Cancelled => write!(f, "Request Status: Cancelled"),
+            RequestStatus::OnHold => write!(f, "Request Status: On Hold"),
         }
     }
 }
@@ -131,9 +129,10 @@ pub struct MaintenanceRequest {
     pub completion_date: Option<NaiveDate>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Expense {
     pub id: u32,
+    pub property_expense: bool,
     pub property_id: u32,
     pub expense_type: ExpenseType,
     pub amount: f32,
@@ -144,6 +143,7 @@ pub struct Expense {
 impl Expense {
     pub fn new(
         id: u32,
+        property_expense: bool,
         property_id: u32,
         expense_type: ExpenseType,
         amount: f32,
@@ -152,6 +152,7 @@ impl Expense {
     ) -> Expense {
         Expense {
             id,
+            property_expense,
             property_id,
             expense_type,
             amount,
@@ -162,7 +163,8 @@ impl Expense {
     pub fn convert_from_slint(input: ExpenseInput) -> Expense {
         Expense::new(
             input.id as u32,
-            1,
+            input.prop_id != 0,
+            input.prop_id as u32,
             ExpenseType::parse_string(input.expense_type.as_str(), input.expense_subtype.as_str()),
             input.amount,
             NaiveDate::from_ymd_opt(2022, 3, 3).unwrap(),
@@ -172,22 +174,29 @@ impl Expense {
 
     pub fn convert_to_slint(&self) -> ExpenseInput {
         let (main, sub) = ExpenseType::to_split_strings(&self.expense_type);
-        let cur_expense = self.clone();
+        let cur_expense = &self.description;
         ExpenseInput {
             message: crate::MessageType::Update,
-            id: cur_expense.id as i32,
-            amount: cur_expense.amount,
-            date: cur_expense.date.to_string().into(),
-            description: cur_expense.description.into(),
+            id: self.id as i32,
+            prop_id: self.property_id as i32,
+            amount: self.amount,
+            date: self.date.to_string().into(),
+            description: cur_expense.into(),
             expense_subtype: sub.into(),
             expense_type: main.into(),
         }
     }
 }
 impl<'r> FromRow<'r, SqliteRow> for Expense {
-    fn from_row(row: &'r SqliteRow) -> Result<Self, sqlx::Error> {
+    fn from_row(row: &'r SqliteRow) -> sqlx::Result<Self, sqlx::Error> {
         let id = row.try_get("expense_id")?;
-        let property_id = row.try_get("property_id")?;
+        let property_id_result = row.try_get("property_id");
+        let mut property_id: u32 = 0;
+        let property_expense;
+        match property_id_result {
+            Ok(o) => {property_id = o; property_expense = true;},
+            Err(_) => {property_expense = false;},
+        }
         let expense_type: String = row.try_get("expense_type")?;
         let amount = row.try_get("amount")?;
         let date: String = row.try_get("date_incurred")?;
@@ -205,12 +214,21 @@ impl<'r> FromRow<'r, SqliteRow> for Expense {
         Ok(Expense {
             id,
             property_id,
+            property_expense,
             expense_type,
             amount,
             date: naive_date,
             description,
         })
     }
+}
+
+pub fn calculate_expense_totals(expenses: Vec<Expense>) -> f32 {
+    let mut result: f32 = 0.0;
+    for expense in expenses {
+        result += expense.amount;
+    }
+    result
 }
 
 pub enum ExpenseMessage {
@@ -258,22 +276,19 @@ async fn expense_worker_loop(
         match m {
             Some(s) => match s {
                 ExpenseMessage::ExpenseCreated(create) => {
-                    let converted_expense = Expense::convert_from_slint(create);
-                    match add_expense(&pool, &converted_expense).await {
+                    match crate::database::add_expense(&pool, &Expense::convert_from_slint(create)).await {
                         Ok(_) => (), //println!("Successfully added expense via slint"),
                         Err(e) => println!("Failed to add expense via slint: {e}"),
                     }
                 }
                 ExpenseMessage::ExpenseUpdate(update) => {
-                    let converted_expense = Expense::convert_from_slint(update);
-                    match update_expense(&pool, &converted_expense).await {
+                    match crate::database::update_expense(&pool, &Expense::convert_from_slint(update)).await {
                         Ok(_) => (), //println!("Successfully updated expense via slint"),
                         Err(e) => println!("Failed to update expense via slint: {e}"),
                     }
                 }
                 ExpenseMessage::ExpenseDelete(remove) => {
-                    let converted_expense = Expense::convert_from_slint(remove);
-                    match remove_expense(&pool, &converted_expense).await {
+                    match crate::database::remove_expense(&pool, &Expense::convert_from_slint(remove)).await {
                         Ok(_) => (), //println!("Successfully removed expense via slint"),
                         Err(e) => println!("Failed to remove expense via slint: {e}"),
                     }
