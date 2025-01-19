@@ -1,5 +1,4 @@
-use chrono::NaiveDate;
-use serde::{Deserialize, Serialize};
+use chrono::{Datelike, NaiveDate};
 use sqlx::{sqlite::SqliteRow, FromRow, Row};
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 
@@ -163,7 +162,7 @@ impl<'r> FromRow<'r, SqliteRow> for Leaseholder {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct Individual {
     pub first_name: String,
     pub last_name: String,
