@@ -1,23 +1,24 @@
 use crate::{
     app_settings::PathSettings,
     database::{
-        add_expense, add_leaseholders, add_property, add_statement, get_current_property_expenses,
+        add_expense, add_leaseholders, add_property, add_statement,
         update_property,
     },
+    time::*,
     expenses::*,
     lease::{self, *},
     leaseholders::*,
     properties::*,
-    statements::{create_statement, Statement},
+    statements::{create_statement, Statement}, ValidIds,
 };
 use chrono::NaiveDate;
 use sqlx::Sqlite;
 
-pub async fn activate_test_mode(activate: bool, instances: &sqlx::Pool<Sqlite>) {
+pub async fn activate_test_mode(activate: bool, instances: &sqlx::Pool<Sqlite>, valid_ids: &mut ValidIds) {
     if activate {
         let settings = test_settings().await;
-        let (company, leaseholder, mut property) = test_database(instances).await;
-        test_expenses(instances, &property).await;
+        let (company, leaseholder, mut property) = test_database(instances, valid_ids).await;
+        test_expenses(instances, &property, valid_ids).await;
         test_statements(instances, &mut property, leaseholder, company, settings).await;
     }
 }
@@ -26,13 +27,13 @@ async fn test_settings() -> PathSettings {
     PathSettings::default()
 }
 
-async fn test_database(instances: &sqlx::Pool<Sqlite>) -> (Company, Leaseholder, Property) {
+async fn test_database(instances: &sqlx::Pool<Sqlite>, valid_ids: &mut ValidIds) -> (Company, Leaseholder, Property) {
     //println!("- - - Testing Database - - -");
     let company = Company::new("Company".to_owned(), 3241523);
 
-    let mut property = Property::new(
-        0,
-        "name".to_string(),
+    let property = Property::new(
+        ValidIds::get_id(valid_ids, crate::IdType::Property),
+        "TestProperty".to_string(),
         Address::new(
             "address".to_string(),
             "city".to_string(),
@@ -46,7 +47,7 @@ async fn test_database(instances: &sqlx::Pool<Sqlite>) -> (Company, Leaseholder,
     match add_property(instances, &property).await {
         Ok(r) => {
             //converting i64 to u16. This may cause issues. Keep an eye on this
-            property.id = r.last_insert_rowid() as u32;
+            //property.id = r.last_insert_rowid() as u32;
             //println!("Successfully added PROPERTY");
         }
         Err(e) => println!("Error when adding PROPERTY: {}", e),
@@ -78,19 +79,20 @@ async fn test_database(instances: &sqlx::Pool<Sqlite>) -> (Company, Leaseholder,
                 recycling: 0.3,
                 garbage: 0.3,
                 water: 0.3,
+                gas: 0.3,
                 landscaping: 0.3,
-                amenities: 0.3,
+                repairs: 0.3,
                 misc: 0.1,
             },
         ),
         "Check".to_string(),
     );
     let mut leaseholder = Leaseholder::new(
-        0,
+        ValidIds::get_id(valid_ids, crate::IdType::Leaseholder),
         lease.clone(),
         property.id,
         contact,
-        NaiveDate::from_ymd_opt(2024, 3, 1).unwrap(),
+        get_naivedate_x_days_ago(7),
     );
     match add_leaseholders(instances, &leaseholder, property.id).await {
         Ok(t) => {
@@ -102,15 +104,16 @@ async fn test_database(instances: &sqlx::Pool<Sqlite>) -> (Company, Leaseholder,
     (company, leaseholder, property)
 }
 
-pub async fn test_expenses(instances: &sqlx::Pool<Sqlite>, property: &Property) {
+pub async fn test_expenses(instances: &sqlx::Pool<Sqlite>, property: &Property, valid_ids: &mut ValidIds) {
     //println!("- - - Testing Expenses - - -");
-    let dt = NaiveDate::from_ymd_opt(2024, 3, 10);
+    let dt = get_naivedate_x_days_ago(5);
     let expense = Expense::new(
-        0,
+        ValidIds::get_id(valid_ids, crate::IdType::Expense),
+        true,
         property.id,
         ExpenseType::Maintenance(MaintenanceType::Landscaping),
         100.0,
-        dt.unwrap(),
+        dt,
         "Normal Maintenance".to_string(),
     );
     match add_expense(instances, &expense).await {
@@ -119,11 +122,12 @@ pub async fn test_expenses(instances: &sqlx::Pool<Sqlite>, property: &Property) 
     }
 
     let expense = Expense::new(
-        0,
+        ValidIds::get_id(valid_ids, crate::IdType::Expense),
+        true,
         property.id,
         ExpenseType::Utilities(UtilitiesType::Electricity),
         1920.0,
-        dt.unwrap(),
+        dt,
         "Electricity Bill".to_string(),
     );
     match add_expense(instances, &expense).await {
@@ -132,11 +136,12 @@ pub async fn test_expenses(instances: &sqlx::Pool<Sqlite>, property: &Property) 
     }
 
     let expense = Expense::new(
-        0,
+        ValidIds::get_id(valid_ids, crate::IdType::Expense),
+        true,
         property.id,
         ExpenseType::Utilities(UtilitiesType::Water),
         450.0,
-        dt.unwrap(),
+        dt,
         "Water Bill".to_string(),
     );
     match add_expense(instances, &expense).await {
@@ -145,11 +150,12 @@ pub async fn test_expenses(instances: &sqlx::Pool<Sqlite>, property: &Property) 
     }
 
     let expense = Expense::new(
-        0,
+        ValidIds::get_id(valid_ids, crate::IdType::Expense),
+        true,
         property.id,
         ExpenseType::Other,
         100.0,
-        dt.unwrap(),
+        dt,
         "Rat Abatement".to_string(),
     );
     match add_expense(instances, &expense).await {
@@ -167,22 +173,17 @@ pub async fn test_statements(
 ) {
     //println!("- - - Testing Statements - - -");
     let statement = Statement::new(
+        &instances,
         NaiveDate::from_ymd_opt(2024, 3, 1).unwrap(),
         leaseholder,
-        get_current_property_expenses(
-            instances,
-            property.id,
-            NaiveDate::from_ymd_opt(2024, 2, 1).unwrap(),
-        )
-        .await,
-    );
+    ).await;
     match add_statement(instances, &statement).await {
         Ok(_) => (), //println!("Successfully added STATEMENT"),
         Err(e) => println!("Error when adding STATEMENT: {}", e),
     }
     //println!("New Statement: {:#?}", statement);
 
-    create_statement(statement, property.clone(), company, settings);
+    create_statement(instances, statement, property.clone(), company, settings).await;
 
     property.business_insurance += 100.0;
     match update_property(instances, property).await {

@@ -1,3 +1,6 @@
+import { ScrollView, LineEdit } from "std-widgets.slint";
+import { ColorPalette } from "palette.slint";
+
 export component BufferLine {
     in-out property <physical-length> buffer;
     in-out property <physical-length> line-thickness;
@@ -12,13 +15,118 @@ export component BufferLine {
     }
 }
 
-export component TableText inherits Rectangle{
+
+export component TableHeader inherits Rectangle {
     in-out property <string> text;
-    Text { 
-        text: text;
-        horizontal-alignment: TextHorizontalAlignment.left;
-        vertical-alignment: TextVerticalAlignment.center;
-        overflow: TextOverflow.elide;
-        wrap: TextWrap.no-wrap;
+    in-out property <length> text-size: 9px;
+    pure callback on-sort-clicked(int);
+    HorizontalLayout {
+        width: parent.width;
+        header-title := Text {
+            font-size: text-size;
+            text: text;
+            horizontal-alignment: TextHorizontalAlignment.center;
+            vertical-alignment: TextVerticalAlignment.center;
+            wrap: TextWrap.word-wrap;
+        }
+        sorting-icon := TouchArea {
+            Image {
+                
+            }
+        }
+    }
+}
+export component TableText inherits TouchArea {
+    in-out property <string> default-text <=> text-line.placeholder-text;
+    in-out property <string> edit-text <=> text-line.text;
+    Rectangle {
+        width: parent.width;
+        border-color: black;
+        border-top-right-radius: 3px;
+        text-line := LineEdit {
+            width: parent.width;
+            horizontal-alignment: TextHorizontalAlignment.left;
+        }
+    }
+}
+
+export component ActionIcon inherits TouchArea {
+    in-out property <string> name;
+    Rectangle {
+        background: parent.pressed ? ColorPalette.button-pressed : 
+                    parent.has-hover ? ColorPalette.button-hovered : 
+                    ColorPalette.button-default;
+        border-radius: 3px;
+        Text {
+            color: black;
+            font-size: 8px;
+            text: name;
+        }
+    }
+}
+
+export component TableItemActionIcons inherits Rectangle {
+    callback update();
+    callback delete();
+    callback duplicate();
+    callback clear();
+    GridLayout {
+        padding: 5px;
+        update-row := ActionIcon {
+            name: "Update";
+            col: 0;
+            row: 0;
+            clicked => {
+                update();
+            }
+        }
+        delete-row := ActionIcon {
+            name: "Delete";
+            col: 1;
+            row: 0;
+            clicked => {
+                delete();
+            }
+        }
+        duplicate-row := ActionIcon {
+            name: "Dup.";
+            col: 0;
+            row: 1;
+            clicked => {
+                duplicate();
+            }
+        }
+        clear-row := ActionIcon {
+            name: "Clear";
+            col: 1;
+            row: 1;
+            clicked => {
+                clear();
+            }
+        }
+    }
+}
+
+export component CreationActionIcons inherits Rectangle {
+    callback create();
+    callback clear();
+    GridLayout {
+        padding: 5px;
+        create-item := ActionIcon {
+            name: "Create";
+            col: 0;
+            row: 0;
+            clicked => {
+                create();
+            }
+        }
+        clear-row := ActionIcon {
+            name: "Clear";
+            col: 1;
+            row: 0;
+            clicked => {
+                clear();
+            }
+        }
     }
 }

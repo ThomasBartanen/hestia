@@ -18,15 +18,15 @@ pub async fn initialize_slint_expenses(ui: &App, pool: &sqlx::Pool<Sqlite>, max_
 }
 
 pub async fn initialize_slint_properties(ui: &App, pool: &sqlx::Pool<Sqlite>, max_ids: &ValidIds) {
-    let expenses: Vec<PropertyInput> = crate::database::get_properties(pool)
+    let props: Vec<PropertyInput> = crate::database::get_properties(pool)
         .await
         .iter()
         .map(Property::convert_to_slint)
         .collect();
 
-    let converted_expenses = ModelRc::new(VecModel::from(expenses));
+    let converted_props = ModelRc::new(VecModel::from(props));
     ui.global::<PropertyData>().set_potential_prop_id(max_ids.property_id as i32);
-    ui.global::<PropertyData>().set_properties(converted_expenses);
+    ui.global::<PropertyData>().set_properties(converted_props);
 }
 
 pub async fn initialize_slint_leaseholders(

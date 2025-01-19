@@ -1,9 +1,10 @@
 use chrono::NaiveDate;
+use serde::Serialize;
 use sqlx::{migrate::MigrateDatabase, sqlite::SqliteQueryResult, FromRow, Sqlite, SqlitePool};
 use std::result::Result;
 
 use crate::{
-    expenses::*, lease::Lease, leaseholders::Leaseholder, properties::Property,
+    expenses::*, lease::{FeeStructure, Lease}, leaseholders::Leaseholder, properties::Property,
     statements::Statement,
 };
 
@@ -32,9 +33,9 @@ pub async fn create_schema(db_url: &str) -> Result<SqliteQueryResult, sqlx::Erro
         end_date            TEXT,
         fee_structure       TEXT,
         payment_method      TEXT
-    );  
+    );
     CREATE TABLE IF NOT EXISTS properties (
-        property_id         INTEGER PRIMARY KEY AUTOINCREMENT,
+        property_id         INTEGER PRIMARY KEY,
         property_name       TEXT,
         property_tax        TEXT,
         business_insurance  TEXT,
@@ -55,7 +56,7 @@ pub async fn create_schema(db_url: &str) -> Result<SqliteQueryResult, sqlx::Erro
         FOREIGN KEY (leaseholder_id) REFERENCES leaseholders(leaseholder_id) ON DELETE SET NULL
     );
     CREATE TABLE IF NOT EXISTS leaseholders (
-        leaseholder_id      INTEGER PRIMARY KEY AUTOINCREMENT,
+        leaseholder_id      INTEGER PRIMARY KEY,
         lease_id            INTEGER,
         property_id         INTEGER,
         name                TEXT,
@@ -67,7 +68,6 @@ pub async fn create_schema(db_url: &str) -> Result<SqliteQueryResult, sqlx::Erro
         phone_number        TEXT,
         move_in_date        TEXT,
         FOREIGN KEY (lease_id) REFERENCES leases(lease_id) ON DELETE SET NULL
-        FOREIGN KEY (property_id) REFERENCES properties(property_id) ON DELETE CASCADE
     );    
     CREATE TABLE IF NOT EXISTS expenses (
         expense_id          INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -76,15 +76,17 @@ pub async fn create_schema(db_url: &str) -> Result<SqliteQueryResult, sqlx::Erro
         amount              REAL,
         date_incurred       TEXT,
         description         TEXT,
-        receipt_url         TEXT null,
-        FOREIGN KEY (property_id) REFERENCES properties(property_id) ON DELETE SET NULL
+        receipt_url         TEXT null
     );
     CREATE TABLE IF NOT EXISTS statements (
         statement_id        INTEGER PRIMARY KEY AUTOINCREMENT,
         leaseholder_id      INTEGER,
-        amount_due          INTEGER,
-        amount_paid         INTEGER,
-        statement_path      TEXT,
+        amount_due          REAL,
+        amount_paid         REAL,
+        month               INTEGER,
+        fee_structure       TEXT,
+        expense_list        TEXT,
+        filename            TEXT,
         FOREIGN KEY (leaseholder_id) REFERENCES leaseholders(leaseholder_id) ON DELETE CASCADE
     )";
     let result = sqlx::query(qry).execute(&pool).await;
@@ -107,7 +109,7 @@ pub async fn add_maint_request(
     };
     sqlx::query("INSERT INTO maintenance_requests (leaseholder_id, request_date, maintenance_type, description, status, completion_date) VALUES (?, ?, ?, ?, ?, ?)")
         .bind(request.leaseholder_id)
-        .bind(request.request_date.to_string())
+        .bind(NaiveDate::to_string(&request.request_date))
         .bind(maint_type_str)
         .bind(&request.description)
         .bind(RequestStatus::Received.to_string())
@@ -124,7 +126,7 @@ pub async fn add_expense(pool: &sqlx::Pool<Sqlite>, expense: &Expense) -> Result
         .bind(expense.property_id)
         .bind(expense_type_str)
         .bind(expense.amount)
-        .bind(expense.date.to_string())
+        .bind(NaiveDate::to_string(&expense.date))
         .bind(&expense.description)
         .execute(pool)
         .await?;
@@ -161,9 +163,9 @@ pub async fn add_leaseholders(
 
     let lease_id =
         sqlx::query("INSERT INTO leases (start_date, end_date, fee_structure) VALUES (?, ?, ?)")
-            .bind(lease.start_date.to_string())
-            .bind(lease.end_date.to_string())
-            .bind(leaseholder.lease.fee_structure.encode_to_database_string())
+            .bind(NaiveDate::to_string(&lease.start_date))
+            .bind(NaiveDate::to_string(&lease.end_date))
+            .bind(serde_json::to_string(&leaseholder.lease.fee_structure).unwrap())
             .execute(pool)
             .await?
             .last_insert_rowid();
@@ -179,7 +181,7 @@ pub async fn add_leaseholders(
         .bind(&leaseholder.contact_info.remittence_address.zip_code)
         .bind(&leaseholder.contact_info.email)
         .bind(&leaseholder.contact_info.phone_number)
-        .bind(&leaseholder.move_in_date.to_string())
+        .bind(NaiveDate::to_string(&leaseholder.move_in_date))
         .execute(pool)
         .await?;
     Ok(leaseholder_result)
@@ -191,18 +193,51 @@ pub async fn add_statement(
 ) -> Result<SqliteQueryResult, sqlx::Error> {
     //println!("Adding Statement");
     let x = sqlx::query(
-        "INSERT INTO statements (leaseholder_id, amount_due, amount_paid, statement_path) VALUES (?, ?, ?, ?)")
-        .bind(statement.leaseholder.id)
+        "INSERT INTO statements (leaseholder_id, amount_due, amount_paid, fee_structure, expense_list, filename) VALUES (?, ?, ?, ?, ?, ?)")
+        .bind(statement.leaseholder_id)
         .bind(statement.total)
-        .bind(0)
-        .bind("test_statement")
+        .bind(statement.amount_paid)
+        .bind(serde_json::to_string(&statement.rates).unwrap())
+        .bind(serde_json::to_string(&statement.fees).unwrap())
+        .bind(&statement.statement_name)
         .execute(pool)
         .await?;
 
     Ok(x)
 }
+// ----------------------------------- GET SPECIFIC -----------------------------------------
+pub async fn get_property(pool: &sqlx::Pool<Sqlite>, id: u32) -> Property {
+    let property_row = sqlx::query("SELECT * FROM properties WHERE property_id == ?")
+        .bind(id)
+        .fetch_one(pool)
+        .await;
+    Property::from_row(&property_row.unwrap()).unwrap()
+}
 
-// -------------------------------------- GET ---------------------------------------------
+pub async fn get_leaseholder(pool: &sqlx::Pool<Sqlite>, id: u32) -> Leaseholder {
+    let lessee_row = sqlx::query("SELECT * FROM leaseholders WHERE leaseholder_id == ?")
+        .bind(id)
+        .fetch_one(pool)
+        .await;
+    Leaseholder::from_row(&lessee_row.unwrap()).unwrap()
+}
+
+pub async fn get_period_expenses(pool: &sqlx::Pool<Sqlite>, start_date: NaiveDate, end_date: NaiveDate) -> Vec<Expense> {
+    let mut expenses: Vec<Expense> = vec![];
+
+    let expense_rows = sqlx::query("SELECT * FROM expenses WHERE date >= ? AND date <= ?")
+        .bind(NaiveDate::to_string(&start_date))
+        .bind(NaiveDate::to_string(&end_date))
+        .fetch_all(pool)
+        .await;
+    for row in expense_rows.unwrap() {
+        let expense = Expense::from_row(&row);
+        expenses.push(expense.unwrap());
+    }
+    expenses
+}
+
+// -------------------------------------- GET ALL ---------------------------------------------
 pub async fn get_properties(pool: &sqlx::Pool<Sqlite>) -> Vec<Property> {
     let mut properties: Vec<Property> = vec![];
 
@@ -301,17 +336,20 @@ pub async fn update_expense(
     expense: &Expense,
 ) -> Result<SqliteQueryResult, sqlx::Error> {
     let expense_type_str = &expense.expense_type.to_string();
-
+    let prop_id: String;
+    if expense.property_expense == true { prop_id = expense.property_id.to_string() } else {prop_id = 0.to_string()};
     let x = sqlx::query(
-        "UPDATE expenses SET (property_id, expense_type, amount, date_incurred, description) = (?, ?, ?, ?, ?) WHERE expense_id == ?")
-        .bind(expense.property_id)
+        "UPDATE expenses SET (property_id, expense_type, amount, date_incurred, description, receipt_url) = (?, ?, ?, ?, ?, ?) WHERE expense_id == ?")
+        .bind(prop_id)
         .bind(expense_type_str)
         .bind(expense.amount)
         .bind(expense.date.to_string())
         .bind(&expense.description)
+        .bind("none")
         .bind(expense.id)
         .execute(pool)
         .await?;
+    
     Ok(x)
 }
 
@@ -347,9 +385,29 @@ pub async fn update_lease(
     )
     .bind(new_lease.start_date.to_string())
     .bind(new_lease.end_date.to_string())
-    .bind(new_lease.fee_structure.encode_to_database_string())
+    .bind(serde_json::to_string(&new_lease.fee_structure).unwrap())
     .execute(pool)
     .await?;
+    Ok(x)
+}
+
+pub async fn update_statement(
+    pool: &sqlx::Pool<Sqlite>,
+    new_statement: &Statement,
+) -> Result<SqliteQueryResult, sqlx::Error> {
+    //println!("Adding Statement");
+    let x = sqlx::query(
+        "UPDATE statements SET (leaseholder_id, amount_due, amount_paid, fee_structure, expense_list, filename) = (?, ?, ?, ?, ?, ?) WHERE statement_id == ?")
+        .bind(new_statement.leaseholder_id)
+        .bind(new_statement.total)
+        .bind(new_statement.amount_paid)
+        .bind(serde_json::to_string(&new_statement.rates).unwrap())
+        .bind(serde_json::to_string(&new_statement.fees).unwrap())
+        .bind(&new_statement.statement_name)
+        .bind(new_statement.id)
+        .execute(pool)
+        .await?;
+
     Ok(x)
 }
 
@@ -370,6 +428,17 @@ pub async fn remove_property(
     property: &Property,
 ) -> Result<SqliteQueryResult, sqlx::Error> {
     //println!("Removing Property with id: {}", property.id);
+    let expenses = sqlx::query("SELECT * FROM expenses WHERE property_id == ?")
+        .bind(property.id)
+        .fetch_all(pool)
+        .await;
+
+    for row in expenses.unwrap() {
+        let mut updated_expense = Expense::from_row(&row).unwrap();
+        updated_expense.property_id = 0;
+        update_expense(pool, &updated_expense).await?;
+    }
+
     let x = sqlx::query("DELETE FROM properties WHERE property_id == ?")
         .bind(property.id)
         .execute(pool)
@@ -387,7 +456,17 @@ pub async fn remove_leaseholder(
         .await?;
     Ok(x)
 }
-
+pub async fn remove_statement(
+    pool: &sqlx::Pool<Sqlite>,
+    statement: &Statement,
+) -> Result<SqliteQueryResult, sqlx::Error> {
+    //println!("Removing Property with id: {}", property.id);
+    let x = sqlx::query("DELETE FROM statements WHERE statement_id == ?")
+        .bind(statement.id)
+        .execute(pool)
+        .await?;
+    Ok(x)
+}
 // -------------------------------------- Get Max ID ---------------------------------------------
 pub async fn get_max_expense_id(pool: &sqlx::Pool<Sqlite>) -> u32 {
     let res = sqlx::query("SELECT * FROM expenses ORDER BY expense_id DESC LIMIT 1;")
@@ -398,12 +477,12 @@ pub async fn get_max_expense_id(pool: &sqlx::Pool<Sqlite>) -> u32 {
             Ok(o) => o.id + 1,
             Err(e) => {
                 println!("Error parsing expense record for expense id: {}", e);
-                0
+                1
             }
         },
         Err(e) => {
-            println!("Error getting max expense id: {}", e);
-            0
+            println!("Failed to get max expense id. Defaulting to 1. ' {} '", e);
+            1
         }
     }
 }
@@ -416,12 +495,12 @@ pub async fn get_max_property_id(pool: &sqlx::Pool<Sqlite>) -> u32 {
             Ok(o) => o.id + 1,
             Err(e) => {
                 println!("Error parsing property record for property id: {}", e);
-                0
+                1
             }
         },
         Err(e) => {
-            println!("Error getting max property id: {}", e);
-            0
+            println!("Failed to get max property id. Defaulting to 1. ' {} '", e);
+            1
         }
     }
 }
@@ -435,12 +514,31 @@ pub async fn get_max_leaseholder_id(pool: &sqlx::Pool<Sqlite>) -> u32 {
             Ok(o) => o.id + 1,
             Err(e) => {
                 println!("Error parsing leaseholder record for leaseholder id: {}", e);
-                0
+                1
             }
         },
         Err(e) => {
-            println!("Error getting max leaseholder id: {}", e);
-            0
+            println!("Failed to get max leaseholder id. Defaulting to 1. ' {} '", e);
+            1
+        }
+    }
+}
+
+pub async fn get_max_statement_id(pool: &sqlx::Pool<Sqlite>) -> u32 {
+    let res = sqlx::query("SELECT * FROM statements ORDER BY statement_id DESC LIMIT 1;")
+        .fetch_one(pool)
+        .await;
+    match res {
+        Ok(r) => match Statement::from_row(&r) {
+            Ok(o) => o.id + 1,
+            Err(e) => {
+                println!("Error parsing statement record for statement id: {}", e);
+                1
+            }
+        },
+        Err(e) => {
+            println!("Failed to get max statement id. Defaulting to 1. ' {} '", e);
+            1
         }
     }
 }

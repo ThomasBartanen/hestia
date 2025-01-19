@@ -1,13 +1,16 @@
+import { ExpenseInput } from "globals.slint";
+
 export enum IdType {
     Expense,
     Property,
     Leaseholder,
-    Lease
+    Lease,
+    Statement
 }
 
 export global Validation {
     pure callback get-valid-id(IdType) -> int;
-
-    in-out property <int> potential-expense-id;
-    in-out property <int> potential-prop-id;
+    pure callback check-new-expense-validity(ExpenseInput) -> bool;    
+    pure callback check-new-property-validity(ExpenseInput) -> bool;    
+    pure callback check-new-lessee-validity(ExpenseInput) -> bool;
 }
