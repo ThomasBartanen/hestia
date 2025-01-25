@@ -36,10 +36,27 @@ export component TableHeader inherits Rectangle {
         }
     }
 }
+
+export component TableItem inherits Rectangle {
+    border-color: black.transparentize(0.8);
+    border-width: 1px;
+    border-top-right-radius: 3px;
+    in-out property <string> text <=> text-line.text;
+    text-line := Text {
+        x: 5px;
+        width: parent.width;
+        horizontal-alignment: TextHorizontalAlignment.left;
+    }
+}
+
 export component TableText inherits TouchArea {
+    public function clear() {
+        edit-text = "";
+    }
     in-out property <string> default-text <=> text-line.placeholder-text;
     in-out property <string> edit-text <=> text-line.text;
     Rectangle {
+        x: 5px;
         width: parent.width;
         border-color: black;
         border-top-right-radius: 3px;
@@ -59,25 +76,23 @@ export component ActionIcon inherits TouchArea {
         border-radius: 3px;
         Text {
             color: black;
-            font-size: 8px;
+            font-size: 10px;
             text: name;
         }
     }
 }
 
 export component TableItemActionIcons inherits Rectangle {
-    callback update();
+    callback edit();
     callback delete();
-    callback duplicate();
-    callback clear();
     GridLayout {
         padding: 5px;
-        update-row := ActionIcon {
-            name: "Update";
+        edit-row := ActionIcon {
+            name: "Edit";
             col: 0;
             row: 0;
             clicked => {
-                update();
+                edit();
             }
         }
         delete-row := ActionIcon {
@@ -88,44 +103,28 @@ export component TableItemActionIcons inherits Rectangle {
                 delete();
             }
         }
-        duplicate-row := ActionIcon {
-            name: "Dup.";
-            col: 0;
-            row: 1;
-            clicked => {
-                duplicate();
-            }
-        }
-        clear-row := ActionIcon {
-            name: "Clear";
-            col: 1;
-            row: 1;
-            clicked => {
-                clear();
-            }
-        }
     }
 }
 
 export component CreationActionIcons inherits Rectangle {
-    callback create();
-    callback clear();
+    callback confirm();
+    callback cancel();
     GridLayout {
         padding: 5px;
-        create-item := ActionIcon {
-            name: "Create";
+        confirm-item := ActionIcon {
+            name: "Confirm";
             col: 0;
             row: 0;
             clicked => {
-                create();
+                confirm();
             }
         }
-        clear-row := ActionIcon {
-            name: "Clear";
+        cancel-row := ActionIcon {
+            name: "Cancel";
             col: 1;
             row: 0;
             clicked => {
-                clear();
+                cancel();
             }
         }
     }
