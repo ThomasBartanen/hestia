@@ -78,12 +78,11 @@ export component ViewExpenseTotalsMenu inherits Rectangle {
         titles := HorizontalLayout {
             TableHeader { 
                 width: 40px;
-                
                 text: "ID";
             }
             TableHeader { 
                 width: 40px;
-                text: "Prop. ID";
+                text: "Property";
             }
             TableHeader { 
                 width: 100px;
@@ -124,6 +123,7 @@ export component ViewExpenseTotalsMenu inherits Rectangle {
                     expense-prop-id := TableItem {
                         width: 40px;
                         text: x.prop-id;
+                        //TODO: Translate prop id to property name. Maybe use combobox for the edit section
                     }
                     expense-date := TableItem { 
                         width: 100px;
