@@ -7,7 +7,7 @@ mod generated_code {
 use chrono::NaiveDate;
 use expenses::calculate_expense_totals;
 pub use generated_code::*;
-use slint::{Model, ModelRc, Weak};
+use slint::{ComponentHandle, Model, ModelRc, Weak, WindowPosition};
 use sqlx::Sqlite;
 
 mod app_settings;
@@ -32,6 +32,7 @@ async fn main() {
 
     testing::activate_test_mode(true, &instances, &mut valid_ids).await;
     let app = App::new().unwrap();
+    app.window().set_position(slint::WindowPosition::Logical(slint::LogicalPosition::new(0.,0.)));
     let weak_app = app.as_weak();
 
     initialize_slint_properties(&weak_app, &instances, &valid_ids).await;
