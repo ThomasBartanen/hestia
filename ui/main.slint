@@ -1,6 +1,6 @@
 import { PeriodType, ExpenseData, LesseeData, PropertyData, StatementData, PropertyInput, StatementInput, ExpenseInput, LeaseholderInput } from "globals.slint";
 import { Validation, IdType } from "validation.slint";
-import { Button, TabWidget, AboutSlint } from "std-widgets.slint";
+import { Button, TabWidget, AboutSlint, Palette } from "std-widgets.slint";
 import { PropertyMenu } from "properties.slint";
 import { StatementMenu } from "statements.slint";
 import { ExpenseMenu } from "expenses.slint";
@@ -80,26 +80,26 @@ export component NavigationPane inherits Rectangle {
             }
             Tab {
                 title: "Leaseholders";
-                lessee-menu := LesseeMenu {
-                    background: sienna.mix(gray, 10%);
+                lessee-menu := ViewLesseesMenu {
+                    background: ColorPalette.leaseholder-menu-bg;
                 }
             }
             Tab {
                 title: "Properties";
                 prop-menu := PropertyMenu { 
-                    background: green.mix(gray, 20%);
+                    background: ColorPalette.prop-menu-bg;
                 }
             }
             Tab {
                 title: "Expenses";
                 expense-menu := ExpenseMenu {
-                    background: sienna.mix(gray, 20%); 
+                    background: ColorPalette.expense-menu-bg; 
                 }
             }
             Tab {
                 title: "Statements";
                 statement-menu := StatementMenu {
-                    background: green.mix(gray, 20%);
+                    background: ColorPalette.statement-menu-bg;
                 }
             }
         }
