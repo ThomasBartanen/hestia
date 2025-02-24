@@ -1,5 +1,13 @@
 export enum MessageType {create, update, delete}
 export enum PeriodType {Day, Month, YTD, Complete}
+export enum WindowType {Lessee, Property, Settings}
+
+// ==========================================
+// ============== Windows ===================
+// ==========================================
+export global WindowCallbacks {
+    callback open-window(WindowType);
+}
 
 // ==========================================
 // ============== EXPENSES ==================
@@ -44,6 +52,7 @@ export struct LeaseholderInput {
 
 export global LesseeData {
     callback new-lessee(LeaseholderInput);
+    callback open-lessee-menu();
     
     in-out property <int> potential-lessee-id;
     in-out property <int> selected-lessee-id;

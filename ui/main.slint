@@ -1,12 +1,13 @@
-import { PeriodType, ExpenseData, LesseeData, PropertyData, StatementData, PropertyInput, StatementInput, ExpenseInput, LeaseholderInput } from "globals.slint";
+import { WindowCallbacks, WindowType, PeriodType, ExpenseData, LesseeData, PropertyData, StatementData, PropertyInput, StatementInput, ExpenseInput, LeaseholderInput } from "globals.slint";
 import { Validation, IdType } from "validation.slint";
 import { Button, TabWidget, AboutSlint, Palette } from "std-widgets.slint";
 import { PropertyMenu } from "properties.slint";
 import { StatementMenu } from "statements.slint";
 import { ExpenseMenu } from "expenses.slint";
 import { LesseeMenu } from "leaseholders.slint";
+import { ColorPalette } from "palette.slint";
 
-export { ExpenseData, LesseeData, PropertyData, StatementData, PropertyInput, StatementInput, ExpenseInput, LeaseholderInput, Validation, IdType }
+export { WindowCallbacks, WindowType, ExpenseData, AddLeaseholderMenu, LesseeData, LeaseholderInput, PropertyData, StatementData, PropertyInput, StatementInput, ExpenseInput, Validation, IdType }
 
 export component NavigationPane inherits Rectangle {
     Rectangle {

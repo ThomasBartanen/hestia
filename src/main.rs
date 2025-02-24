@@ -167,6 +167,22 @@ fn intialize_slint_callbacks(
         }}
     );
 
+    app.global::<WindowCallbacks>().on_open_window({
+        let local_app = weak_app.clone().upgrade().unwrap();
+        move |input| {
+            match input {
+                WindowType::Lessee => { 
+                    println!("Opening Lessee Edit Window");
+                    let menu = AddLeaseholderMenu::new().unwrap();
+                    menu.show().unwrap();
+                    menu.invoke_open_lessee(local_app.global::<LesseeData>().get_selected_lessee());
+                }
+                WindowType::Property => (),
+                WindowType::Settings => ()
+            };
+        }
+    });
+
     app.global::<ExpenseData>().on_new_expense({
         let expense_channel = expense_worker.channel.clone();
         let local_app = weak_app.clone();
