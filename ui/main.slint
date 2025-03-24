@@ -1,1 +1,103 @@
+import { VerticalBox, HorizontalBox, ComboBox } from "std-widgets.slint";
+import { Tenant, TenantData } from "globals.slint";
+
+export { Tenant, TenantData }
+
+export enum PageType { Home, Expenses, Tenants, Properties, Settings }
+
+export component NavigationPane inherits Rectangle {
+    in-out property <string> current-page: "Home";
+    width: 60px;
+    Rectangle {
+        background: green;
+        VerticalLayout {
+            alignment: LayoutAlignment.start;
+            padding: 10px;
+            spacing: 10px;
+            TouchArea {
+                Text {
+                    text : "Properties";
+                }
+                clicked => {
+                    current-page = "Properties";
+                }
+            }
+            TouchArea {
+                Text {
+                    text : "Tenants";
+                }
+                clicked => {
+                    current-page = "Tenants";
+                }
+            }
+            TouchArea {
+                Text {
+                    text : "Expenses";
+                }
+                clicked => {
+                    current-page = "Expenses";
+                }
+            }
+            TouchArea {
+                Text {
+                    text : "Settings";
+                }
+                clicked => {
+                    current-page = "Settings";
+                }
+            }
+        }
+    }
+}
+
+export component App inherits Window {    
+    // === Window ===
+    title: "Hestia";
+    //always-on-top: true;
+    //no-frame: true;
+
+    // === Sizing ===
+    min-width: 400px;
+    preferred-width: 800px;
+    min-height: 300px;
+    preferred-height: 1000px;
+
+    // === Elements ===
+    padding: 10px;
     
+    HorizontalLayout {
+        nav-pane := NavigationPane { }
+        content-pane := Rectangle {             
+            background: grey;
+            
+            Text {
+                y: 20px;
+                height: 40px;
+                text: "Current Page is: " + nav-pane.current-page;
+            }
+
+            info-rect := Rectangle {
+                
+            }
+        }
+    }
+
+    MenuBar {
+        Menu {
+            title: @tr("File");
+            MenuItem {
+                title: @tr("New");
+                activated => { }
+            }
+        }
+        Menu {
+            title: @tr("Edit");
+        }
+        Menu {
+            title: @tr("View");
+        }
+        Menu {
+            title: @tr("Help");
+        }
+    }
+}
