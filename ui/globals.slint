@@ -1,0 +1,23 @@
+export enum MessageType {create, update, delete}
+export enum PeriodType {Day, Month, YTD, Complete}
+export enum WindowType {Lessee, Property, Settings}
+
+// ==========================================
+// ============== Tenants ===================
+// ==========================================
+export struct Tenant {
+    id: int,
+    name: string,
+    lease: int,
+    property-id: int,
+    email: string,
+    phone-number: string,
+    move-in-date: string,
+}
+
+export global TenantData {
+    callback new-tenant(Tenant);
+
+    in-out property <[Tenant]> tenants;
+    in-out property <int> selected-id;
+}
