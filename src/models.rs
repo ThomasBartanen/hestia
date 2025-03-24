@@ -1,8 +1,11 @@
+use chrono::NaiveDate;
+
 #[derive(Debug, Clone)]
-pub struct Building {
+pub struct Property {
     pub id: i32,
-    pub name: String,    
-    pub units: Vec<Unit>,
+    pub name: String,
+    pub address: String,
+    pub units: Vec<i32>,
 }
 
 #[derive(Debug, Clone)]
@@ -19,4 +22,13 @@ pub struct Tenant {
     pub name: String,
     pub email: String,
     pub phone: String,
+}
+
+pub struct Expense {
+    pub id: i32,
+    pub property_id: Option<i32>,
+    pub expense_type: String,
+    pub amount: f32,
+    pub date: NaiveDate,
+    pub description: String,
 }
