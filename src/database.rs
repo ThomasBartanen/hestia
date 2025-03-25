@@ -3,6 +3,8 @@ use std::path::Path;
 
 use crate::models::Property;
 
+pub const DATABASE_NAME: &str = "test_db.db3";
+
 pub struct DatabaseManager {
     pub conn: Connection,
 }
