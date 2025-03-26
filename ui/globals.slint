@@ -5,7 +5,7 @@ export enum WindowType {Lessee, Property, Settings}
 // ==========================================
 // ============== Tenants ===================
 // ==========================================
-export struct Tenant {
+export struct TenantInfo {
     id: int,
     name: string,
     lease: int,
@@ -16,8 +16,8 @@ export struct Tenant {
 }
 
 export global TenantData {
-    callback new-tenant(Tenant);
+    callback new-tenant(TenantInfo);
 
-    in-out property <[Tenant]> tenants;
+    in-out property <[TenantInfo]> tenants;
     in-out property <int> selected-id;
 }

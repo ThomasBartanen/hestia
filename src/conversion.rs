@@ -1,8 +1,8 @@
 use crate::models::*;
 
 impl Tenant {
-    pub fn to_slint(&self) -> crate::slint_generatedApp::Tenant {
-        crate::slint_generatedApp::Tenant {
+    pub fn to_slint(&self) -> crate::slint_generatedApp::TenantInfo {
+        crate::slint_generatedApp::TenantInfo {
             id: self.id,
             name: self.name.clone().into(),
             lease: 0,
