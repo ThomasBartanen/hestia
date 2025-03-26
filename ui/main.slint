@@ -7,6 +7,7 @@ export enum PageType { Home, Expenses, Tenants, Properties, Settings }
 
 export component NavigationPane inherits Rectangle {
     in-out property <string> current-page: "Home";
+    in-out property <PageType> current-page-type: Home;
     width: 60px;
     Rectangle {
         background: green;
@@ -20,6 +21,7 @@ export component NavigationPane inherits Rectangle {
                 }
                 clicked => {
                     current-page = "Properties";
+                    current-page-type = PageType.Properties;
                 }
             }
             TouchArea {
@@ -27,7 +29,8 @@ export component NavigationPane inherits Rectangle {
                     text : "Tenants";
                 }
                 clicked => {
-                    current-page = "Tenants";
+                    current-page = "Tenants";                    
+                    current-page-type = PageType.Tenants;
                 }
             }
             TouchArea {
@@ -36,6 +39,7 @@ export component NavigationPane inherits Rectangle {
                 }
                 clicked => {
                     current-page = "Expenses";
+                    current-page-type = PageType.Expenses;
                 }
             }
             TouchArea {
@@ -44,6 +48,7 @@ export component NavigationPane inherits Rectangle {
                 }
                 clicked => {
                     current-page = "Settings";
+                    current-page-type = PageType.Settings;
                 }
             }
         }
@@ -51,6 +56,8 @@ export component NavigationPane inherits Rectangle {
 }
 
 export component App inherits Window {    
+    // function that sets the info rects to visible when selecting new page type?
+
     // === Window ===
     title: "Hestia";
     //always-on-top: true;
@@ -64,6 +71,8 @@ export component App inherits Window {
 
     // === Elements ===
     padding: 10px;
+
+    in-out property <PageType> current-page-type <=> nav-pane.current-page-type;
     
     HorizontalLayout {
         nav-pane := NavigationPane { }
@@ -77,7 +86,38 @@ export component App inherits Window {
             }
 
             info-rect := Rectangle {
-                
+                expense-info := Rectangle {
+                    x: 10px;
+                    y: 10px;
+                    //visible: false;
+                    Text {
+                        text: "1";
+                    }
+                }
+                prop-info := Rectangle {
+                    x: 10px;
+                    y: 10px;
+                    //visible: false;
+                    Text {
+                        text: "2";
+                    }
+                }
+                tenant-info := Rectangle {
+                    x: 10px;
+                    y: 10px;
+                    //visible: false;
+                    Text {
+                        text: "3";
+                    }
+                }
+                settings-info := Rectangle {
+                    x: 10px;
+                    y: 10px;
+                    //visible: false;
+                    Text {
+                        text: "4";
+                    }
+                } 
             }
         }
     }
@@ -91,7 +131,11 @@ export component App inherits Window {
             }
         }
         Menu {
-            title: @tr("Edit");
+            title: @tr("Add");
+            MenuItem {
+                title: @tr("Property");
+                activated => { }
+            }
         }
         Menu {
             title: @tr("View");
