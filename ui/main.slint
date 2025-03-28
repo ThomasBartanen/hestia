@@ -1,84 +1,39 @@
 import { VerticalBox, HorizontalBox, ComboBox } from "std-widgets.slint";
-import { TenantInfo, TenantData } from "globals.slint";
+import { TenantInfo, TenantData, ExpenseInfo, ExpenseData, PropertyInfo, PropertyData } from "globals.slint";
 
-export { TenantInfo, TenantData }
+export { TenantInfo, TenantData, ExpenseInfo, ExpenseData, PropertyInfo, PropertyData }
 
 export enum PageType { Home, Expenses, Tenants, Properties, Settings }
 
-export component NavigationPane inherits Rectangle {
-    in-out property <string> current-page: "Home";
-    in-out property <PageType> current-page-type: Home;
-    
-    callback change-page(PageType);
-    width: 60px;
-    Rectangle {
-        background: green;
-        VerticalLayout {
-            alignment: LayoutAlignment.start;
-            padding: 10px;
-            spacing: 10px;
-            TouchArea {
-                Text {
-                    text : "Properties";
-                }
-                clicked => {
-                    current-page = "Properties";
-                    current-page-type = PageType.Properties;
-                    change-page(PageType.Properties);
-                }
-            }
-            TouchArea {
-                Text {
-                    text : "Tenants";
-                }
-                clicked => {
-                    current-page = "Tenants";                    
-                    current-page-type = PageType.Tenants;
-                    change-page(PageType.Tenants);
-                }
-            }
-            TouchArea {
-                Text {
-                    text : "Expenses";
-                }
-                clicked => {
-                    current-page = "Expenses";
-                    current-page-type = PageType.Expenses;
-                    change-page(PageType.Expenses);
-                }
-            }
-            TouchArea {
-                Text {
-                    text : "Settings";
-                }
-                clicked => {
-                    current-page = "Settings";
-                    current-page-type = PageType.Settings;
-                    change-page(PageType.Settings);
-                }
-            }
-        }
-    }
-}
-
-export component App inherits Window {    
-    // function that sets the info rects to visible when selecting new page type?
+export component App inherits Window {
     function OpenContent(page: PageType) {
+        home-info.visible = false;
         expense-info.visible = false;
         prop-info.visible = false;
         tenant-info.visible = false;
         settings-info.visible = false;
+        
+        change-page(page);
+        current-page-type = page;
 
-        if current-page-type == PageType.Expenses {
+        if page == PageType.Home {
+            current-page = "Home";
+            home-info.visible = true;
+        }
+        if page == PageType.Expenses {
+            current-page = "Expenses";
             expense-info.visible = true;
         }
-        if current-page-type == PageType.Properties {
+        if page == PageType.Properties {
+            current-page = "Properties";
             prop-info.visible = true;
         }
-        if current-page-type == PageType.Tenants {
+        if page == PageType.Tenants {
+            current-page = "Tenants";    
             tenant-info.visible = true;
         }
-        if current-page-type == PageType.Settings {
+        if page == PageType.Settings {
+            current-page = "Settings";
             settings-info.visible = true;
         }
     }
@@ -97,28 +52,87 @@ export component App inherits Window {
     // === Elements ===
     padding: 10px;
 
-    in-out property <PageType> current-page-type <=> nav-pane.current-page-type;
+    in-out property <string> current-page: "Home";
+    in-out property <PageType> current-page-type: Home;
 
-    callback change-page <=> nav-pane.change-page;
+    callback change-page(PageType);
     
     HorizontalLayout {
-        nav-pane := NavigationPane { }
+        Rectangle {
+            width: 60px;
+            Rectangle {
+                background: green;
+                VerticalLayout {
+                    alignment: LayoutAlignment.start;
+                    padding: 10px;
+                    spacing: 10px;
+                    TouchArea {
+                        Text {
+                            text : "Home";
+                        }
+                        clicked => {
+                            OpenContent(PageType.Home);
+                        }
+                    }
+                    TouchArea {
+                        Text {
+                            text : "Expenses";
+                        }
+                        clicked => {
+                            OpenContent(PageType.Expenses);
+                        }
+                    }
+                    TouchArea {
+                        Text {
+                            text : "Properties";
+                        }
+                        clicked => {
+                            OpenContent(PageType.Properties);
+                        }
+                    }
+                    TouchArea {
+                        Text {
+                            text : "Tenants";
+                        }
+                        clicked => {
+                            OpenContent(PageType.Tenants);
+                        }
+                    }
+                    TouchArea {
+                        Text {
+                            text : "Settings";
+                        }
+                        clicked => {
+                            OpenContent(PageType.Settings);
+                        }
+                    }
+                }
+            }
+        }
         content-pane := Rectangle {             
             background: grey;
             
             Text {
                 y: 20px;
                 height: 40px;
-                text: "Current Page is: " + nav-pane.current-page;
+                text: "Current Page is: " + current-page;
             }
 
             info-rect := Rectangle {
+                home-info := Rectangle {
+                    x: 10px;
+                    y: 10px;
+                    visible: true;
+                    Text {
+                        text: "Home Page Stuff";
+                    }
+                }
                 expense-info := Rectangle {
                     x: 10px;
                     y: 10px;
                     visible: false;
                     Text {
-                        text: "1";
+                        text: @tr("You have {} expenses", ExpenseData.expenses.length);
                     }
                 }
                 prop-info := Rectangle {
@@ -126,7 +140,7 @@ export component App inherits Window {
                     y: 10px;
                     visible: false;
                     Text {
-                        text: "2";
+                        text: @tr("You have {} properties", PropertyData.props.length);
                     }
                 }
                 tenant-info := Rectangle {
@@ -134,7 +148,7 @@ export component App inherits Window {
                     y: 10px;
                     visible: false;
                     Text {
-                        text: "3";
+                        text: @tr("You have {} tenants", TenantData.tenants.length);
                     }
                 }
                 settings-info := Rectangle {
@@ -142,7 +156,7 @@ export component App inherits Window {
                     y: 10px;
                     visible: false;
                     Text {
-                        text: "4";
+                        text: "No Settings Available at this time";
                     }
                 } 
             }
