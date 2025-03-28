@@ -3,6 +3,7 @@ use rusqlite::Error;
 use async_std::sync::Mutex;
 use models::{Property, Tenant};
 use database::DatabaseManager;
+use slint::{Model, ModelRc, VecModel};
 
 mod app_settings;
 mod database;
@@ -76,7 +77,14 @@ impl AppState {
 }
 
 async fn initialize_slint_properties(app_ref: &App, app_state: Arc<Mutex<AppState>>) -> &App {
-    //app_ref.global::<TenantData>().set_tenants(app_state.lock().await.tenants); // need to convert
+    let tenants = app_state.lock().await.tenants.clone();
+    let converted_tenants: Vec<_> = tenants.into_iter().map(|t| Tenant::to_slint(&t)).collect();
+    app_ref.global::<TenantData>().set_tenants(ModelRc::new(VecModel::from(converted_tenants)));
+
+    let properties = app_state.lock().await.properties.clone();
+    let converted_properties: Vec<_> = properties.into_iter().map(|p| Property::to_slint(&p)).collect();
+    app_ref.global::<PropertyData>().set_props(ModelRc::new(VecModel::from(converted_properties)));
+    
     app_ref
 }
 
