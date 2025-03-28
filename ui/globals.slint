@@ -16,8 +16,65 @@ export struct TenantInfo {
 }
 
 export global TenantData {
-    callback new-tenant(TenantInfo);
+    callback new-tenant(MessageType, TenantInfo);
 
     in-out property <[TenantInfo]> tenants;
     in-out property <int> selected-id;
+}
+
+// ==========================================
+// ============== Expenses ==================
+// ==========================================
+export struct ExpenseInfo {
+    id: int,
+    prop-id: int,
+    expense-type: string,
+    amount: float,
+    date: string,
+    description: string,
+}
+
+export global ExpenseData {
+    callback new-expense(MessageType, ExpenseInfo);
+
+    in-out property <[ExpenseInfo]> expenses;
+    in-out property <int> selected-id;
+}
+
+// ==========================================
+// ============== Properties ================
+// ==========================================
+export struct PropertyInfo {
+    id: int,
+    name: string,
+    address: string,
+    unit-ids: [int]
+}
+export global PropertyData {
+    callback new-prop(MessageType, PropertyInfo);
+
+    in-out property <[PropertyInfo]> props;
+    in-out property <int> selected-id;
+}
+
+// ==========================================
+// ============== Units =====================
+// ==========================================
+export struct UnitInfo {
+    id: int
+}
+
+export global UnitData {
+    callback new-unit(MessageType, UnitInfo);
+
+    in-out property <[UnitInfo]> units;
+    in-out property <int> selected-id;
+}
+
+
+// ==========================================
+// ============== Settings ==================
+// ==========================================
+export global SettingsData {
+    callback edit-settings();
 }
