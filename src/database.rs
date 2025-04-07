@@ -1,7 +1,7 @@
 use rusqlite::{self, Connection, Error};
 use std::path::Path;
 
-use crate::models::Property;
+use crate::models::{Property, Tenant};
 
 pub const DATABASE_NAME: &str = "test_db.db3";
 
@@ -56,12 +56,25 @@ impl DatabaseManager {
         Ok(())
     }
 
+    // ====================================
+    // ========= Insert ===================
+    // ====================================
+
     pub fn insert_property(&self, property: Property) -> Result<i64, Error> {
         self.conn.execute(
             "INSERT INTO properties (name, address) VALUES (?, ?)",
             &[&property.name, &property.address],
         )?;
         
+        Ok(self.conn.last_insert_rowid())
+    }
+
+    pub fn insert_tenant(&self, tenant: Tenant) -> Result<i64, Error> {
+        self.conn.execute(
+            "INSERT INTO tenants (name, email, phone) VALUES (?, ?, ?)", 
+            &[&tenant.name, &tenant.email, &tenant.phone],
+        )?;
+
         Ok(self.conn.last_insert_rowid())
     }
 
