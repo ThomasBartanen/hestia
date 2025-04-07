@@ -23,7 +23,7 @@ async fn main() {
     let weak_app = app.as_weak();
 
     let app = initialize_slint_properties(&app, app_state.clone()).await;
-    setup_event_handlers(&app, app_state.clone());
+    setup_event_handlers(&app, app_state.clone()).await;
     app.run().unwrap();
 }
 
@@ -88,7 +88,16 @@ async fn initialize_slint_properties(app_ref: &App, app_state: Arc<Mutex<AppStat
     app_ref
 }
 
-fn setup_event_handlers(app_ref: &App, app_state: Arc<Mutex<AppState>>) { 
-    
+async fn setup_event_handlers(app_ref: &App, app_state: Arc<Mutex<AppState>>) { 
+    app_ref.global::<TenantData>().on_new_tenant({
+        let db_manager_clone = app_state.lock().await.db_manager;
+        let state_clone = app_state.lock().await.tenants.clone();
+        move |message_type, input| {
+            let message = match message_type {
+                MessageType::Create => DatabaseManager::insert_tenant(&db_manager_clone, Tenant::from_slint(input)),
+                MessageType::Update => todo!(),
+                MessageType::Delete => todo!(),
+            };
+    }});
 
 }
