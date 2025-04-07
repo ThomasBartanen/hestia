@@ -1,6 +1,6 @@
 use slint::{ModelRc, ToSharedString, VecModel};
 
-use crate::models::*;
+use crate::{models::*, TenantInfo};
 
 impl Tenant {
     pub fn to_slint(&self) -> crate::slint_generatedApp::TenantInfo {
@@ -13,6 +13,9 @@ impl Tenant {
             phone_number: self.phone.clone().into(),
             move_in_date: format!("Now").into(),
         }
+    }
+    pub fn from_slint(input: TenantInfo) {
+        
     }
 }
 
