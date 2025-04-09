@@ -14,8 +14,13 @@ impl Tenant {
             move_in_date: format!("Now").into(),
         }
     }
-    pub fn from_slint(input: TenantInfo) {
-        
+    pub fn from_slint(input: TenantInfo) -> Tenant {
+        Tenant { 
+            id: input.id, 
+            name: String::from(input.name), 
+            email: String::from(input.email), 
+            phone: String::from(input.phone_number) 
+        }
     }
 }
 
