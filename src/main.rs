@@ -99,5 +99,22 @@ async fn setup_event_handlers(app_ref: &App, app_state: Arc<Mutex<AppState>>) {
                 MessageType::Delete => todo!(),
             };
     }});
-
+    app_ref.global::<ExpenseData>().on_new_expense({
+        let db_manager_clone = state_clone.lock().await;
+        move |message_type, input| {
+            let message = match message_type {
+                MessageType::Create => todo!(), //DatabaseManager::insert_tenant(&db_manager_clone.db_manager.conn, Tenant::from_slint(TenantInfo { email: (), id: (), lease: (), move_in_date: (), name: (), phone_number: (), property_id: () })),
+                MessageType::Update => todo!(),
+                MessageType::Delete => todo!(),
+            };
+    }});
+    app_ref.global::<PropertyData>().on_new_prop({
+        let db_manager_clone = state_clone.lock().await;
+        move |message_type, input| {
+            let message = match message_type {
+                MessageType::Create => todo!(), //DatabaseManager::insert_property(&db_manager_clone, Property::from_slint(input)),
+                MessageType::Update => todo!(),
+                MessageType::Delete => todo!(),
+            };
+    }});
 }
