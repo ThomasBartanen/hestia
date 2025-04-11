@@ -1,9 +1,9 @@
-use std::{sync::Arc, vec};
-use rusqlite::Error;
-use async_std::sync::Mutex;
+use std::{fmt::Error, sync::Arc, vec};
 use models::{Property, Tenant};
-use database::DatabaseManager;
+use database::{create_pool, DatabaseConfig, DatabaseManager, DatabaseWorker};
 use slint::{Model, ModelRc, VecModel};
+use sqlx::PgPool;
+use tokio::sync::Mutex;
 
 mod app_settings;
 mod database;
@@ -13,17 +13,27 @@ mod validation;
 
 slint::include_modules!();
 
-#[async_std::main]
-async fn main() {    
+#[tokio::main]
+async fn main() {
     app_settings::initialize_data_paths().await;
-    let app_state = Arc::new(Mutex::new(AppState::default()));
+    
+    let config = DatabaseConfig::new(
+        "postgres://username:password@localhost/database".to_string(),
+        5,
+    );
+    
+    let pool = create_pool(config).await.unwrap();
+
+    let app_state = Arc::new(Mutex::new(AppState::new(pool).await));
     let _ = app_state.lock().await.load_initial_data().await;
+
     let app = App::new().unwrap();
     app.window().set_position(slint::WindowPosition::Logical(slint::LogicalPosition::new(0.,0.)));
     let weak_app = app.as_weak();
 
-    let app = initialize_slint_properties(&app, app_state.clone()).await;
-    setup_event_handlers(&app, app_state.clone()).await;
+    let (app, app_state) = initialize_slint_properties(&app, app_state.clone()).await;
+    let db_worker = DatabaseWorker::new(app_state.lock().await.db_manager.clone());
+    setup_event_handlers(&app, db_worker).await;
     app.run().unwrap();
 }
 
@@ -35,20 +45,19 @@ struct AppState {
     selected_unit: Option<i32>,
 }
 
-impl Default for AppState {
-    fn default() -> Self {
+
+impl AppState {
+    async fn new(pool: PgPool) -> Self {
         Self {
-            db_manager: DatabaseManager::new(app_settings::TESTING_DATABASE_PATH).unwrap(),
+            db_manager: DatabaseManager::new(pool).await.unwrap(),
             properties: Vec::new(),
             tenants: Vec::new(),
             selected_building: None,
             selected_unit: None,
         }
     }
-}
-
-impl AppState {
     async fn load_initial_data(&mut self) -> Result<(), Error> {
+        /*
         let mut prop_stmt = self.db_manager.conn.prepare(
             "SELECT * FROM properties ORDER BY name"
         )?;
@@ -71,12 +80,12 @@ impl AppState {
             )?;
             let _ = unit_stmt.query_map([element.id], |row| Ok(element.units.push(row.get::<usize, i32>(0).unwrap())))?;
         }
-        
+        */
         Ok(())
     }
 }
 
-async fn initialize_slint_properties(app_ref: &App, app_state: Arc<Mutex<AppState>>) -> &App {
+async fn initialize_slint_properties(app_ref: &App, app_state: Arc<Mutex<AppState>>) -> (&App, Arc<Mutex<AppState>>) {
     let tenants = app_state.lock().await.tenants.clone();
     let converted_tenants: Vec<_> = tenants.into_iter().map(|t| Tenant::to_slint(&t)).collect();
     app_ref.global::<TenantData>().set_tenants(ModelRc::new(VecModel::from(converted_tenants)));
@@ -85,36 +94,16 @@ async fn initialize_slint_properties(app_ref: &App, app_state: Arc<Mutex<AppStat
     let converted_properties: Vec<_> = properties.into_iter().map(|p| Property::to_slint(&p)).collect();
     app_ref.global::<PropertyData>().set_props(ModelRc::new(VecModel::from(converted_properties)));
     
-    app_ref
+    (app_ref, app_state)
 }
 
-async fn setup_event_handlers(app_ref: &App, app_state: Arc<Mutex<AppState>>) { 
+async fn setup_event_handlers(app_ref: &App, worker: DatabaseWorker) { 
     app_ref.global::<TenantData>().on_new_tenant({
-        let db_manager_clone = app_state.lock().await.db_manager;
-        let state_clone = app_state.lock().await.tenants.clone();
         move |message_type, input| {
             let message = match message_type {
-                MessageType::Create => DatabaseManager::insert_tenant(&db_manager_clone, Tenant::from_slint(input)),
-                MessageType::Update => todo!(),
-                MessageType::Delete => todo!(),
-            };
-    }});
-    app_ref.global::<ExpenseData>().on_new_expense({
-        let db_manager_clone = state_clone.lock().await;
-        move |message_type, input| {
-            let message = match message_type {
-                MessageType::Create => todo!(), //DatabaseManager::insert_tenant(&db_manager_clone.db_manager.conn, Tenant::from_slint(TenantInfo { email: (), id: (), lease: (), move_in_date: (), name: (), phone_number: (), property_id: () })),
-                MessageType::Update => todo!(),
-                MessageType::Delete => todo!(),
-            };
-    }});
-    app_ref.global::<PropertyData>().on_new_prop({
-        let db_manager_clone = state_clone.lock().await;
-        move |message_type, input| {
-            let message = match message_type {
-                MessageType::Create => todo!(), //DatabaseManager::insert_property(&db_manager_clone, Property::from_slint(input)),
-                MessageType::Update => todo!(),
-                MessageType::Delete => todo!(),
+                MessageType::Create => worker.channel.send(database::DatabaseOperation::Create),
+                MessageType::Update => worker.channel.send(database::DatabaseOperation::Update),
+                MessageType::Delete => worker.channel.send(database::DatabaseOperation::Delete),
             };
     }});
 }
