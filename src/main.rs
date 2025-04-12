@@ -2,7 +2,7 @@ use std::{fmt::Error, sync::Arc, vec};
 use models::{Property, Tenant};
 use database::{create_pool, DatabaseConfig, DatabaseManager, DatabaseWorker};
 use slint::{Model, ModelRc, VecModel};
-use sqlx::PgPool;
+use sqlx::{postgres::PgRow, Executor, PgPool, Row};
 use tokio::sync::Mutex;
 
 mod app_settings;
@@ -57,28 +57,27 @@ impl AppState {
         }
     }
     async fn load_initial_data(&mut self) -> Result<(), Error> {
-        /*
-        let mut prop_stmt = self.db_manager.conn.prepare(
+        let mut prop_stmt = self.db_manager.pool.fetch_all(
             "SELECT * FROM properties ORDER BY name"
-        )?;
+        ).await;
         
-        let rows = prop_stmt.query_map([], |row| {
-            Ok(Property {
-                id: row.get(0)?,
-                name: row.get(1)?,
-                address: row.get(2)?,
+        let rows = prop_stmt.unwrap().iter().map( |row| {
+            Property {
+                id: PgRow::get(row, 0),
+                name: PgRow::get(row, 1),
+                address: PgRow::get(row, 2),
                 units: Vec::new()
-            })
-        })?;
-        
+            }
+        });
+        /*
         self.properties = rows.collect::<Result<Vec<_>, _>>()?;
-
+        
         for element in self.properties.iter_mut() {
             //probably a very inefficient way of doing it
-            let mut unit_stmt = self.db_manager.conn.prepare(
+            let mut unit_stmt = self.db_manager.pool.fetch_all(
                 "SELECT id FROM units WHERE property_id = ?1",
-            )?;
-            let _ = unit_stmt.query_map([element.id], |row| Ok(element.units.push(row.get::<usize, i32>(0).unwrap())))?;
+            ).await;
+            let _ = unit_stmt.unwrap().iter().map(|row| Ok(element.units.push(PgRow::get(row, 0))));
         }
         */
         Ok(())
