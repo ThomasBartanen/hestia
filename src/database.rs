@@ -14,18 +14,19 @@ use std::time::Duration;
 pub struct DatabaseConfig {
     pub url: String,
     pub max_connections: u32,
+    pub acquire_timeout: u32
 }
 
 impl DatabaseConfig {
-    pub fn new(url: String, max_connections: u32) -> Self {
-        Self { url, max_connections }
+    pub fn new(url: String, max_connections: u32, acquire_timeout: u32) -> Self {
+        Self { url, max_connections, acquire_timeout }
     }
 }
 
 pub async fn create_pool(config: DatabaseConfig) -> sqlx::Result<PgPool> {
     PgPoolOptions::new()
         .max_connections(config.max_connections)
-        .acquire_timeout(Duration::from_secs(10))
+        .acquire_timeout(Duration::from_secs(config.acquire_timeout.into()))
         .connect(&config.url)
         .await
 }
