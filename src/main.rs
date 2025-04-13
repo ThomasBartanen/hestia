@@ -18,11 +18,15 @@ async fn main() {
     app_settings::initialize_data_paths().await;
     
     let config = DatabaseConfig::new(
-        "postgres://username:password@localhost/database".to_string(),
-        5,
+        "postgres:localhost/database".to_string(), //"postgres://username:password@localhost/database".to_string(),
+        2,
+        25
     );
     
-    let pool = create_pool(config).await.unwrap();
+    let pool = match create_pool(config).await {
+        Ok(p) => p,
+        Err(e) => panic!("Failed to create pool due to: {e}"),
+    };
 
     let app_state = Arc::new(Mutex::new(AppState::new(pool).await));
     let _ = app_state.lock().await.load_initial_data().await;
