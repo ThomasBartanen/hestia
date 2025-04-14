@@ -18,9 +18,9 @@ async fn main() {
     app_settings::initialize_data_paths().await;
     
     let config = DatabaseConfig::new(
-        "postgres:localhost/database".to_string(), //"postgres://username:password@localhost/database".to_string(),
-        2,
-        25
+        format!("postgres://postgres:RRC1@localhost/postgres"),
+        30,
+        30
     );
     
     let pool = match create_pool(config).await {

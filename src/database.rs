@@ -1,5 +1,5 @@
 use std::{path::Path, sync::Arc};
-use sqlx::{postgres::PgPoolOptions, Connection, Error};
+use sqlx::{postgres::{PgConnectOptions, PgPoolOptions}, Connection, Error};
 use tokio::sync::{mpsc::{UnboundedReceiver, UnboundedSender}, Mutex};
 
 
@@ -42,43 +42,47 @@ impl DatabaseManager {
         Ok(Self { pool })
     }
 
-    async fn initialize_schema(pool: &PgPool) -> Result<(), Error> {
-        let schema = r#"
-            -- Properties Table            
-            CREATE TABLE IF NOT EXISTS properties (
+    async fn initialize_schema(pool: &PgPool) -> Result<(), Error> {        
+        let mut conn = pool.acquire().await?;
+
+        let _ = sqlx::query(
+            "CREATE TABLE IF NOT EXISTS properties (
                 id SERIAL PRIMARY KEY,
                 name TEXT NOT NULL UNIQUE,
                 address TEXT NOT NULL
-            );
-            
-            -- Units Table
-            CREATE TABLE IF NOT EXISTS units (
+            );")
+            .execute(pool)
+            .await?;
+    
+        let _ = sqlx::query(
+            "CREATE TABLE IF NOT EXISTS units (
                 id SERIAL PRIMARY KEY,
                 property_id INTEGER,
                 unit_number TEXT NOT NULL,
                 is_occupied BOOLEAN DEFAULT FALSE,
                 FOREIGN KEY (property_id) REFERENCES properties(id)
-            );
-            
-            -- Tenants Table
-            CREATE TABLE IF NOT EXISTS tenants (
+            );")
+            .execute(pool)
+            .await?;
+
+        let _ = sqlx::query(
+            "CREATE TABLE IF NOT EXISTS tenants (
                 id SERIAL PRIMARY KEY,
                 unit_id INTEGER,
                 name TEXT NOT NULL,
                 email TEXT,
                 phone TEXT
-            );
-            
-            -- Expenses Table
-            CREATE TABLE IF NOT EXISTS expenses (
+            );")
+            .execute(pool)
+            .await?;
+
+        let _ = sqlx::query(
+            "CREATE TABLE IF NOT EXISTS expenses (
                 id SERIAL PRIMARY KEY,
                 amount REAL NOT NULL,
                 description TEXT,
                 date TEXT
-            );
-        "#;
-
-        sqlx::query(schema)
+            );")
             .execute(pool)
             .await?;
 
