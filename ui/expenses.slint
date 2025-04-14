@@ -1,0 +1,41 @@
+import { Button, LineEdit } from "std-widgets.slint";
+export component AddExpense inherits Rectangle {
+    width: 400px;
+    height: 300px;
+
+    VerticalLayout {
+        spacing: 10px;
+        padding: 20px;
+
+        expense_name := LineEdit {
+            placeholder-text: "Expense Name";
+            width: 100%;
+        }
+
+        expense_amount := LineEdit {
+            placeholder-text: "Amount";
+            input-type: number;
+            width: 100%;
+        }
+
+        HorizontalLayout {
+            spacing: 10px;
+
+            Button {
+                text: "Add";
+                clicked => {
+                    // Add logic to handle adding the expense
+                    //console.log("Expense Added: " + expense_name.text + ", Amount: " + expense_amount.text);
+                }
+            }
+
+            Button {
+                text: "Cancel";
+                clicked => {
+                    // Add logic to handle canceling the action
+                    //console.log("Add Expense Canceled");
+                }
+            }
+        }
+    }
+}

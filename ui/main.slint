@@ -1,5 +1,6 @@
 import { VerticalBox, HorizontalBox, ComboBox } from "std-widgets.slint";
 import { TenantInfo, TenantData, ExpenseInfo, ExpenseData, PropertyInfo, PropertyData } from "globals.slint";
+import { AddExpense } from "expenses.slint";
 
 export { TenantInfo, TenantData, ExpenseInfo, ExpenseData, PropertyInfo, PropertyData }
 
@@ -134,6 +135,7 @@ export component App inherits Window {
                     Text {
                         text: @tr("You have {} expenses", ExpenseData.expenses.length);
                     }
+                    AddExpense { }
                 }
                 prop-info := Rectangle {
                     x: 10px;
