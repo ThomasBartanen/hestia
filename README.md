@@ -3,3 +3,6 @@ Named for the Greek goddess of Hearth and Home, this Property Management program
 Track expenses, tenants with their leases, properties, maintenance requests, and more.
 
 Export pdf statements to be sent to the tenants showing breakdowns of where the fees are coming from.
+
+[Installation-Notes]
+This version of the project requires a PostgreSQL database installed. https://www.postgresql.org/
