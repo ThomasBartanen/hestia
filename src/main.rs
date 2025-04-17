@@ -102,11 +102,21 @@ async fn initialize_slint_properties(app_ref: &App, app_state: Arc<Mutex<AppStat
 
 async fn setup_event_handlers(app_ref: &App, worker: DatabaseWorker) { 
     app_ref.global::<TenantData>().on_new_tenant({
+        let local_channel = worker.channel.clone();
         move |message_type, input| {
             let message = match message_type {
-                MessageType::Create => worker.channel.send(database::DatabaseOperation::Create),
-                MessageType::Update => worker.channel.send(database::DatabaseOperation::Update),
-                MessageType::Delete => worker.channel.send(database::DatabaseOperation::Delete),
+                MessageType::Create => local_channel.send(database::DatabaseOperation::Create),
+                MessageType::Update => local_channel.send(database::DatabaseOperation::Update),
+                MessageType::Delete => local_channel.send(database::DatabaseOperation::Delete),
+            };
+    }});
+    app_ref.global::<ExpenseData>().on_new_expense({
+        let local_channel = worker.channel.clone();
+        move |message_type, input| {
+            let message = match message_type {
+                MessageType::Create => local_channel.send(database::DatabaseOperation::Create),
+                MessageType::Update => local_channel.send(database::DatabaseOperation::Update),
+                MessageType::Delete => local_channel.send(database::DatabaseOperation::Delete),
             };
     }});
 }

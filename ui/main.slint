@@ -132,10 +132,15 @@ export component App inherits Window {
                     x: 10px;
                     y: 10px;
                     visible: false;
-                    Text {
-                        text: @tr("You have {} expenses", ExpenseData.expenses.length);
+
+                    padding: 2px;
+                    VerticalLayout {
+                        Text {
+                            text: @tr("You have {} expenses", ExpenseData.expenses.length);
+                            height: 10px;
+                        }
+                        AddExpense { }
                     }
-                    AddExpense { }
                 }
                 prop-info := Rectangle {
                     x: 10px;

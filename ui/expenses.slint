@@ -1,14 +1,46 @@
 import { Button, LineEdit } from "std-widgets.slint";
+import { MessageType, ExpenseInfo, ExpenseData } from "globals.slint";
+
 export component AddExpense inherits Rectangle {
     width: 400px;
     height: 300px;
 
+    in-out property <ExpenseInfo> new-expense;
+
+    public function clear-expense-menu() {
+        prop_id.text = "";
+        expense_type.text = "";
+        expense_amount.text = "";
+        expense_date.text = "";
+        expense_description.text = "";
+    }
+
+    expense-added := PopupWindow {
+        Text {
+            text: "Succesfully Added Expense";
+        }
+    }
+
     VerticalLayout {
         spacing: 10px;
         padding: 20px;
+        /*
+        id: int,
+        prop-id: int,
+        expense-type: string,
+        amount: float,
+        date: string,
+        description: string,
+        */
 
-        expense_name := LineEdit {
-            placeholder-text: "Expense Name";
+        prop_id := LineEdit {
+            placeholder-text: "Associated Property";
+            input-type: number;
+            width: 100%;
+        }
+
+        expense_type := LineEdit {
+            placeholder-text: "Expense Type";
             width: 100%;
         }
 
@@ -18,14 +50,38 @@ export component AddExpense inherits Rectangle {
             width: 100%;
         }
 
+        expense_date := LineEdit {
+            placeholder-text: "Date";
+            input-type: InputType.text;
+            width: 100%;
+        }
+
+        expense_description := LineEdit {
+            placeholder-text: "Description";
+            width: 100%;
+        }
+
         HorizontalLayout {
             spacing: 10px;
 
             Button {
                 text: "Add";
                 clicked => {
-                    // Add logic to handle adding the expense
-                    //console.log("Expense Added: " + expense_name.text + ", Amount: " + expense_amount.text);
+                    ExpenseData.new-expense(
+                        MessageType.create,
+                        {
+                            id: -1,
+                            prop-id: -1,
+                            expense-type: expense_type.text,
+                            amount: expense_amount.text.to-float(),
+                            date: expense_date.text,
+                            description: expense_description.text
+                        }
+                    );
+
+                    clear-expense-menu();
+
+                    expense-added.show();
                 }
             }
 
@@ -34,6 +90,7 @@ export component AddExpense inherits Rectangle {
                 clicked => {
                     // Add logic to handle canceling the action
                     //console.log("Add Expense Canceled");
+                    clear-expense-menu();
                 }
             }
         }
