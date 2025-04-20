@@ -1,6 +1,7 @@
+use chrono::NaiveDate;
 use slint::{ModelRc, ToSharedString, VecModel};
 
-use crate::{models::*, TenantInfo};
+use crate::{models::*, ExpenseInfo, TenantInfo};
 
 impl Tenant {
     pub fn to_slint(&self) -> crate::slint_generatedApp::TenantInfo {
@@ -49,6 +50,16 @@ impl Expense {
             amount: self.amount,
             date: self.date.to_shared_string(),
             description: self.description.to_shared_string(),
+        }
+    }
+    pub fn from_slint(input: ExpenseInfo) -> Expense {
+        Expense {
+            id: input.id,
+            property_id: Some(input.prop_id),
+            expense_type: input.expense_type.to_string(),
+            amount: input.amount,
+            date: NaiveDate::parse_from_str(&input.date.to_string(), "%m/%d/%Y").unwrap_or(chrono::Utc::now().naive_utc().date()),
+            description: input.description.to_string(),
         }
     }
 }
