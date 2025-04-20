@@ -3,7 +3,7 @@ use sqlx::{postgres::{PgConnectOptions, PgPoolOptions}, Connection, Error};
 use tokio::sync::{mpsc::{UnboundedReceiver, UnboundedSender}, Mutex};
 
 
-use crate::{models::{Property, Tenant}, AppState};
+use crate::{models::{Expense, Property, Tenant, Unit}, AppState};
 
 pub const DATABASE_NAME: &str = "test_db.db3";
 
@@ -139,11 +139,18 @@ impl DatabaseManager {
 }
 
 pub enum DatabaseOperation {
-    Create,
-    Query,
-    Update,
-    Delete,
+    Create(DatabaseTable),
+    Query(DatabaseTable),
+    Update(DatabaseTable),
+    Delete(DatabaseTable),
     Close
+}
+
+pub enum DatabaseTable {
+    Property(Property),
+    Unit(Unit),
+    Tenant(Tenant),
+    Expense(Expense)
 }
 
 pub struct DatabaseWorker {    
