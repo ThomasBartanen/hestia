@@ -2,6 +2,12 @@ export enum MessageType {create, update, delete}
 export enum PeriodType {Day, Month, YTD, Complete}
 export enum WindowType {Lessee, Property, Settings}
 
+export struct Date {
+    month: int,
+    day: int,
+    year: int
+}
+
 // ==========================================
 // ============== Tenants ===================
 // ==========================================
@@ -30,7 +36,7 @@ export struct ExpenseInfo {
     prop-id: int,
     expense-type: string,
     amount: float,
-    date: string,
+    date: Date,
     description: string,
 }
 

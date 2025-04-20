@@ -1,7 +1,7 @@
-use chrono::NaiveDate;
+use chrono::{Datelike, NaiveDate};
 use slint::{ModelRc, ToSharedString, VecModel};
 
-use crate::{models::*, ExpenseInfo, TenantInfo};
+use crate::{models::*, slint_generatedApp, ExpenseInfo, TenantInfo};
 
 impl Tenant {
     pub fn to_slint(&self) -> crate::slint_generatedApp::TenantInfo {
@@ -48,7 +48,11 @@ impl Expense {
             },
             expense_type: self.expense_type.to_shared_string(),
             amount: self.amount,
-            date: self.date.to_shared_string(),
+            date: slint_generatedApp::Date {
+                month: self.date.month() as i32,
+                day: self.date.day0() as i32,
+                year: self.date.year_ce().1 as i32
+            },
             description: self.description.to_shared_string(),
         }
     }
@@ -58,7 +62,7 @@ impl Expense {
             property_id: Some(input.prop_id),
             expense_type: input.expense_type.to_string(),
             amount: input.amount,
-            date: NaiveDate::parse_from_str(&input.date.to_string(), "%m/%d/%Y").unwrap_or(chrono::Utc::now().naive_utc().date()),
+            date: NaiveDate::from_ymd_opt(input.date.year, input.date.month as u32, input.date.day as u32).unwrap(),
             description: input.description.to_string(),
         }
     }

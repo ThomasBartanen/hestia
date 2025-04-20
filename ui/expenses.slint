@@ -1,5 +1,5 @@
-import { Button, LineEdit } from "std-widgets.slint";
-import { MessageType, ExpenseInfo, ExpenseData } from "globals.slint";
+import { DatePickerPopup, Button, LineEdit } from "std-widgets.slint";
+import { Date, MessageType, ExpenseInfo, ExpenseData } from "globals.slint";
 
 export component AddExpense inherits Rectangle {
     width: 400px;
@@ -11,7 +11,9 @@ export component AddExpense inherits Rectangle {
         prop_id.text = "";
         expense_type.text = "";
         expense_amount.text = "";
-        expense_date.text = "";
+        month.text = "";
+        day.text = "";
+        year.text = "";
         expense_description.text = "";
     }
 
@@ -50,10 +52,40 @@ export component AddExpense inherits Rectangle {
             width: 100%;
         }
 
-        expense_date := LineEdit {
-            placeholder-text: "Date";
-            input-type: InputType.text;
-            width: 100%;
+        expense_dates := Rectangle {
+            in-out property <Date> date;
+            popup := DatePickerPopup {
+                accepted(date) => {
+                    month.text = date.month;
+                    day.text = date.day;
+                    year.text = date.year;
+                    popup.close();
+                }
+            }
+            HorizontalLayout {
+                width: parent.width;
+                month := LineEdit {
+                    placeholder-text: "Month";
+                    input-type: InputType.number;
+                    width: 30%;
+                }
+                day := LineEdit {
+                    placeholder-text: "Day";
+                    input-type: InputType.number;
+                    width: 30%;
+                }
+                year := LineEdit {
+                    placeholder-text: "Year";
+                    input-type: InputType.number;
+                    width: 30%;
+                }
+                picker := Button {
+                    width: 10%;
+                    clicked => {
+                        popup.show();
+                    }                
+                }
+            }
         }
 
         expense_description := LineEdit {
@@ -74,7 +106,11 @@ export component AddExpense inherits Rectangle {
                             prop-id: -1,
                             expense-type: expense_type.text,
                             amount: expense_amount.text.to-float(),
-                            date: expense_date.text,
+                            date: {
+                                month: month.text.to-float(), 
+                                day: day.text.to-float(), 
+                                year: year.text.to-float(),
+                            },
                             description: expense_description.text
                         }
                     );
