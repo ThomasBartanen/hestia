@@ -1,5 +1,5 @@
 use std::{fmt::Error, sync::Arc, vec};
-use models::{Property, Tenant};
+use models::{Expense, Property, Tenant};
 use database::{create_pool, DatabaseConfig, DatabaseManager, DatabaseWorker};
 use slint::{Model, ModelRc, VecModel};
 use sqlx::{postgres::PgRow, Executor, PgPool, Row};
@@ -105,18 +105,18 @@ async fn setup_event_handlers(app_ref: &App, worker: DatabaseWorker) {
         let local_channel = worker.channel.clone();
         move |message_type, input| {
             let message = match message_type {
-                MessageType::Create => local_channel.send(database::DatabaseOperation::Create),
-                MessageType::Update => local_channel.send(database::DatabaseOperation::Update),
-                MessageType::Delete => local_channel.send(database::DatabaseOperation::Delete),
+                MessageType::Create => local_channel.send(database::DatabaseOperation::Create(database::DatabaseTable::Tenant(Tenant::from_slint(input)))),
+                MessageType::Update => local_channel.send(database::DatabaseOperation::Update(database::DatabaseTable::Tenant(Tenant::from_slint(input)))),
+                MessageType::Delete => local_channel.send(database::DatabaseOperation::Delete(database::DatabaseTable::Tenant(Tenant::from_slint(input)))),
             };
     }});
     app_ref.global::<ExpenseData>().on_new_expense({
         let local_channel = worker.channel.clone();
         move |message_type, input| {
             let message = match message_type {
-                MessageType::Create => local_channel.send(database::DatabaseOperation::Create),
-                MessageType::Update => local_channel.send(database::DatabaseOperation::Update),
-                MessageType::Delete => local_channel.send(database::DatabaseOperation::Delete),
+                MessageType::Create => local_channel.send(database::DatabaseOperation::Create(database::DatabaseTable::Expense(Expense::from_slint(input)))),
+                MessageType::Update => local_channel.send(database::DatabaseOperation::Update(database::DatabaseTable::Expense(Expense::from_slint(input)))),
+                MessageType::Delete => local_channel.send(database::DatabaseOperation::Delete(database::DatabaseTable::Expense(Expense::from_slint(input)))),
             };
     }});
 }
