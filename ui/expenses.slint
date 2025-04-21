@@ -1,5 +1,179 @@
-import { DatePickerPopup, Button, LineEdit } from "std-widgets.slint";
+import { DatePickerPopup, Button, LineEdit, ScrollView, ComboBox } from "std-widgets.slint";
 import { Date, MessageType, ExpenseInfo, ExpenseData } from "globals.slint";
+import { TableHeader, BufferLine, TableItem, TableItemActionIcons, TableText, TableDate, CreationActionIcons } from "custom_widgets.slint";
+import { IdType, Validation } from "validation.slint";
+
+export component ExpenseList inherits Rectangle {
+    in-out property <MessageType> message-type;
+    x: 20px;
+    padding: 10px;
+    VerticalLayout {
+        x: 30px;
+        titles := HorizontalLayout {
+            TableHeader {
+                width: 40px;
+                text: "ID";
+            }
+            TableHeader {
+                width: 40px;
+                text: "Property";
+            }
+            TableHeader {
+                width: 100px;
+                text: "Date";
+            }
+            TableHeader { 
+                width: 150px;
+                text: "Description";
+            }
+            TableHeader { 
+                width: 150px;
+                text: "Expense Type";
+            }
+            TableHeader { 
+                width: 150px;
+                text: "Expense Subtype";
+            }
+            TableHeader { 
+                width: 70px;
+                text: "Amount";
+            }
+        }
+        BufferLine { 
+            buffer: 10px;
+            line-thickness: 3px;
+        }
+        ScrollView {
+            VerticalLayout {
+                alignment: LayoutAlignment.start;
+                preferred-width: 0in;
+                x: 0cm;
+                padding: 0;
+                for x in ExpenseData.expenses: expense-line := HorizontalLayout {
+                    expense-id := TableItem {
+                        width: 40px;
+                        text: x.id;
+                    }
+                    expense-prop-id := TableItem {
+                        width: 40px;
+                        text: x.prop-id;
+                        //TODO: Translate prop id to property name. Maybe use combobox for the edit section
+                    }
+                    expense-date := TableItem { 
+                        width: 100px;
+                        text: @tr("{}/{}/{}", x.date.month, x.date.day, x.date.year);
+                    }
+                    expense-description := TableItem { 
+                        width: 150px;
+                        text: x.description;
+                    }
+                    TableItem {
+                        width: 150px;
+                        text: x.expense-type;
+                    }
+                    expense-amount := TableItem { 
+                        width: 70px;
+                        text: x.amount;
+                    }
+                    expense-action-icons := TableItemActionIcons {
+                        width: 70px;
+                        edit => {
+                            ExpenseData.selected-id = x.id;
+                            message-type = MessageType.update;
+
+                            id.edit-text = x.id;
+                            prop-id.edit-text = x.prop-id;
+                            description.edit-text = x.description;
+                            date.set-date(x.date);
+                            amount.edit-text = x.amount;
+                            type.edit-text = x.expense-type;
+                        }
+                        delete => {
+                            ExpenseData.selected-id = x.id;
+                            message-type = MessageType.delete;
+
+                            ExpenseData.new-expense(
+                                message-type,
+                                {
+                                    id: ExpenseData.selected-id,
+                                    description: x.description,
+                                    amount: x.amount,
+                                    date: x.date,
+                                    expense-type: x.expense-type,
+                                },
+                            );
+                        }
+                    }
+                }
+            }
+        }
+        BufferLine { 
+            buffer: 10px;
+            line-thickness: 3px;
+        }
+        Rectangle {
+            new-expense := HorizontalLayout {
+                out property <MessageType> current-use;
+                id := TableText {                        
+                    width: 40px;
+                    default-text: "";
+                }
+                prop-id := TableText {
+                    width: 40px;
+                    default-text: "Property";
+                }
+                date := TableDate { 
+                    width: 40px;
+                    default-text: "Date";
+                }
+                description := TableText { 
+                    width: 150px;
+                    default-text: "Description";
+                }
+                type := TableText {
+                    width: 150px;
+                    default-text: "Expense Type";
+                }
+                amount := TableText { 
+                    width: 70px;
+                    default-text: "Amount";
+                }
+                action-icons := CreationActionIcons {
+                    width: 70px;
+                    confirm => {
+                        
+                        ExpenseData.new-expense(
+                            new-expense.current-use,
+                            {
+                                id: new-expense.current-use == MessageType.update ?
+                                    ExpenseData.selected-id :
+                                    Validation.get-valid-id(IdType.Expense),
+                                prop-id: prop-id.edit-text.to-float(),
+                                description: description.edit-text,
+                                amount: amount.edit-text.to-float(),
+                                date: date.current-date,
+                                expense-type: type.edit-text,
+                            }
+                        );
+                    }
+                    cancel => {
+                        new-expense.current-use = MessageType.create;
+
+                        id.clear();
+                        prop-id.clear();
+                        description.clear();
+                        amount.clear();
+                        date.clear();
+                        type.clear();
+                    }
+                }
+            }
+        }
+        Rectangle {
+            height: 10px;
+        }
+    }
+}
 
 export component AddExpense inherits Rectangle {
     width: 400px;

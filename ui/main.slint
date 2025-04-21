@@ -1,4 +1,4 @@
-import { VerticalBox, HorizontalBox, ComboBox } from "std-widgets.slint";
+import { VerticalBox, HorizontalBox, ComboBox, TabWidget } from "std-widgets.slint";
 import { TenantInfo, TenantData, ExpenseInfo, ExpenseData, PropertyInfo, PropertyData } from "globals.slint";
 import { AddExpense } from "expenses.slint";
 
@@ -110,62 +110,73 @@ export component App inherits Window {
                 }
             }
         }
-        content-pane := Rectangle {             
+        content-pane := Rectangle {
             background: grey;
-            
-            Text {
-                y: 20px;
-                height: 40px;
-                text: "Current Page is: " + current-page;
-            }
+            padding: 10px;
+            VerticalLayout {
+                alignment: LayoutAlignment.start;
+                spacing: 10px;
+                padding: 10px;
 
-            info-rect := Rectangle {
-                home-info := Rectangle {
-                    x: 10px;
-                    y: 10px;
-                    visible: true;
-                    Text {
-                        text: "Home Page Stuff";
-                    }
-                }
-                expense-info := Rectangle {
-                    x: 10px;
-                    y: 10px;
-                    visible: false;
-
-                    padding: 2px;
-                    VerticalLayout {
+                info-rect := Rectangle {
+                    home-info := Rectangle {
+                        x: 10px;
+                        y: 10px;
+                        visible: true;
                         Text {
-                            text: @tr("You have {} expenses", ExpenseData.expenses.length);
-                            height: 10px;
+                            text: "Home Page Stuff";
                         }
-                        AddExpense { }
                     }
+                    expense-info := Rectangle {
+                        x: 10px;
+                        y: 10px;
+                        visible: false;
+                        VerticalLayout {  
+                            alignment: LayoutAlignment.start;
+                            TabWidget {
+                                Tab {
+                                    title: "Expense Register";
+                                }
+                                Tab {
+                                    title: "Add Expense";                                    
+                                    Rectangle {
+                                        AddExpense { }
+                                    }
+                                }
+                            }
+                            Rectangle {
+                                Text {
+                                    text: @tr("You have {} expenses", ExpenseData.expenses.length);
+                                    height: 10px;
+                                }
+                            }
+                        }
+                    }
+                    prop-info := Rectangle {
+                        x: 10px;
+                        y: 10px;
+                        visible: false;
+                        Text {
+                            text: @tr("You have {} properties", PropertyData.props.length);
+                        }
+                    }
+                    tenant-info := Rectangle {
+                        x: 10px;
+                        y: 10px;
+                        visible: false;
+                        Text {
+                            text: @tr("You have {} tenants", TenantData.tenants.length);
+                        }
+                    }
+                    settings-info := Rectangle {
+                        x: 10px;
+                        y: 10px;
+                        visible: false;
+                        Text {
+                            text: "No Settings Available at this time";
+                        }
+                    } 
                 }
-                prop-info := Rectangle {
-                    x: 10px;
-                    y: 10px;
-                    visible: false;
-                    Text {
-                        text: @tr("You have {} properties", PropertyData.props.length);
-                    }
-                }
-                tenant-info := Rectangle {
-                    x: 10px;
-                    y: 10px;
-                    visible: false;
-                    Text {
-                        text: @tr("You have {} tenants", TenantData.tenants.length);
-                    }
-                }
-                settings-info := Rectangle {
-                    x: 10px;
-                    y: 10px;
-                    visible: false;
-                    Text {
-                        text: "No Settings Available at this time";
-                    }
-                } 
             }
         }
     }
