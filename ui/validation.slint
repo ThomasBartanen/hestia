@@ -1,0 +1,17 @@
+import { ExpenseInfo, TenantInfo, PropertyInfo } from "globals.slint";
+
+export enum IdType {
+    Expense,
+    Property,
+    Unit,
+    Tenant,
+    Lease,
+    Statement
+}
+
+export global Validation {
+    pure callback get-valid-id(IdType) -> int;
+    pure callback check-new-expense-validity(ExpenseInfo) -> bool;    
+    pure callback check-new-property-validity(PropertyInfo) -> bool;    
+    pure callback check-new-tenant-validity(TenantInfo) -> bool;
+}
