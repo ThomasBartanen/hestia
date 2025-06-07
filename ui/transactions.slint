@@ -51,7 +51,7 @@ export component Register inherits Rectangle {
                     preferred-width: 0in;
                     x: 0cm;
                     padding: 0;
-                    for x in RegisterData.expenses: transaction-line := HorizontalLayout {
+                    for x in RegisterData.transactions: transaction-line := HorizontalLayout {
                         transaction-id := TableItem {
                             width: 40px;
                             text: x.id;
