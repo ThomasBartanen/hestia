@@ -56,13 +56,14 @@ export component TableText inherits TouchArea {
     }
     in-out property <string> default-text <=> text-line.placeholder-text;
     in-out property <string> edit-text <=> text-line.text;
+
     Rectangle {
         x: 5px;
         width: parent.width;
         border-color: black;
         border-top-right-radius: 3px;
         text-line := LineEdit {
-            font-size: 9px;
+            font-size: 8px;
             width: parent.width;
             horizontal-alignment: TextHorizontalAlignment.left;
         }
@@ -86,7 +87,7 @@ export component TableDate inherits TouchArea {
         border-color: black;
         border-top-right-radius: 3px;
         text-line := LineEdit {
-            font-size: 9px;
+            font-size: 8px;
             width: parent.width;
             horizontal-alignment: TextHorizontalAlignment.left;
         }
