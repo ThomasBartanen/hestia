@@ -1,7 +1,7 @@
 use chrono::{Datelike, NaiveDate};
 use slint::{ModelRc, ToSharedString, VecModel};
 
-use crate::{models::*, slint_generatedApp, ExpenseInfo, TenantInfo};
+use crate::{models::*, slint_generatedApp, TransactionInfo, TenantInfo};
 
 impl Tenant {
     pub fn to_slint(&self) -> crate::slint_generatedApp::TenantInfo {
@@ -36,9 +36,9 @@ impl Property {
     }
 }
 
-impl Expense {
-    pub fn to_slint(&self) -> crate::slint_generatedApp::ExpenseInfo {
-        crate::slint_generatedApp::ExpenseInfo {
+impl Transaction {
+    pub fn to_slint(&self) -> crate::slint_generatedApp::TransactionInfo {
+        crate::slint_generatedApp::TransactionInfo {
             id: self.id,
             prop_id: {
                 match self.property_id {
@@ -46,7 +46,7 @@ impl Expense {
                     None => -1
                 }
             },
-            expense_type: self.expense_type.to_shared_string(),
+            expense_type: self.transaction_type.to_shared_string(),
             amount: self.amount,
             date: slint_generatedApp::Date {
                 month: self.date.month() as i32,
@@ -56,11 +56,11 @@ impl Expense {
             description: self.description.to_shared_string(),
         }
     }
-    pub fn from_slint(input: ExpenseInfo) -> Expense {
-        Expense {
+    pub fn from_slint(input: TransactionInfo) -> Transaction {
+        Transaction {
             id: input.id,
             property_id: Some(input.prop_id),
-            expense_type: input.expense_type.to_string(),
+            transaction_type: input.expense_type.to_string(),
             amount: input.amount,
             date: NaiveDate::from_ymd_opt(input.date.year, input.date.month as u32, input.date.day as u32).unwrap(),
             description: input.description.to_string(),

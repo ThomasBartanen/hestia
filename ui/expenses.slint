@@ -1,120 +1,126 @@
 import { DatePickerPopup, Button, LineEdit, ScrollView, ComboBox } from "std-widgets.slint";
-import { Date, MessageType, ExpenseInfo, ExpenseData } from "globals.slint";
+import { Date, MessageType, TransactionInfo, RegisterData } from "globals.slint";
 import { TableHeader, BufferLine, TableItem, TableItemActionIcons, TableText, TableDate, CreationActionIcons } from "custom_widgets.slint";
 import { IdType, Validation } from "validation.slint";
 
-export component ExpenseList inherits Rectangle {
+export component Register inherits Rectangle {
     in-out property <MessageType> message-type;
-    x: 20px;
-    padding: 10px;
-    VerticalLayout {
-        x: 30px;
-        titles := HorizontalLayout {
-            TableHeader {
-                width: 40px;
-                text: "ID";
-            }
-            TableHeader {
-                width: 40px;
-                text: "Property";
-            }
-            TableHeader {
-                width: 100px;
-                text: "Date";
-            }
-            TableHeader { 
-                width: 150px;
-                text: "Description";
-            }
-            TableHeader { 
-                width: 150px;
-                text: "Expense Type";
-            }
-            TableHeader { 
-                width: 150px;
-                text: "Expense Subtype";
-            }
-            TableHeader { 
-                width: 70px;
-                text: "Amount";
+    //x: 20px;
+    //padding: 10px;
+    GridLayout {
+        x: 5px;
+        Row {
+            HorizontalLayout {
+                height: 30px;
+                TableHeader {
+                    width: 40px;
+                    text: "ID";
+                }
+                TableHeader {
+                    width: 40px;
+                    text: "Property";
+                }
+                TableHeader {
+                    width: 40px;
+                    text: "Date";
+                }
+                TableHeader { 
+                    width: 150px;
+                    text: "Description";
+                }
+                TableHeader { 
+                    width: 150px;
+                    text: "Type";
+                }
+                TableHeader { 
+                    width: 70px;
+                    text: "Amount";
+                }
             }
         }
-        BufferLine { 
-            buffer: 10px;
-            line-thickness: 3px;
+        Row {
+            BufferLine { 
+                buffer: 10px;
+                line-thickness: 2px;
+            }
         }
-        ScrollView {
-            VerticalLayout {
-                alignment: LayoutAlignment.start;
-                preferred-width: 0in;
-                x: 0cm;
-                padding: 0;
-                for x in ExpenseData.expenses: expense-line := HorizontalLayout {
-                    expense-id := TableItem {
-                        width: 40px;
-                        text: x.id;
-                    }
-                    expense-prop-id := TableItem {
-                        width: 40px;
-                        text: x.prop-id;
-                        //TODO: Translate prop id to property name. Maybe use combobox for the edit section
-                    }
-                    expense-date := TableItem { 
-                        width: 100px;
-                        text: @tr("{}/{}/{}", x.date.month, x.date.day, x.date.year);
-                    }
-                    expense-description := TableItem { 
-                        width: 150px;
-                        text: x.description;
-                    }
-                    TableItem {
-                        width: 150px;
-                        text: x.expense-type;
-                    }
-                    expense-amount := TableItem { 
-                        width: 70px;
-                        text: x.amount;
-                    }
-                    expense-action-icons := TableItemActionIcons {
-                        width: 70px;
-                        edit => {
-                            ExpenseData.selected-id = x.id;
-                            message-type = MessageType.update;
-
-                            id.edit-text = x.id;
-                            prop-id.edit-text = x.prop-id;
-                            description.edit-text = x.description;
-                            date.set-date(x.date);
-                            amount.edit-text = x.amount;
-                            type.edit-text = x.expense-type;
+        Row {
+            ScrollView {
+                VerticalLayout {
+                    alignment: LayoutAlignment.start;
+                    preferred-width: 0in;
+                    x: 0cm;
+                    padding: 0;
+                    for x in RegisterData.expenses: transaction-line := HorizontalLayout {
+                        transaction-id := TableItem {
+                            width: 40px;
+                            text: x.id;
                         }
-                        delete => {
-                            ExpenseData.selected-id = x.id;
-                            message-type = MessageType.delete;
+                        transaction-prop-id := TableItem {
+                            width: 40px;
+                            text: x.prop-id;
+                            //TODO: Translate prop id to property name. Maybe use combobox for the edit section
+                            
+                        }
+                        transaction-date := TableItem { 
+                            width: 100px;
+                            text: @tr("{}/{}/{}", x.date.month, x.date.day, x.date.year);
+                        }
+                        transaction-description := TableItem { 
+                            width: 150px;
+                            text: x.description;
+                        }
+                        TableItem {
+                            width: 150px;
+                            text: x.transaction-type;
+                        }
+                        transaction-amount := TableItem { 
+                            width: 70px;
+                            text: x.amount;
+                        }
+                        transaction-action-icons := TableItemActionIcons {
+                            width: 70px;
+                            edit => {
+                                RegisterData.selected-id = x.id;
+                                message-type = MessageType.update;
 
-                            ExpenseData.new-expense(
-                                message-type,
-                                {
-                                    id: ExpenseData.selected-id,
-                                    description: x.description,
-                                    amount: x.amount,
-                                    date: x.date,
-                                    expense-type: x.expense-type,
-                                },
-                            );
+                                id.edit-text = x.id;
+                                prop-id.edit-text = x.prop-id;
+                                description.edit-text = x.description;
+                                date.set-date(x.date);
+                                amount.edit-text = x.amount;
+                                type.edit-text = x.transaction-type;
+                            }
+                            delete => {
+                                RegisterData.selected-id = x.id;
+
+                                RegisterData.new-transaction(
+                                    MessageType.delete,
+                                    {
+                                        id: RegisterData.selected-id,
+                                        description: x.description,
+                                        amount: x.amount,
+                                        date: x.date,
+                                        transaction-type: x.transaction-type,
+                                    },
+                                );
+                            }
                         }
                     }
                 }
             }
         }
-        BufferLine { 
-            buffer: 10px;
-            line-thickness: 3px;
+        Row {
+            BufferLine { 
+                buffer: 10px;
+                line-thickness: 2px;
+            }
         }
-        Rectangle {
+        Row {
             new-expense := HorizontalLayout {
+                max-height: 20px;
                 out property <MessageType> current-use;
-                id := TableText {                        
+                id := TableText {
                     width: 40px;
                     default-text: "";
                 }
@@ -122,19 +128,19 @@ export component ExpenseList inherits Rectangle {
                     width: 40px;
                     default-text: "Property";
                 }
-                date := TableDate { 
+                date := TableDate {
                     width: 40px;
                     default-text: "Date";
                 }
-                description := TableText { 
+                description := TableText {
                     width: 150px;
                     default-text: "Description";
                 }
                 type := TableText {
                     width: 150px;
-                    default-text: "Expense Type";
+                    default-text: "Type";
                 }
-                amount := TableText { 
+                amount := TableText {
                     width: 70px;
                     default-text: "Amount";
                 }
@@ -142,22 +148,22 @@ export component ExpenseList inherits Rectangle {
                     width: 70px;
                     confirm => {
                         
-                        ExpenseData.new-expense(
-                            new-expense.current-use,
+                        RegisterData.new-transaction(
+                            new-transaction.current-use,
                             {
-                                id: new-expense.current-use == MessageType.update ?
-                                    ExpenseData.selected-id :
-                                    Validation.get-valid-id(IdType.Expense),
+                                id: new-transaction.current-use == MessageType.update ?
+                                    RegisterData.selected-id :
+                                    Validation.get-valid-id(IdType.Transaction),
                                 prop-id: prop-id.edit-text.to-float(),
                                 description: description.edit-text,
                                 amount: amount.edit-text.to-float(),
                                 date: date.current-date,
-                                expense-type: type.edit-text,
+                                transaction-type: type.edit-text,
                             }
                         );
                     }
                     cancel => {
-                        new-expense.current-use = MessageType.create;
+                        new-transaction.current-use = MessageType.create;
 
                         id.clear();
                         prop-id.clear();
@@ -169,31 +175,29 @@ export component ExpenseList inherits Rectangle {
                 }
             }
         }
-        Rectangle {
-            height: 10px;
-        }
+        Row { }
     }
 }
 
-export component AddExpense inherits Rectangle {
+export component AddTransaction inherits Rectangle {
     width: 400px;
     height: 300px;
 
-    in-out property <ExpenseInfo> new-expense;
+    in-out property <TransactionInfo> new-transaction;
 
-    public function clear-expense-menu() {
+    public function clear-menu() {
         prop_id.text = "";
-        expense_type.text = "";
-        expense_amount.text = "";
+        transaction_type.text = "";
+        transaction_amount.text = "";
         month.text = "";
         day.text = "";
         year.text = "";
-        expense_description.text = "";
+        transaction_description.text = "";
     }
 
-    expense-added := PopupWindow {
+    transaction-added := PopupWindow {
         Text {
-            text: "Succesfully Added Expense";
+            text: "Succesfully Added Transaction";
         }
     }
 
@@ -215,18 +219,18 @@ export component AddExpense inherits Rectangle {
             width: 100%;
         }
 
-        expense_type := LineEdit {
-            placeholder-text: "Expense Type";
+        transaction_type := LineEdit {
+            placeholder-text: "Type";
             width: 100%;
         }
 
-        expense_amount := LineEdit {
+        transaction_amount := LineEdit {
             placeholder-text: "Amount";
             input-type: number;
             width: 100%;
         }
 
-        expense_dates := Rectangle {
+        transaction_dates := Rectangle {
             in-out property <Date> date;
             popup := DatePickerPopup {
                 accepted(date) => {
@@ -257,12 +261,12 @@ export component AddExpense inherits Rectangle {
                     width: 10%;
                     clicked => {
                         popup.show();
-                    }                
+                    }
                 }
             }
         }
 
-        expense_description := LineEdit {
+        transaction_description := LineEdit {
             placeholder-text: "Description";
             width: 100%;
         }
@@ -273,25 +277,25 @@ export component AddExpense inherits Rectangle {
             Button {
                 text: "Add";
                 clicked => {
-                    ExpenseData.new-expense(
+                    RegisterData.new-transaction(
                         MessageType.create,
                         {
                             id: -1,
                             prop-id: -1,
-                            expense-type: expense_type.text,
-                            amount: expense_amount.text.to-float(),
+                            transaction-type: transaction_type.text,
+                            amount: transaction_amount.text.to-float(),
                             date: {
                                 month: month.text.to-float(), 
                                 day: day.text.to-float(), 
                                 year: year.text.to-float(),
                             },
-                            description: expense_description.text
+                            description: transaction_description.text
                         }
                     );
 
-                    clear-expense-menu();
+                    clear-menu();
 
-                    expense-added.show();
+                    transaction-added.show();
                 }
             }
 
@@ -299,8 +303,8 @@ export component AddExpense inherits Rectangle {
                 text: "Cancel";
                 clicked => {
                     // Add logic to handle canceling the action
-                    //console.log("Add Expense Canceled");
-                    clear-expense-menu();
+                    //console.log("Add Transaction Canceled");
+                    clear-menu();
                 }
             }
         }

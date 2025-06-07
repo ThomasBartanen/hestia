@@ -24,10 +24,10 @@ pub struct Tenant {
     pub phone: String,
 }
 
-pub struct Expense {
+pub struct Transaction {
     pub id: i32,
     pub property_id: Option<i32>,
-    pub expense_type: String,
+    pub transaction_type: String,
     pub amount: f32,
     pub date: NaiveDate,
     pub description: String,

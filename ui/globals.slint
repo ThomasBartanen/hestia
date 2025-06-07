@@ -29,21 +29,21 @@ export global TenantData {
 }
 
 // ==========================================
-// ============== Expenses ==================
+// ============== Transactions ==============
 // ==========================================
-export struct ExpenseInfo {
+export struct TransactionInfo {
     id: int,
     prop-id: int,
-    expense-type: string,
+    transaction-type: string,
     amount: float,
     date: Date,
     description: string,
 }
 
-export global ExpenseData {
-    callback new-expense(MessageType, ExpenseInfo);
+export global RegisterData {
+    callback new-transaction(MessageType, TransactionInfo);
 
-    in-out property <[ExpenseInfo]> expenses;
+    in-out property <[TransactionInfo]> transactions;
     in-out property <int> selected-id;
 }
 

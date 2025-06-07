@@ -9,7 +9,7 @@ use tokio::sync::{
 };
 
 use crate::{
-    models::{Expense, Property, Tenant, Unit},
+    models::{Transaction, Property, Tenant, Unit},
     AppState,
 };
 
@@ -90,7 +90,7 @@ impl DatabaseManager {
         .await?;
 
         let _ = sqlx::query(
-            "CREATE TABLE IF NOT EXISTS expenses (
+            "CREATE TABLE IF NOT EXISTS transactions (
                 id SERIAL PRIMARY KEY,
                 prop_id INTEGER,
                 amount REAL NOT NULL,
@@ -117,14 +117,14 @@ impl DatabaseManager {
         Ok(res.rows_affected())
     }
 
-    pub async fn insert_expense(&self, expense: Expense) -> Result<u64, Error> {
+    pub async fn insert_transaction(&self, transaction: Transaction) -> Result<u64, Error> {
         let res = sqlx::query(
-            "INSERT INTO expenses (prop_id, amount, date, description) VALUES ($1, $2, $3, $4)",
+            "INSERT INTO transactions (prop_id, amount, date, description) VALUES ($1, $2, $3, $4)",
         )
-        .bind(expense.property_id)
-        .bind(expense.amount)
-        .bind(expense.date.to_string())
-        .bind(expense.description)
+        .bind(transaction.property_id)
+        .bind(transaction.amount)
+        .bind(transaction.date.to_string())
+        .bind(transaction.description)
         .execute(&self.pool)
         .await?;
 
@@ -190,21 +190,21 @@ impl DatabaseManager {
             .collect::<Vec<Tenant>>()
     }
 
-    pub async fn select_all_expenses(&self) -> Vec<Expense> {
+    pub async fn select_all_transactions(&self) -> Vec<Transaction> {
         self.pool
-            .fetch_all("SELECT * FROM expenses")
+            .fetch_all("SELECT * FROM transactions")
             .await
             .unwrap()
             .iter()
-            .map(|row| Expense {
+            .map(|row| Transaction {
                 id: PgRow::get(row, 0),
                 property_id: PgRow::get(row, 1),
-                expense_type: String::from(""),
+                transaction_type: String::from(""),
                 amount: PgRow::get(row, 2),
                 date: NaiveDate::from_str(PgRow::get(row, 3)).unwrap(),
                 description: PgRow::get(row, 4),
             })
-            .collect::<Vec<Expense>>()
+            .collect::<Vec<Transaction>>()
     }
 }
 
@@ -220,7 +220,7 @@ pub enum DatabaseTable {
     Property(Property),
     Unit(Unit),
     Tenant(Tenant),
-    Expense(Expense),
+    Transaction(Transaction),
 }
 
 pub struct DatabaseWorker {
@@ -264,7 +264,7 @@ async fn database_worker_loop(conn: DatabaseManager, mut r: UnboundedReceiver<Da
                     Ok(o) => println!("Successfully inserted new tenant. Row: {o}"),
                     Err(e) => println!("Error inserting new tenant: {e}"),
                 },
-                DatabaseTable::Expense(expense) => match conn.insert_expense(expense).await {
+                DatabaseTable::Transaction(expense) => match conn.insert_transaction(expense).await {
                     Ok(o) => println!("Successfully inserted new expense. Row: {o}"),
                     Err(e) => println!("Error inserting new expense: {e}"),
                 },
@@ -273,19 +273,19 @@ async fn database_worker_loop(conn: DatabaseManager, mut r: UnboundedReceiver<Da
                 DatabaseTable::Property(property) => todo!(),
                 DatabaseTable::Unit(unit) => todo!(),
                 DatabaseTable::Tenant(tenant) => todo!(),
-                DatabaseTable::Expense(expense) => todo!(),
+                DatabaseTable::Transaction(expense) => todo!(),
             },
             DatabaseOperation::Update(t) => match t {
                 DatabaseTable::Property(property) => todo!(),
                 DatabaseTable::Unit(unit) => todo!(),
                 DatabaseTable::Tenant(tenant) => todo!(),
-                DatabaseTable::Expense(expense) => todo!(),
+                DatabaseTable::Transaction(expense) => todo!(),
             },
             DatabaseOperation::Delete(t) => match t {
                 DatabaseTable::Property(property) => todo!(),
                 DatabaseTable::Unit(unit) => todo!(),
                 DatabaseTable::Tenant(tenant) => todo!(),
-                DatabaseTable::Expense(expense) => todo!(),
+                DatabaseTable::Transaction(expense) => todo!(),
             },
             DatabaseOperation::Close => println!("Closing app"),
         };

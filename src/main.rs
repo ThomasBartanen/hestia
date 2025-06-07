@@ -1,7 +1,7 @@
 use database::{
     create_pool, DatabaseConfig, DatabaseManager, DatabaseOperation, DatabaseTable, DatabaseWorker,
 };
-use models::{Expense, Property, Tenant};
+use models::{Transaction, Property, Tenant};
 use slint::{Model, ModelRc, VecModel};
 use sqlx::{postgres::PgRow, Executor, PgPool, Row};
 use std::{fmt::Error, sync::Arc, vec};
@@ -51,7 +51,7 @@ struct AppState {
     db_manager: DatabaseManager,
     properties: Vec<Property>,
     tenants: Vec<Tenant>,
-    expenses: Vec<Expense>,
+    expenses: Vec<Transaction>,
     selected_building: Option<i32>,
     selected_unit: Option<i32>,
     selected_tenant: Option<i32>,
@@ -86,7 +86,7 @@ impl AppState {
         }
         */
 
-        self.expenses = self.db_manager.select_all_expenses().await;
+        self.expenses = self.db_manager.select_all_transactions().await;
 
         Ok(())
     }
@@ -140,18 +140,18 @@ async fn setup_event_handlers(app_ref: &App, tx: UnboundedSender<DatabaseOperati
         move |message_type, input| {
             let message_res = match message_type {
                 MessageType::Create => local_channel.send(DatabaseOperation::Create(
-                    DatabaseTable::Expense(Expense::from_slint(input)),
+                    DatabaseTable::Transaction(Transaction::from_slint(input)),
                 )),
                 MessageType::Update => local_channel.send(DatabaseOperation::Update(
-                    DatabaseTable::Expense(Expense::from_slint(input)),
+                    DatabaseTable::Transaction(Transaction::from_slint(input)),
                 )),
                 MessageType::Delete => local_channel.send(DatabaseOperation::Delete(
-                    DatabaseTable::Expense(Expense::from_slint(input)),
+                    DatabaseTable::Transaction(Transaction::from_slint(input)),
                 )),
             };
             match message_res {
                 Ok(_) => (),
-                Err(e) => println!("Failed to send expense message: {e}"),
+                Err(e) => println!("Failed to send transaction message: {e}"),
             }
         }
     });

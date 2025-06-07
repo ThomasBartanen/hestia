@@ -1,10 +1,10 @@
 import { VerticalBox, HorizontalBox, ComboBox, TabWidget } from "std-widgets.slint";
-import { TenantInfo, TenantData, ExpenseInfo, ExpenseData, PropertyInfo, PropertyData } from "globals.slint";
-import { AddExpense } from "expenses.slint";
+import { TenantInfo, TenantData, TransactionInfo, RegisterData, PropertyInfo, PropertyData } from "globals.slint";
+import { AddTransaction, Register } from "transactions.slint";
 
-export { TenantInfo, TenantData, ExpenseInfo, ExpenseData, PropertyInfo, PropertyData }
+export { TenantInfo, TenantData, TransactionInfo, RegisterData, PropertyInfo, PropertyData }
 
-export enum PageType { Home, Expenses, Tenants, Properties, Settings }
+export enum PageType { Home, Transactions, Tenants, Properties, Settings }
 
 export component App inherits Window {
     function OpenContent(page: PageType) {
@@ -13,7 +13,7 @@ export component App inherits Window {
         prop-info.visible = false;
         tenant-info.visible = false;
         settings-info.visible = false;
-        
+
         change-page(page);
         current-page-type = page;
 
@@ -21,8 +21,8 @@ export component App inherits Window {
             current-page = "Home";
             home-info.visible = true;
         }
-        if page == PageType.Expenses {
-            current-page = "Expenses";
+        if page == PageType.Transactions {
+            current-page = "Register";
             expense-info.visible = true;
         }
         if page == PageType.Properties {
@@ -57,7 +57,7 @@ export component App inherits Window {
     in-out property <PageType> current-page-type: Home;
 
     callback change-page(PageType);
-    
+
     HorizontalLayout {
         Rectangle {
             width: 60px;
@@ -77,10 +77,10 @@ export component App inherits Window {
                     }
                     TouchArea {
                         Text {
-                            text : "Expenses";
+                            text : "Register";
                         }
                         clicked => {
-                            OpenContent(PageType.Expenses);
+                            OpenContent(PageType.Transactions);
                         }
                     }
                     TouchArea {
@@ -135,18 +135,21 @@ export component App inherits Window {
                             alignment: LayoutAlignment.start;
                             TabWidget {
                                 Tab {
-                                    title: "Expense Register";
+                                    title: "Register";
+                                    Rectangle {
+                                        Register { }
+                                    }
                                 }
                                 Tab {
-                                    title: "Add Expense";                                    
+                                    title: "Add Transaction";
                                     Rectangle {
-                                        AddExpense { }
+                                        AddTransaction { }
                                     }
                                 }
                             }
                             Rectangle {
                                 Text {
-                                    text: @tr("You have {} expenses", ExpenseData.expenses.length);
+                                    text: @tr("You have {} transactions", RegisterData.transactions.length);
                                     height: 10px;
                                 }
                             }
@@ -186,6 +189,10 @@ export component App inherits Window {
             title: @tr("File");
             MenuItem {
                 title: @tr("New");
+                activated => { }
+            }
+            MenuItem {
+                title: @tr("Quit");
                 activated => { }
             }
         }
