@@ -1,6 +1,7 @@
-use std::{fmt::Error, sync::Arc, vec};
+use database::{
+    create_pool, DatabaseConfig, DatabaseManager, DatabaseOperation, DatabaseTable, DatabaseWorker,
+};
 use models::{Expense, Property, Tenant};
-use database::{create_pool, DatabaseConfig, DatabaseManager, DatabaseWorker};
 use slint::{Model, ModelRc, VecModel};
 use sqlx::{postgres::PgRow, Executor, PgPool, Row};
 use tokio::sync::Mutex;
@@ -20,9 +21,9 @@ async fn main() {
     let config = DatabaseConfig::new(
         format!("postgres://postgres:RRC1@localhost/postgres"),
         30,
-        30
+        30,
     );
-    
+
     let pool = match create_pool(config).await {
         Ok(p) => p,
         Err(e) => panic!("Failed to create pool due to: {e}"),
