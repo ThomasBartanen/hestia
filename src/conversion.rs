@@ -62,7 +62,10 @@ impl Transaction {
             property_id: Some(input.prop_id),
             transaction_type: input.expense_type.to_string(),
             amount: input.amount,
-            date: NaiveDate::from_ymd_opt(input.date.year, input.date.month as u32, input.date.day as u32).unwrap(),
+            date: match NaiveDate::from_ymd_opt(input.date.year, input.date.month as u32, input.date.day as u32) {
+                Some(date) => date,
+                None => NaiveDate::from_ymd_opt(2025, 01, 01).unwrap(),
+            },
             description: input.description.to_string(),
         }
     }
