@@ -70,6 +70,7 @@ impl DatabaseManager {
                 id SERIAL PRIMARY KEY,
                 property_id INTEGER,
                 unit_number TEXT NOT NULL,
+                tenant_id INTEGER,
                 is_occupied BOOLEAN DEFAULT FALSE,
                 FOREIGN KEY (property_id) REFERENCES properties(id)
             );",
@@ -131,6 +132,16 @@ impl DatabaseManager {
         Ok(res.rows_affected())
     }
 
+    pub async fn insert_unit(&self, unit: Unit) -> Result<u64, Error> {
+        let res = sqlx::query("INSERT INTO units (property_id, unit_number) VALUES (?, ?)")
+            .bind(unit.building_id)
+            .bind(unit.unit_number)
+            .execute(&self.pool)
+            .await?;
+
+        Ok(res.rows_affected())
+    }
+
     pub async fn insert_tenant(&self, tenant: Tenant) -> Result<u64, Error> {
         let res = sqlx::query("INSERT INTO tenants (name, email, phone) VALUES (?, ?, ?)")
             .bind(tenant.name)
@@ -149,7 +160,8 @@ impl DatabaseManager {
             .execute(&self.pool)
             .await?;
 
-        sqlx::query("UPDATE units SET is_occupied = TRUE WHERE id = ?")
+        sqlx::query("UPDATE units SET is_occupied = TRUE, tenant_id = ? WHERE id = ?")
+            .bind(tenant_id)
             .bind(unit_id)
             .execute(&self.pool)
             .await?;
@@ -158,7 +170,28 @@ impl DatabaseManager {
     }
 
     // ====================================
-    // ========= SELECT ===================
+    // ========= SELECT INDIVIDUAL ========
+    // ====================================
+    /*
+    pub async fn select_property(&self, id: i32) -> Property {
+        let res =
+            sqlx::query("SELECT * FROM properties WHERE id = ?")
+            .bind(id)
+            .execute(&self.pool)
+            .await;
+
+        match res {
+            Ok(o) => {
+                println!("Successfully retreived property. {o}");
+                return Property::from(o)
+            },
+            Err(e) => todo!(),
+        }
+    }
+    */
+
+    // ====================================
+    // ========= SELECT ALL ===============
     // ====================================
     pub async fn select_all_properties(&self) -> Vec<Property> {
         self.pool
@@ -259,7 +292,10 @@ async fn database_worker_loop(conn: DatabaseManager, mut r: UnboundedReceiver<Da
                     Ok(o) => println!("Successfully inserted new property. Row: {o}"),
                     Err(e) => println!("Error inserting new property: {e}"),
                 },
-                DatabaseTable::Unit(unit) => todo!(),
+                DatabaseTable::Unit(unit) => match conn.insert_unit(unit).await{
+                    Ok(o) => println!("Successfully inserted new unit. Row: {o}"),
+                    Err(e) => println!("Error inserting new unit: {e}"),
+                },
                 DatabaseTable::Tenant(tenant) => match conn.insert_tenant(tenant).await {
                     Ok(o) => println!("Successfully inserted new tenant. Row: {o}"),
                     Err(e) => println!("Error inserting new tenant: {e}"),
@@ -270,6 +306,10 @@ async fn database_worker_loop(conn: DatabaseManager, mut r: UnboundedReceiver<Da
                 },
             },
             DatabaseOperation::Query(t) => match t {
+                /*DatabaseTable::Property(property) => match conn.select_property(property.id) {
+                    Ok(o) => println!("Successfully selected property."),
+                    Err(e) => println!("Error selecting property: {e}"),
+                }*/
                 DatabaseTable::Property(property) => todo!(),
                 DatabaseTable::Unit(unit) => todo!(),
                 DatabaseTable::Tenant(tenant) => todo!(),
