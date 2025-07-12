@@ -12,6 +12,7 @@ pub struct Property {
 pub struct Unit {
     pub id: i32,
     pub building_id: i32,
+    pub tenant_id: Option<i32>,
     pub unit_number: String,
     pub is_occupied: bool,
 }
