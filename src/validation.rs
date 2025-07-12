@@ -24,75 +24,6 @@ pub trait Validatable {
     fn validate(&self) -> ValidationResult;
 }
 
-// Building Validation
-pub struct PropertyValidator;
-
-impl PropertyValidator {
-    pub fn validate_name(name: String) -> ValidationResult {
-        let mut result = ValidationResult::new();
-        
-        if name.trim().is_empty() {
-            result.add_error("Building name cannot be empty".to_string());
-        }
-        
-        if name.len() > 100 {
-            result.add_error("Building name must be less than 100 characters".to_string());
-        }
-        
-        result
-    }
-    /*
-    pub async fn validate_unique_name(
-        db_manager: &DatabaseManager,
-        name: String,
-        exclude_id: Option<i32>
-    ) -> Result<ValidationResult, Error> {
-        let mut result = ValidationResult::new();
-        
-        let count = db_manager.conn.prepare(
-            "SELECT COUNT(*) FROM buildings 
-             WHERE id != COALESCE(?1, 0) AND LOWER(name) = LOWER(?2)"
-        )?.query_row([&exclude_id, &name.to_lowercase()], |row| row.get(0))?;
-        
-        if count > 0 {
-            result.add_error("Building with this name already exists".to_string());
-        }
-        
-        Ok(result)
-    }
-    */
-}
-
-// Unit Validation
-pub struct UnitValidator;
-
-impl UnitValidator {
-    pub fn validate_unit_number(number: String) -> ValidationResult {
-        let mut result = ValidationResult::new();
-        
-        if number.trim().is_empty() {
-            result.add_error("Unit number cannot be empty".to_string());
-        }
-        
-        // Allow alphanumeric plus common unit separators
-        if !number.chars().all(|c| c.is_alphanumeric() || "-/#".contains(c)) {
-            result.add_error("Invalid characters in unit number".to_string());
-        }
-        
-        result
-    }
-
-    pub fn validate_occupancy_status(is_occupied: bool, tenant_id: Option<i32>) -> ValidationResult {
-        let mut result = ValidationResult::new();
-        
-        if is_occupied && tenant_id.is_none() {
-            result.add_error("Occupied units must have a valid tenant assigned".to_string());
-        }
-        
-        result
-    }
-}
-
 // Tenant Validation
 pub struct TenantValidator;
 
@@ -151,10 +82,35 @@ impl TenantValidator {
 impl Validatable for Property {
     fn validate(&self) -> ValidationResult {
         let mut result = ValidationResult::new();
+
+        /*
+        pub async fn validate_unique_name(
+            db_manager: &DatabaseManager,
+            name: String,
+            exclude_id: Option<i32>
+        ) -> Result<ValidationResult, Error> {
+            let mut result = ValidationResult::new();
+            
+            let count = db_manager.conn.prepare(
+                "SELECT COUNT(*) FROM buildings 
+                WHERE id != COALESCE(?1, 0) AND LOWER(name) = LOWER(?2)"
+            )?.query_row([&exclude_id, &name.to_lowercase()], |row| row.get(0))?;
+            
+            if count > 0 {
+                result.add_error("Building with this name already exists".to_string());
+            }
+            
+            Ok(result)
+        }
+        */
+
+        // ---- Validate Name ----
+        if self.name.trim().is_empty() {
+            result.add_error("Building name cannot be empty".to_string());
+        }
         
-        let basic_validation = PropertyValidator::validate_name(self.name.clone());
-        if !basic_validation.is_valid {
-            result.errors.extend(basic_validation.errors);
+        if self.name.len() > 100 {
+            result.add_error("Building name must be less than 100 characters".to_string());
         }
         
         result
@@ -165,17 +121,19 @@ impl Validatable for Unit {
     fn validate(&self) -> ValidationResult {
         let mut result = ValidationResult::new();
         
-        let number_validation = UnitValidator::validate_unit_number(self.unit_number.clone());
-        if !number_validation.is_valid {
-            result.errors.extend(number_validation.errors);
+        // ---- Validate Unit Number ----
+        if self.unit_number.trim().is_empty() {
+            result.add_error("Unit number cannot be empty".to_string());
         }
         
-        let occupancy_validation = UnitValidator::validate_occupancy_status(
-            self.is_occupied,
-            None, // In real usage, pass actual tenant ID
-        );
-        if !occupancy_validation.is_valid {
-            result.errors.extend(occupancy_validation.errors);
+        // Allow alphanumeric plus common unit separators
+        if !self.unit_number.chars().all(|c| c.is_alphanumeric() || "-/#".contains(c)) {
+            result.add_error("Invalid characters in unit number".to_string());
+        }
+
+        // ---- Validate Occupancy ----
+        if self.is_occupied && self.tenant_id.is_none() {
+            result.add_error("Occupied units must have a valid tenant assigned".to_string());
         }
         
         result
