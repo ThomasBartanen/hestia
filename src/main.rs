@@ -135,7 +135,7 @@ async fn setup_event_handlers(app_ref: &App, tx: UnboundedSender<DatabaseOperati
             }
         }
     });
-    app_ref.global::<ExpenseData>().on_new_expense({
+    app_ref.global::<RegisterData>().on_new_transaction({
         let local_channel = tx.clone();
         move |message_type, input| {
             let message_res = match message_type {

@@ -149,9 +149,9 @@ export component Register inherits Rectangle {
                     confirm => {
                         
                         RegisterData.new-transaction(
-                            new-transaction.current-use,
+                            current-use,
                             {
-                                id: new-transaction.current-use == MessageType.update ?
+                                id: current-use == MessageType.update ?
                                     RegisterData.selected-id :
                                     Validation.get-valid-id(IdType.Transaction),
                                 prop-id: prop-id.edit-text.to-float(),
@@ -163,7 +163,7 @@ export component Register inherits Rectangle {
                         );
                     }
                     cancel => {
-                        new-transaction.current-use = MessageType.create;
+                        current-use = MessageType.create;
 
                         id.clear();
                         prop-id.clear();

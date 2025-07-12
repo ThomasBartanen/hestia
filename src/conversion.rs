@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use chrono::{Datelike, NaiveDate};
 use slint::{ModelRc, ToSharedString, VecModel};
 
@@ -46,7 +48,7 @@ impl Transaction {
                     None => -1
                 }
             },
-            expense_type: self.transaction_type.to_shared_string(),
+            transaction_type: self.transaction_type.to_shared_string(),
             amount: self.amount,
             date: slint_generatedApp::Date {
                 month: self.date.month() as i32,
@@ -60,7 +62,7 @@ impl Transaction {
         Transaction {
             id: input.id,
             property_id: Some(input.prop_id),
-            transaction_type: input.expense_type.to_string(),
+            transaction_type: input.transaction_type.to_string(),
             amount: input.amount,
             date: match NaiveDate::from_ymd_opt(input.date.year, input.date.month as u32, input.date.day as u32) {
                 Some(date) => date,
