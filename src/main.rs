@@ -9,6 +9,8 @@ use expenses::calculate_expense_totals;
 pub use generated_code::*;
 use slint::{ComponentHandle, Model, ModelRc, Weak, WindowPosition};
 use sqlx::Sqlite;
+use tokio::sync::Mutex;
+use async_std::sync::Arc;
 
 mod app_settings;
 mod database;
@@ -28,16 +30,19 @@ async fn main() {
     app_settings::initialize_data_paths().await;
     let instances = database::initialize_database().await;
 
-    let mut valid_ids = get_ids(&instances).await;
+    let app_state = Arc::new(Mutex::new(AppState::new(instances).await));
+    let _ = app_state.lock().await.load_initial_data().await;
 
-    testing::activate_test_mode(true, &instances, &mut valid_ids).await;
+    let mut valid_ids = get_ids(&app_state.lock().await.db_manager.db_pool).await;
+
+    testing::activate_test_mode(true, &app_state.lock().await.db_manager.db_pool, &mut valid_ids).await;
     let app = App::new().unwrap();
     app.window().set_position(slint::WindowPosition::Logical(slint::LogicalPosition::new(0.,0.)));
     let weak_app = app.as_weak();
 
-    initialize_slint_properties(&weak_app, &instances, &valid_ids).await;
+    let app_state = initialize_slint_properties(&weak_app, app_state, &valid_ids).await;
 
-    let worker_instances = instances.clone();
+    let worker_instances = &app_state.lock().await.db_manager.db_pool.clone();
     let expense_worker = expenses::ExpenseWorker::new(&worker_instances);
     let property_worker = properties::PropertyWorker::new(&worker_instances);
     let lessee_worker = leaseholders::LeaseholderWorker::new(&worker_instances);
@@ -45,7 +50,7 @@ async fn main() {
 
     intialize_slint_callbacks(
         &app,
-        &instances,
+        &app_state.lock().await.db_manager.db_pool,
         valid_ids.clone(),
         &expense_worker,
         &property_worker,
@@ -55,11 +60,64 @@ async fn main() {
 
     app.run().unwrap();
 
-    instances.close().await;
+    app_state.lock().await.db_manager.db_pool.close().await;
     let _expense_result = expense_worker.join();
     let _property_result = property_worker.join();
     let _lessee_result = lessee_worker.join();
     let _statement_result = statement_worker.join();
+}
+
+struct DatabaseManager {
+    db_pool: sqlx::Pool<Sqlite>
+}
+
+impl DatabaseManager {
+    pub async fn new(pool: sqlx::Pool<Sqlite>) -> DatabaseManager {
+        DatabaseManager {
+            db_pool: pool
+        }
+    }
+}
+
+struct AppState {
+    db_manager: DatabaseManager,
+    props_dirty: bool,
+    properties: Vec<properties::Property>,
+    tenants_dirty: bool,
+    tenants: Vec<leaseholders::Leaseholder>,
+    expenses_dirty: bool,
+    expenses: Vec<expenses::Expense>,
+    selected_building: Option<i32>,
+    selected_unit: Option<i32>,
+    selected_tenant: Option<i32>,
+    selected_expense: Option<i32>,
+}
+
+impl AppState {
+    async fn new(pool: sqlx::Pool<Sqlite>) -> Self {
+        Self {
+            db_manager: DatabaseManager::new(pool).await,
+            props_dirty: false,
+            properties: Vec::new(),
+            tenants_dirty: false,
+            tenants: Vec::new(),
+            expenses_dirty: false,
+            expenses: Vec::new(),
+            selected_building: None,
+            selected_unit: None,
+            selected_tenant: None,
+            selected_expense: None,
+        }
+    }
+    async fn load_initial_data(&mut self) -> Result<(), sqlx::Error> {
+        //self.properties = self.db_manager.select_all_properties().await;
+
+        //self.tenants = self.db_manager.select_all_tenants().await;
+
+        //self.expenses = self.db_manager.select_all_transactions().await;
+
+        Ok(())
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -127,27 +185,29 @@ async fn get_ids(pool: &sqlx::Pool<Sqlite>) -> ValidIds {
 
 async fn initialize_slint_properties(
     weak_app: &Weak<App>,
-    instances: &sqlx::Pool<Sqlite>,
+    app_state: Arc<Mutex<AppState>>,
     valid_ids: &ValidIds,
-) {
+) -> Arc<Mutex<AppState>> {
     slint_conversion::initialize_slint_properties(
         &weak_app.upgrade().unwrap(),
-        instances,
+        &app_state.lock().await.db_manager.db_pool,
         valid_ids,
     )
     .await;
     slint_conversion::initialize_slint_expenses(
         &weak_app.upgrade().unwrap(), 
-        instances, 
+        &app_state.lock().await.db_manager.db_pool, 
         valid_ids
     )
     .await;
     slint_conversion::initialize_slint_leaseholders(
         &weak_app.upgrade().unwrap(),
-        instances,
+        &app_state.lock().await.db_manager.db_pool,
         valid_ids,
     )
     .await;
+
+    app_state
 }
 
 fn intialize_slint_callbacks(
