@@ -238,7 +238,7 @@ pub async fn get_period_expenses(pool: &sqlx::Pool<Sqlite>, start_date: NaiveDat
 }
 
 // -------------------------------------- GET ALL ---------------------------------------------
-pub async fn get_properties(pool: &sqlx::Pool<Sqlite>) -> Vec<Property> {
+pub async fn get_properties(pool: &sqlx::Pool<Sqlite>) -> (Vec<Property>, &sqlx::Pool<Sqlite>) {
     let mut properties: Vec<Property> = vec![];
 
     let property_rows = sqlx::query("SELECT * FROM properties")
@@ -248,10 +248,10 @@ pub async fn get_properties(pool: &sqlx::Pool<Sqlite>) -> Vec<Property> {
         let property = Property::from_row(&row);
         properties.push(property.unwrap());
     }
-    properties
+    (properties, pool)
 }
 
-pub async fn get_leaseholders(pool: &sqlx::Pool<Sqlite>) -> Vec<Leaseholder> {
+pub async fn get_leaseholders(pool: &sqlx::Pool<Sqlite>) -> (Vec<Leaseholder>, &sqlx::Pool<Sqlite>) {
     let mut leaseholders: Vec<Leaseholder> = vec![];
 
     let leaseholder_rows = sqlx::query("SELECT * FROM leaseholders")
@@ -262,10 +262,10 @@ pub async fn get_leaseholders(pool: &sqlx::Pool<Sqlite>) -> Vec<Leaseholder> {
         let leaseholder = Leaseholder::from_row(&row);
         leaseholders.push(leaseholder.unwrap());
     }
-    leaseholders
+    (leaseholders, pool)
 }
 
-pub async fn get_all_expenses(pool: &sqlx::Pool<Sqlite>) -> Vec<Expense> {
+pub async fn get_all_expenses(pool: &sqlx::Pool<Sqlite>) -> (Vec<Expense>, &sqlx::Pool<Sqlite>) {
     let mut expenses: Vec<Expense> = vec![];
 
     let expense_rows = sqlx::query("SELECT * FROM expenses").fetch_all(pool).await;
@@ -273,7 +273,7 @@ pub async fn get_all_expenses(pool: &sqlx::Pool<Sqlite>) -> Vec<Expense> {
         let expense = Expense::from_row(&row);
         expenses.push(expense.unwrap());
     }
-    expenses
+    (expenses, pool)
 }
 
 pub async fn get_property_expenses(pool: &sqlx::Pool<Sqlite>, property_id: u32) -> Vec<Expense> {

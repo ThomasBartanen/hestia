@@ -31,7 +31,12 @@ async fn main() {
     let instances = database::initialize_database().await;
 
     let app_state = Arc::new(Mutex::new(AppState::new(instances).await));
-    let _ = app_state.lock().await.load_initial_data().await;
+    let (init_data_result, _instances) = app_state.lock().await.load_initial_data().await;
+
+    match init_data_result {
+        Ok(_) => (), //println!("Data Initialized into memory"),
+        Err(e) => println!("Error initializing data into memory: {e}"),
+    }
 
     let mut valid_ids = get_ids(&app_state.lock().await.db_manager.db_pool).await;
 
@@ -109,14 +114,15 @@ impl AppState {
             selected_expense: None,
         }
     }
-    async fn load_initial_data(&mut self) -> Result<(), sqlx::Error> {
-        //self.properties = self.db_manager.select_all_properties().await;
+    async fn load_initial_data(&mut self) -> (Result<(), sqlx::Error>, &sqlx::Pool<Sqlite>) {
+        let mut pool = &self.db_manager.db_pool;
+        (self.properties, pool) = crate::database::get_properties(&pool).await;
 
-        //self.tenants = self.db_manager.select_all_tenants().await;
+        (self.tenants, pool) = crate::database::get_leaseholders(&pool).await;
 
-        //self.expenses = self.db_manager.select_all_transactions().await;
+        (self.expenses, pool) = crate::database::get_all_expenses(&pool).await;
 
-        Ok(())
+        (Ok(()), pool)
     }
 }
 
