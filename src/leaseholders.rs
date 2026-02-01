@@ -249,8 +249,7 @@ pub async fn leaseholder_worker_loop(
                     let converted_leaseholder = Leaseholder::convert_from_slint(create);
                     match add_leaseholders(
                         &pool,
-                        &converted_leaseholder,
-                        converted_leaseholder.property_id,
+                        &converted_leaseholder
                     )
                     .await
                     {

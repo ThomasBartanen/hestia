@@ -94,7 +94,7 @@ async fn test_database(instances: &sqlx::Pool<Sqlite>, valid_ids: &mut ValidIds)
         contact,
         get_naivedate_x_days_ago(7),
     );
-    match add_leaseholders(instances, &leaseholder, property.id).await {
+    match add_leaseholders(instances, &leaseholder).await {
         Ok(t) => {
             leaseholder.id = t.last_insert_rowid() as u32;
             //println!("Successfully added LEASEHOLDER")

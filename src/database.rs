@@ -156,7 +156,6 @@ pub async fn add_property(
 pub async fn add_leaseholders(
     pool: &sqlx::Pool<Sqlite>,
     leaseholder: &Leaseholder,
-    property_id: u32,
 ) -> Result<SqliteQueryResult, sqlx::Error> {
     //println!("Adding Leaseholder");
     let lease = &leaseholder.lease;
@@ -173,7 +172,7 @@ pub async fn add_leaseholders(
     let leaseholder_result = sqlx::query(
         "INSERT INTO leaseholders (lease_id, property_id, name, address, city, state, zip_code, email, phone_number, move_in_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
         .bind(lease_id)
-        .bind(property_id)
+        .bind(&leaseholder.property_id)
         .bind(&leaseholder.contact_info.name)
         .bind(&leaseholder.contact_info.remittence_address.street_address)
         .bind(&leaseholder.contact_info.remittence_address.city)

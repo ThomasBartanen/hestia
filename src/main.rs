@@ -11,8 +11,10 @@ use slint::{ComponentHandle, Model, ModelRc, Weak, WindowPosition};
 use sqlx::Sqlite;
 use tokio::sync::Mutex;
 use async_std::sync::Arc;
+use crate::database_worker::DatabaseManager;
 
 mod app_settings;
+mod database_worker;
 mod database;
 mod expenses;
 mod lease;
@@ -70,18 +72,6 @@ async fn main() {
     let _property_result = property_worker.join();
     let _lessee_result = lessee_worker.join();
     let _statement_result = statement_worker.join();
-}
-
-struct DatabaseManager {
-    db_pool: sqlx::Pool<Sqlite>
-}
-
-impl DatabaseManager {
-    pub async fn new(pool: sqlx::Pool<Sqlite>) -> DatabaseManager {
-        DatabaseManager {
-            db_pool: pool
-        }
-    }
 }
 
 struct AppState {
