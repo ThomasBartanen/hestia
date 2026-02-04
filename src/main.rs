@@ -242,7 +242,7 @@ fn intialize_slint_callbacks(
     app.global::<ExpenseData>().on_new_expense({
         let expense_channel = expense_worker.channel.clone();
         let local_app = weak_app.clone();
-        move |input| {
+        move |message_type, input| {
             let input_clone = input.clone();
             let upgrade_res = local_app.upgrade_in_event_loop({
                 let internal_channel = expense_channel.clone();
@@ -252,7 +252,7 @@ fn intialize_slint_callbacks(
                         .as_any()
                         .downcast_ref::<slint::VecModel<ExpenseInput>>()
                         .expect("Expenses failed to downcast");
-                    let message = match input_clone.message {
+                    let message = match message_type {
                         MessageType::Create => {
                             new_expenses.push(input_clone);
                             expenses::ExpenseMessage::ExpenseCreated(input)
@@ -300,7 +300,7 @@ fn intialize_slint_callbacks(
     app.global::<PropertyData>().on_new_property({
         let property_channel = property_worker.channel.clone();
         let local_app = weak_app.clone();
-        move |input| {
+        move |message_type, input| {
             let input_clone = input.clone();
             let upgrade_res = local_app.upgrade_in_event_loop({
                 let internal_channel = property_channel.clone();
@@ -310,7 +310,7 @@ fn intialize_slint_callbacks(
                         .as_any()
                         .downcast_ref::<slint::VecModel<PropertyInput>>()
                         .expect("Properties failed to downcast");
-                    let message = match input_clone.message {
+                    let message = match message_type {
                         crate::MessageType::Create => {
                             new_properties.push(input_clone);
                             properties::PropertyMessage::PropertyCreated(input)
@@ -356,7 +356,7 @@ fn intialize_slint_callbacks(
     app.global::<LesseeData>().on_new_lessee({
         let lessee_channel = lessee_worker.channel.clone();
         let local_app = weak_app.clone();
-        move |input| {
+        move |message_type, input| {
             let input_clone = input.clone();
             let upgrade_res = local_app.upgrade_in_event_loop({
                 let internal_channel = lessee_channel.clone();
@@ -366,7 +366,7 @@ fn intialize_slint_callbacks(
                         .as_any()
                         .downcast_ref::<slint::VecModel<LeaseholderInput>>()
                         .expect("Properties failed to downcast");
-                    let message = match input_clone.message {
+                    let message = match message_type {
                         crate::MessageType::Create => {
                             new_lessees.push(input_clone);
                             leaseholders::LeaseholderMessage::LeaseholderCreated(input)
@@ -412,7 +412,7 @@ fn intialize_slint_callbacks(
     app.global::<StatementData>().on_new_statement({
         let statement_channel = statement_worker.channel.clone();
         let local_app = weak_app.clone();
-        move |input| {
+        move |message_type, input| {
             let input_clone = input.clone();
             let upgrade_res = local_app.upgrade_in_event_loop({
                 let internal_channel = statement_channel.clone();
@@ -423,7 +423,7 @@ fn intialize_slint_callbacks(
                         .downcast_ref::<slint::VecModel<StatementInput>>()
                         .expect("Statements failed to downcast");
                     
-                    let message = match input.message {
+                    let message = match message_type {
                         crate::MessageType::Create => {
                             new_statements.push(input_clone);
                             statements::StatementMessage::StatementCreated(input)

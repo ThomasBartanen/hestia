@@ -74,7 +74,6 @@ impl Leaseholder {
             id: self.id as i32,
             property_id: self.property_id as i32,
             lease: self.lease.id as i32,
-            message: crate::MessageType::Update,
             name: copy.contact_info.name.into(),
             city: copy.contact_info.remittence_address.city.into(),
             email: copy.contact_info.email.into(),

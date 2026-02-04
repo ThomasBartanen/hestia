@@ -176,7 +176,6 @@ impl Expense {
         let (main, sub) = ExpenseType::to_split_strings(&self.expense_type);
         let cur_expense = &self.description;
         ExpenseInput {
-            message: crate::MessageType::Update,
             id: self.id as i32,
             prop_id: self.property_id as i32,
             amount: self.amount,

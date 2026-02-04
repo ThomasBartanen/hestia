@@ -35,8 +35,9 @@ export component AddLeaseholderMenu inherits Window {
     }
 
     public function submit-lessee() {
-        LesseeData.new-lessee({
-            message: lessee-action,
+        LesseeData.new-lessee(
+            lessee-action,
+            {
             id: lessee-action == MessageType.update ? 
                             LesseeData.selected-lessee-id : 
                             lessee-action == MessageType.delete ? 
@@ -248,8 +249,9 @@ export component ViewLesseesMenu inherits Rectangle {
                             lessee-action = MessageType.delete;
                             selected-lessee = x;
 
-                            LesseeData.new-lessee({
-                                message: lessee-action,
+                            LesseeData.new-lessee(
+                                lessee-action,
+                                {
                                 id: LesseeData.selected-lessee-id,
                                 name: x.name,
                                 lease: x.lease,
@@ -298,8 +300,9 @@ export component ViewLesseesMenu inherits Rectangle {
                     width: 70px;
                     confirm => {
                         
-                        LesseeData.new-lessee({
-                            message: new-lessee.current-use,
+                        LesseeData.new-lessee(
+                            new-lessee.current-use,
+                            {
                             id: new-lessee.current-use == MessageType.update ?
                                 selected-lessee.id :
                                 Validation.get-valid-id(IdType.Leaseholder),

@@ -164,8 +164,9 @@ export component ViewExpenseTotalsMenu inherits Rectangle {
                             expense-action = MessageType.delete;
                             selected-expense = x;
 
-                            ExpenseData.new-expense({
-                                message: expense-action,
+                            ExpenseData.new-expense(
+                                expense-action,
+                                {
                                 id: ExpenseData.selected-expense-id,
                                 description: x.description,
                                 amount: x.amount,
@@ -255,8 +256,9 @@ export component ViewExpenseTotalsMenu inherits Rectangle {
                     width: 70px;
                     confirm => {
                         
-                        ExpenseData.new-expense({
-                            message: new-expense.current-use,
+                        ExpenseData.new-expense(
+                            new-expense.current-use,
+                            {
                             id: new-expense.current-use == MessageType.update ?
                                 selected-expense.id :
                                 Validation.get-valid-id(IdType.Expense),
