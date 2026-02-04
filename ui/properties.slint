@@ -31,8 +31,9 @@ component AddPropertyMenu inherits Rectangle {
     }
 
     public function submit-prop() {
-        PropertyData.new-property({
-            message: prop-action,
+        PropertyData.new-property(
+            prop-action,
+            {
             id: prop-action == MessageType.update ? 
                             PropertyData.selected-prop-id : 
                             prop-action == MessageType.delete ? 

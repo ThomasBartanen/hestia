@@ -10,7 +10,7 @@ pub use generated_code::*;
 use slint::{ComponentHandle, Model, ModelRc, Weak, WindowPosition};
 use sqlx::Sqlite;
 use tokio::sync::Mutex;
-use async_std::sync::Arc;
+use std::sync::Arc;
 use crate::database_worker::DatabaseManager;
 
 mod app_settings;
@@ -26,7 +26,7 @@ mod statements;
 mod testing;
 mod time;
 
-#[async_std::main]
+#[tokio::main]
 async fn main() {
     //println!("{:?}", std::env::current_exe());
     app_settings::initialize_data_paths().await;

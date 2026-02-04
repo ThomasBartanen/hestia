@@ -6,16 +6,16 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-sqlx = { version = "0.8.2", features = ["runtime-async-std-native-tls", "sqlite"]}
-async-std = { version = "1.13", features = [ "attributes"]}
+sqlx = { version = "0.8.6", features = ["runtime-async-std-native-tls", "sqlite"]}
+# async-std = { version = "1.13.2", features = [ "attributes"]} # discontinued
 futures = "0.3.18"
-chrono = { version = "0.4.39", features = ["serde"] }
-printpdf = "0.7.0"
+chrono = { version = "0.4.43", features = ["serde"] }
+printpdf = "0.9.0"
 serde = "1.0.217"
-serde_json = { version = "1.0.134", features = ["raw_value"] }
-slint = "1.9.1"
-slint-build = "1.9.1"
-tokio = {version = "1.42.0", features = ["full"]}
+serde_json = { version = "1.0.149", features = ["raw_value"] }
+slint = "1.14.1"
+slint-build = "1.14.1"
+tokio = {version = "1.49.0", features = ["full"]}
 
 [build-dependencies]
 slint-build = { version = "1.9.1" }
