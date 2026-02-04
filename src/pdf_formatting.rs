@@ -1,7 +1,7 @@
 use std::{fs::File, io::BufWriter};
 
 use chrono::{Datelike, NaiveDate};
-use printpdf::{BuiltinFont, Line, Mm, PdfDocument, Point, TextRenderingMode};
+use printpdf::{BuiltinFont, Line, Mm, PdfDocument, PdfPage, PdfSaveOptions, Point, TextRenderingMode};
 
 use crate::{
     app_settings::PathSettings, leaseholders::{Company, Leaseholder}, properties::Property, statements::Statement,
@@ -24,17 +24,21 @@ pub fn write_with_printpdf(
     settings: PathSettings,
 ) {
     // Max dimension values in mm 215.9 x 279.4
-    let (doc, page1, layer1) =
-        PdfDocument::new("Monthly Statement", RIGHT_EDGE, TOP_EDGE, "Layer 1");
-    let current_layer = doc.get_page(page1).get_layer(layer1);
-    let font = doc.add_builtin_font(BuiltinFont::Helvetica).unwrap();
+    let mut doc = PdfDocument::new("Monthly Statement");
+    //let font = doc.add_builtin_font(BuiltinFont::Helvetica).unwrap();
     let contact_info = leaseholder.contact_info;
+
+    let mut warnings = Vec::new();
 
     let mut y_level = Mm(270.0);
     let mut left_column = LEFT_COLUMN;
     let right_column = RIGHT_COLUMN;
     let center = RIGHT_EDGE / 2.0;
 
+    let page1_contents = vec![
+
+    ];
+    /*
     current_layer.set_text_rendering_mode(TextRenderingMode::Fill);
 
     current_layer.begin_text_section();
@@ -179,17 +183,26 @@ pub fn write_with_printpdf(
     );
     y_level += Mm(10.0);
     current_layer.use_text("Please Remit To:", BODY_SIZE, left_column, y_level, &font);
+    */
+    let save_options = PdfSaveOptions {
+        ..Default::default()
+    };
+
+    let page1 = PdfPage::new(RIGHT_EDGE, TOP_EDGE, page1_contents);
 
     // Save the PDF to a file
-    doc.save(&mut BufWriter::new(
-        File::create(format!(
-            "{}{}",
-            settings.statements_path,
-            statement.statement_name
-        ))
-        .unwrap(),
-    ))
-    .unwrap();
+    doc
+        .with_pages(vec![page1])
+        .save_writer(&mut BufWriter::new(
+            File::create(format!(
+                "{}{}",
+                settings.statements_path,
+                statement.statement_name
+            ))
+            .unwrap()),
+            &save_options,
+            &mut warnings
+        )
 }
 
 pub fn get_word_date(date: NaiveDate) -> String {
