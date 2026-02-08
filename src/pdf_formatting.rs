@@ -1,7 +1,7 @@
 use std::{fs::File, io::BufWriter};
 
 use chrono::{Datelike, NaiveDate};
-use printpdf::{BuiltinFont, Line, Mm, PdfDocument, PdfPage, PdfSaveOptions, Point, TextRenderingMode};
+use printpdf::{BuiltinFont, Line, Mm, Op, PdfDocument, PdfPage, PdfSaveOptions, Point, Pt, TextRenderingMode};
 
 use crate::{
     app_settings::PathSettings, leaseholders::{Company, Leaseholder}, properties::Property, statements::Statement,
@@ -12,9 +12,9 @@ const RIGHT_COLUMN: Mm = Mm(115.0);
 const TOP_EDGE: Mm = Mm(297.0);
 const RIGHT_EDGE: Mm = Mm(210.0);
 
-const HEADER_SIZE: f32 = 16.0;
-const BODY_SIZE: f32 = 13.0;
-const DETAILS_SIZE: f32 = 12.0;
+const HEADER_SIZE: Pt = Pt(16.0);
+const BODY_SIZE: Pt = Pt(13.0);
+const DETAILS_SIZE: Pt = Pt(12.0);
 
 pub fn write_with_printpdf(
     statement: Statement,
@@ -38,9 +38,10 @@ pub fn write_with_printpdf(
     let page1_contents = vec![
 
     ];
+    Op::SetFont { font: printpdf::PdfFontHandle::Builtin(BuiltinFont::Helvetica), size: BODY_SIZE };
+    Op::SetTextRenderingMode { mode: TextRenderingMode::Fill };
+    //Op::WriteText { items: vec![printpdf::TextItem::Text(company.name)] };
     /*
-    current_layer.set_text_rendering_mode(TextRenderingMode::Fill);
-
     current_layer.begin_text_section();
     current_layer.use_text(company.name, HEADER_SIZE, left_column, y_level, &font);
     y_level -= Mm(8.0);
