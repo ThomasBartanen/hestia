@@ -27,7 +27,43 @@ pub struct Statement {
 impl Statement {
     pub async fn new(pool: &sqlx::Pool<Sqlite>, date: NaiveDate, tenant: Leaseholder) -> Statement {
         let tenant_clone = tenant.clone();
-        let property = database::get_property(pool, tenant.property_id).await;
+        let property = match database::get_property(pool, tenant.property_id).await {
+            Ok(o) => match Property::from_row(&o) {
+                Ok(p) => p,
+                Err(e) => {
+                    println!("Failed to convert property from row: {}", e);
+                    Property {
+                        id: 0,
+                        name: "Unknown".to_owned(),
+                        address: crate::properties::Address {
+                            street_address: "Unknown".to_owned(),
+                            city: "Unknown".to_owned(),
+                            state: "Unknown".to_owned(),
+                            zip_code: "Unknown".to_owned(),
+                        },
+                        property_tax: 0.0,
+                        business_insurance: 0.0,
+                        num_units: 0,
+                    }
+                }
+            },
+            Err(e) => {
+                println!("Failed to get property from database: {}", e);
+                Property {
+                    id: 0,
+                    name: "Unknown".to_owned(),
+                    address: crate::properties::Address {
+                        street_address: "Unknown".to_owned(),
+                        city: "Unknown".to_owned(),
+                        state: "Unknown".to_owned(),
+                        zip_code: "Unknown".to_owned(),
+                    },
+                    property_tax: 0.0,
+                    business_insurance: 0.0,
+                    num_units: 0,
+                }
+            }
+        };
         let fees = database::get_current_property_expenses(
             &pool,
             property.id,
@@ -160,8 +196,18 @@ pub async fn create_statement(
     company: Company,
     settings: PathSettings,
 ) {
-    let tenant = database::get_leaseholder(&pool, statement.leaseholder_id).await;
-    write_with_printpdf(statement, tenant, property, company, settings);
+    match database::get_leaseholder(&pool, statement.leaseholder_id).await {
+        Ok(o) => match Leaseholder::from_row(&o) {
+            Ok(leaseholder) => write_with_printpdf(statement, leaseholder, property, company, settings),
+            Err(e) => {
+                println!("Failed to convert leaseholder from row: {}", e);
+            }
+        },
+        Err(e) => {
+            println!("Failed to get leaseholder from database: {}", e);
+        }
+    };
+    
 }
 
 pub enum StatementMessage {

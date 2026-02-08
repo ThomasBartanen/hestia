@@ -9,9 +9,9 @@ use expenses::calculate_expense_totals;
 pub use generated_code::*;
 use slint::{ComponentHandle, Model, ModelRc, Weak, WindowPosition};
 use sqlx::Sqlite;
-use tokio::sync::Mutex;
+use tokio::sync::{Mutex, mpsc::UnboundedSender};
 use std::sync::Arc;
-use crate::database_worker::DatabaseManager;
+use crate::{database_worker::{DatabaseManager, DatabaseOperation, DatabaseTable}, leaseholders::Leaseholder};
 
 mod app_settings;
 mod database_worker;
@@ -49,29 +49,19 @@ async fn main() {
 
     let app_state = initialize_slint_properties(&weak_app, app_state, &valid_ids).await;
 
-    let worker_instances = &app_state.lock().await.db_manager.db_pool.clone();
-    let expense_worker = expenses::ExpenseWorker::new(&worker_instances);
-    let property_worker = properties::PropertyWorker::new(&worker_instances);
-    let lessee_worker = leaseholders::LeaseholderWorker::new(&worker_instances);
-    let statement_worker = statements::StatementWorker::new(&worker_instances);
+    let db_worker = database_worker::DatabaseWorker::new(app_state.lock().await.db_manager.clone());
 
-    intialize_slint_callbacks(
+    let app_state =intialize_slint_callbacks(
         &app,
-        &app_state.lock().await.db_manager.db_pool,
+        app_state,
         valid_ids.clone(),
-        &expense_worker,
-        &property_worker,
-        &lessee_worker,
-        &statement_worker,
+        db_worker.channel.clone(),
     );
 
     app.run().unwrap();
 
     app_state.lock().await.db_manager.db_pool.close().await;
-    let _expense_result = expense_worker.join();
-    let _property_result = property_worker.join();
-    let _lessee_result = lessee_worker.join();
-    let _statement_result = statement_worker.join();
+    let _db_result = db_worker.join();
 }
 
 struct AppState {
@@ -208,13 +198,10 @@ async fn initialize_slint_properties(
 
 fn intialize_slint_callbacks(
     app: &App,
-    instances: &sqlx::Pool<Sqlite>,
+    app_state: Arc<Mutex<AppState>>,
     valid_ids: ValidIds,
-    expense_worker: &expenses::ExpenseWorker,
-    property_worker: &properties::PropertyWorker,
-    lessee_worker: &leaseholders::LeaseholderWorker,
-    statement_worker: &statements::StatementWorker,
-) {
+    tx: UnboundedSender<DatabaseOperation>,
+) -> Arc<Mutex<AppState>> {
     let weak_app = app.as_weak();
     app.global::<Validation>().on_get_valid_id({
         let mut id_clone = valid_ids;
@@ -223,6 +210,48 @@ fn intialize_slint_callbacks(
         }}
     );
 
+    app.global::<LesseeData>().on_new_lessee({
+        let local_channel = tx.clone();
+        move |message_type, input| {
+            let message_res = match message_type {
+                MessageType::Create => local_channel.send(DatabaseOperation::Create(
+                    DatabaseTable::Leaseholder(Leaseholder::convert_from_slint(input)),
+                )),
+                MessageType::Update => local_channel.send(DatabaseOperation::Update(
+                    DatabaseTable::Leaseholder(Leaseholder::convert_from_slint(input)),
+                )),
+                MessageType::Delete => local_channel.send(DatabaseOperation::Delete(
+                    DatabaseTable::Leaseholder(Leaseholder::convert_from_slint(input)),
+                )),
+            };
+            match message_res {
+                Ok(_) => (),
+                Err(e) => println!("Failed to send tenant message: {e}"),
+            }
+        }
+    });
+    /*
+    app_ref.global::<RegisterData>().on_new_transaction({
+        let local_channel = tx.clone();
+        move |message_type, input| {
+            let message_res = match message_type {
+                MessageType::Create => local_channel.send(DatabaseOperation::Create(
+                    DatabaseTable::Transaction(Transaction::from_slint(input)),
+                )),
+                MessageType::Update => local_channel.send(DatabaseOperation::Update(
+                    DatabaseTable::Transaction(Transaction::from_slint(input)),
+                )),
+                MessageType::Delete => local_channel.send(DatabaseOperation::Delete(
+                    DatabaseTable::Transaction(Transaction::from_slint(input)),
+                )),
+            };
+            match message_res {
+                Ok(_) => (),
+                Err(e) => println!("Failed to send transaction message: {e}"),
+            }
+        }
+    });
+    */
     app.global::<WindowCallbacks>().on_open_window({
         let local_app = weak_app.clone().upgrade().unwrap();
         move |input| {
@@ -240,229 +269,67 @@ fn intialize_slint_callbacks(
     });
 
     app.global::<ExpenseData>().on_new_expense({
-        let expense_channel = expense_worker.channel.clone();
-        let local_app = weak_app.clone();
+        let expense_channel = tx.clone();
         move |message_type, input| {
-            let input_clone = input.clone();
-            let upgrade_res = local_app.upgrade_in_event_loop({
-                let internal_channel = expense_channel.clone();
-                move |handle| {
-                    let prev_expense = handle.global::<ExpenseData>().get_expenses();
-                    let new_expenses = prev_expense
-                        .as_any()
-                        .downcast_ref::<slint::VecModel<ExpenseInput>>()
-                        .expect("Expenses failed to downcast");
-                    let message = match message_type {
-                        MessageType::Create => {
-                            new_expenses.push(input_clone);
-                            expenses::ExpenseMessage::ExpenseCreated(input)
-                        }
-                        MessageType::Update => {
-                            let index = match new_expenses
-                                .iter()
-                                .position(|r| {
-                                    //println!("r.id: {}. input_clone.id: {}", r.id, input_clone.id);
-                                    r.id == input_clone.id
-                                }) {
-                                    Some(i) => i,
-                                    None => panic!("Failed to find correct index for Expense in collection"),
-                                };
-                            new_expenses.remove(index);
-                            new_expenses.insert(index, input_clone);
-                            expenses::ExpenseMessage::ExpenseUpdate(input)
-                        }
-                        MessageType::Delete => {
-                            let index = new_expenses
-                                .iter()
-                                .position(|r| {
-                                    //println!("r.id: {}. input_clone.id: {}", r.id, input_clone.id);
-                                    r.id == input_clone.id
-                                })
-                                .unwrap();
-                            new_expenses.remove(index);
-                            expenses::ExpenseMessage::ExpenseDelete(input)
-                        }
-                    };
-                    let res = internal_channel.send(message);
-                    match res {
-                        Ok(_) => (), //println!("expense successfully sent"),
-                        Err(_e) => println!("expense send failed"),
-                    }
-                }
-            });
-            match upgrade_res {
-                Ok(_) => (),
-                Err(e) => println!("Failed to upgrade ui: {e}"),
+            let message_res = match message_type { 
+                MessageType::Create => expense_channel.send(DatabaseOperation::Create(
+                    DatabaseTable::Expense(expenses::Expense::convert_from_slint(input.clone())),
+                )),
+                MessageType::Update => expense_channel.send(DatabaseOperation::Update(
+                    DatabaseTable::Expense(expenses::Expense::convert_from_slint(input.clone())),
+                )),
+                MessageType::Delete => expense_channel.send(DatabaseOperation::Delete(
+                    DatabaseTable::Expense(expenses::Expense::convert_from_slint(input.clone())),
+                )),
             };
+            match message_res {
+                Ok(_) => (),
+                Err(e) => println!("Failed to send expense message: {e}"),
+            }
         }
     });
 
     app.global::<PropertyData>().on_new_property({
-        let property_channel = property_worker.channel.clone();
-        let local_app = weak_app.clone();
+        let property_channel = tx.clone();
         move |message_type, input| {
-            let input_clone = input.clone();
-            let upgrade_res = local_app.upgrade_in_event_loop({
-                let internal_channel = property_channel.clone();
-                move |handle| {
-                    let prev_property = handle.global::<PropertyData>().get_properties();
-                    let new_properties = prev_property
-                        .as_any()
-                        .downcast_ref::<slint::VecModel<PropertyInput>>()
-                        .expect("Properties failed to downcast");
-                    let message = match message_type {
-                        crate::MessageType::Create => {
-                            new_properties.push(input_clone);
-                            properties::PropertyMessage::PropertyCreated(input)
-                        }
-                        crate::MessageType::Update => {
-                            let index = new_properties
-                                .iter()
-                                .position(|r| {
-                                    //println!("r.id: {}. input_clone.id: {}", r.id, input_clone.id);
-                                    r.id == input_clone.id
-                                })
-                                .unwrap();
-                            new_properties.remove(index);
-                            new_properties.insert(index, input_clone);
-                            properties::PropertyMessage::PropertyUpdate(input)
-                        }
-                        crate::MessageType::Delete => {
-                            let index = new_properties
-                                .iter()
-                                .position(|r| {
-                                    //println!("r.id: {}. input_clone.id: {}", r.id, input_clone.id);
-                                    r.id == input_clone.id
-                                })
-                                .unwrap();
-                            new_properties.remove(index);
-                            properties::PropertyMessage::PropertyRemove(input)
-                        }
-                    };
-                    let res = internal_channel.send(message);
-                    match res {
-                        Ok(_) => (), //println!("property successfully sent"),
-                        Err(_e) => println!("property send failed"),
-                    };
-                }
-            });
-            match upgrade_res {
-                Ok(_) => (),
-                Err(e) => println!("Failed to upgrade ui: {e}"),
+            let message_res = match message_type {
+                MessageType::Create => property_channel.send(DatabaseOperation::Create(
+                    DatabaseTable::Property(properties::Property::convert_from_slint(input.clone())),
+                )),
+                MessageType::Update => property_channel.send(DatabaseOperation::Update(
+                    DatabaseTable::Property(properties::Property::convert_from_slint(input.clone())),
+                )),
+                MessageType::Delete => property_channel.send(DatabaseOperation::Delete(
+                    DatabaseTable::Property(properties::Property::convert_from_slint(input.clone())),
+                )),
             };
-        }
-    });
-
-    app.global::<LesseeData>().on_new_lessee({
-        let lessee_channel = lessee_worker.channel.clone();
-        let local_app = weak_app.clone();
-        move |message_type, input| {
-            let input_clone = input.clone();
-            let upgrade_res = local_app.upgrade_in_event_loop({
-                let internal_channel = lessee_channel.clone();
-                move |handle| {
-                    let prev_lessees = handle.global::<LesseeData>().get_lessees();
-                    let new_lessees = prev_lessees
-                        .as_any()
-                        .downcast_ref::<slint::VecModel<LeaseholderInput>>()
-                        .expect("Properties failed to downcast");
-                    let message = match message_type {
-                        crate::MessageType::Create => {
-                            new_lessees.push(input_clone);
-                            leaseholders::LeaseholderMessage::LeaseholderCreated(input)
-                        }
-                        crate::MessageType::Update => {
-                            let index = new_lessees
-                                .iter()
-                                .position(|r| {
-                                    //println!("r.id: {}. input_clone.id: {}", r.id, input_clone.id);
-                                    r.id == input_clone.id
-                                })
-                                .unwrap();
-                            new_lessees.remove(index);
-                            new_lessees.insert(index, input_clone);
-                            leaseholders::LeaseholderMessage::LeaseholderUpdate(input)
-                        }
-                        crate::MessageType::Delete => {
-                            let index = new_lessees
-                                .iter()
-                                .position(|r| {
-                                    //println!("r.id: {}. input_clone.id: {}", r.id, input_clone.id);
-                                    r.id == input_clone.id
-                                })
-                                .unwrap();
-                            new_lessees.remove(index);
-                            leaseholders::LeaseholderMessage::LeaseholderDelete(input)
-                        }
-                    };
-                    let res = internal_channel.send(message);
-                    match res {
-                        Ok(_) => (), //println!("Leaseholder successfully sent"),
-                        Err(_e) => println!("Leaseholder send failed"),
-                    };
-                }
-            });
-            match upgrade_res {
+            match message_res {
                 Ok(_) => (),
-                Err(e) => println!("Failed to upgrade ui: {e}"),
-            };
+                Err(e) => println!("Failed to send property message: {e}"),
+            }
         }
     });
 
     app.global::<StatementData>().on_new_statement({
-        let statement_channel = statement_worker.channel.clone();
-        let local_app = weak_app.clone();
+        let statement_channel = tx.clone();
         move |message_type, input| {
-            let input_clone = input.clone();
-            let upgrade_res = local_app.upgrade_in_event_loop({
-                let internal_channel = statement_channel.clone();
-                move |handle| {
-                    let prev_statements = handle.global::<StatementData>().get_statements();
-                    let new_statements = prev_statements
-                        .as_any()
-                        .downcast_ref::<slint::VecModel<StatementInput>>()
-                        .expect("Statements failed to downcast");
-                    
-                    let message = match message_type {
-                        crate::MessageType::Create => {
-                            new_statements.push(input_clone);
-                            statements::StatementMessage::StatementCreated(input)
-                        }
-                        crate::MessageType::Delete => {
-                            let index = new_statements
-                                .iter()
-                                .position(|r| {
-                                    //println!("r.id: {}. input_clone.id: {}", r.id, input_clone.id);
-                                    r.id == input_clone.id
-                                })
-                                .unwrap();
-                            new_statements.remove(index);
-                            statements::StatementMessage::StatementDelete(input)
-                        }
-                        crate::MessageType::Update => {
-                            let index = new_statements
-                                .iter()
-                                .position(|r| {
-                                    //println!("r.id: {}. input_clone.id: {}", r.id, input_clone.id);
-                                    r.id == input_clone.id
-                                })
-                                .unwrap();
-                            new_statements.remove(index);
-                            new_statements.insert(index, input_clone);
-                            statements::StatementMessage::StatementUpdate(input)
-                        }
-                    };
-                    let res = internal_channel.send(message);
-                    match res {
-                        Ok(_) => (), //println!("Statement successfully sent"),
-                        Err(_e) => println!("Statement send failed"),
-                    };
-                }
-            });
-            match upgrade_res {
+            let message_res = match message_type {
+                MessageType::Create => statement_channel.send(DatabaseOperation::Create(
+                    DatabaseTable::Statement(statements::Statement::convert_from_slint(input.clone())),
+                )),
+                MessageType::Update => statement_channel.send(DatabaseOperation::Update(
+                    DatabaseTable::Statement(statements::Statement::convert_from_slint(input.clone())),
+                )),
+                MessageType::Delete => statement_channel.send(DatabaseOperation::Delete(
+                    DatabaseTable::Statement(statements::Statement::convert_from_slint(input.clone())),
+                )),
+            };
+            match message_res {
                 Ok(_) => (),
-                Err(e) => println!("Failed to upgrade ui: {e}"),
+                Err(e) => println!("Failed to send statement message: {e}"),
             }
         }
     });
+    
+    app_state
 }

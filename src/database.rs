@@ -1,6 +1,6 @@
 use chrono::NaiveDate;
 use serde::Serialize;
-use sqlx::{migrate::MigrateDatabase, sqlite::SqliteQueryResult, FromRow, Sqlite, SqlitePool};
+use sqlx::{FromRow, Sqlite, SqlitePool, migrate::MigrateDatabase, sqlite::{SqliteQueryResult, SqliteRow}};
 use std::result::Result;
 
 use crate::{
@@ -205,20 +205,36 @@ pub async fn add_statement(
     Ok(x)
 }
 // ----------------------------------- GET SPECIFIC -----------------------------------------
-pub async fn get_property(pool: &sqlx::Pool<Sqlite>, id: u32) -> Property {
+pub async fn get_property(pool: &sqlx::Pool<Sqlite>, id: u32) -> Result<SqliteRow, sqlx::Error> {
     let property_row = sqlx::query("SELECT * FROM properties WHERE property_id == ?")
         .bind(id)
         .fetch_one(pool)
         .await;
-    Property::from_row(&property_row.unwrap()).unwrap()
+    property_row
 }
 
-pub async fn get_leaseholder(pool: &sqlx::Pool<Sqlite>, id: u32) -> Leaseholder {
+pub async fn get_leaseholder(pool: &sqlx::Pool<Sqlite>, id: u32) -> Result<SqliteRow, sqlx::Error> {
     let lessee_row = sqlx::query("SELECT * FROM leaseholders WHERE leaseholder_id == ?")
         .bind(id)
         .fetch_one(pool)
         .await;
-    Leaseholder::from_row(&lessee_row.unwrap()).unwrap()
+    lessee_row
+}
+
+pub async fn get_expense(pool: &sqlx::Pool<Sqlite>, id: u32) -> Result<SqliteRow, sqlx::Error> {
+    let expense_row = sqlx::query("SELECT * FROM expenses WHERE expense_id == ?")
+        .bind(id)
+        .fetch_one(pool)
+        .await;
+    expense_row
+}
+
+pub async fn get_statement(pool: &sqlx::Pool<Sqlite>, id: u32) -> Result<SqliteRow, sqlx::Error> {
+    let statement_row = sqlx::query("SELECT * FROM statements WHERE statement_id == ?")
+        .bind(id)
+        .fetch_one(pool)
+        .await;
+    statement_row
 }
 
 pub async fn get_period_expenses(pool: &sqlx::Pool<Sqlite>, start_date: NaiveDate, end_date: NaiveDate) -> Vec<Expense> {
