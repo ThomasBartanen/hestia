@@ -21,7 +21,7 @@ mod lease;
 mod leaseholders;
 mod pdf_formatting;
 mod properties;
-mod slint_conversion;
+mod slint_data_initialization;
 mod statements;
 mod testing;
 mod time;
@@ -174,19 +174,19 @@ async fn initialize_slint_properties(
     app_state: Arc<Mutex<AppState>>,
     valid_ids: &ValidIds,
 ) -> Arc<Mutex<AppState>> {
-    slint_conversion::initialize_slint_properties(
+    slint_data_initialization::initialize_slint_properties(
         &weak_app.upgrade().unwrap(),
         &app_state.lock().await.db_manager.db_pool,
         valid_ids,
     )
     .await;
-    slint_conversion::initialize_slint_expenses(
+    slint_data_initialization::initialize_slint_expenses(
         &weak_app.upgrade().unwrap(), 
         &app_state.lock().await.db_manager.db_pool, 
         valid_ids
     )
     .await;
-    slint_conversion::initialize_slint_leaseholders(
+    slint_data_initialization::initialize_slint_leaseholders(
         &weak_app.upgrade().unwrap(),
         &app_state.lock().await.db_manager.db_pool,
         valid_ids,
