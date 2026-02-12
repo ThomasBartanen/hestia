@@ -30,9 +30,8 @@ mod time;
 async fn main() {
     //println!("{:?}", std::env::current_exe());
     app_settings::initialize_data_paths().await;
-    let instances = database::initialize_database().await;
 
-    let app_state = Arc::new(Mutex::new(AppState::new(instances).await));
+    let app_state = Arc::new(Mutex::new(AppState::new(database::initialize_database().await).await));
     let (init_data_result, _instances) = app_state.lock().await.load_initial_data().await;
 
     match init_data_result {
@@ -51,7 +50,7 @@ async fn main() {
 
     let db_worker = database_worker::DatabaseWorker::new(app_state.lock().await.db_manager.clone());
 
-    let app_state =intialize_slint_callbacks(
+    let app_state = intialize_slint_callbacks(
         &app,
         app_state,
         valid_ids.clone(),

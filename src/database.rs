@@ -17,7 +17,7 @@ pub async fn initialize_database() -> sqlx::Pool<Sqlite> {
             Err(e) => panic!("{}", e),
         }
     } else {
-        println!("Database already exists");
+        ()
     }
 
     SqlitePool::connect(&db_url).await.unwrap()
